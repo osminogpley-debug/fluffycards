@@ -1,0 +1,397 @@
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
+import { PrimaryButton, SecondaryButton } from './UI/Buttons';
+import { 
+  getFriends, 
+  searchUsers, 
+  sendFriendRequest,
+  getFriendRequests,
+  handleFriendRequest,
+  removeFriend
+} from '../services/socialService';
+
+
+
+const Container = styled.div`
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+`;
+
+const Title = styled.h3`
+  font-size: 1.3rem;
+  color: #2d3748;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const SearchBox = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #63b3ed;
+  }
+`;
+
+const Tabs = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+`;
+
+const Tab = styled.button`
+  background: ${props => props.$active ? '#63b3ed' : 'transparent'};
+  color: ${props => props.$active ? 'white' : '#4a5568'};
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: ${props => props.$active ? '#4299e1' : '#e0f2fe'};
+  }
+`;
+
+const UserList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+`;
+
+const UserCard = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #f7fafc;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #edf2f7;
+  }
+`;
+
+const UserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+const Avatar = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+  font-weight: 600;
+`;
+
+const UserDetails = styled.div``;
+
+const UserName = styled.div`
+  font-weight: 600;
+  color: #2d3748;
+  
+  &:hover {
+    color: #63b3ed;
+  }
+`;
+
+const UserMeta = styled.div`
+  font-size: 0.85rem;
+  color: #718096;
+`;
+
+const Actions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const IconButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: ${props => props.$danger ? '#fee2e2' : '#e0f2fe'};
+  }
+`;
+
+const Badge = styled.span`
+  background: #f56565;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 10px;
+  margin-left: 0.5rem;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #a0aec0;
+`;
+
+function FriendsList({ user }) {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('friends');
+  const [friends, setFriends] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const handleUserClick = (userId) => {
+    navigate(`/users/${userId}`);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    const [friendsData, requestsData] = await Promise.all([
+      getFriends(),
+      getFriendRequests()
+    ]);
+    setFriends(friendsData);
+    setRequests(requestsData);
+  };
+
+  const handleSearch = async () => {
+    if (searchQuery.length < 2) return;
+    setLoading(true);
+    setError(null);
+    const results = await searchUsers(searchQuery);
+    
+    if (results?.error === 'auth') {
+      setError('Ошибка авторизации. Попробуйте перезайти.');
+      setSearchResults([]);
+    } else if (Array.isArray(results)) {
+      setSearchResults(results);
+    } else {
+      setSearchResults([]);
+    }
+    
+    setLoading(false);
+  };
+
+  const handleAddFriend = async (userId) => {
+    await sendFriendRequest(userId);
+    setSearchResults(prev => prev.filter(u => u._id !== userId));
+    loadData();
+  };
+
+  const handleRequest = async (requestId, status) => {
+    await handleFriendRequest(requestId, status);
+    loadData();
+  };
+
+  const handleRemove = async (friendId) => {
+    if (window.confirm('Удалить из друзей?')) {
+      await removeFriend(friendId);
+      loadData();
+    }
+  };
+
+  return (
+    <Container>
+      <Header>
+        <Title>
+          👥 Друзья
+          {requests.length > 0 && <Badge>{requests.length}</Badge>}
+        </Title>
+      </Header>
+
+      <SearchBox>
+        <SearchInput
+          placeholder="Поиск по имени или ID..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          onKeyPress={e => e.key === 'Enter' && handleSearch()}
+        />
+        <PrimaryButton onClick={handleSearch} disabled={loading}>
+          🔍
+        </PrimaryButton>
+      </SearchBox>
+
+      {error && (
+        <div style={{ 
+          background: '#fee2e2', 
+          color: '#991b1b', 
+          padding: '0.75rem 1rem', 
+          borderRadius: '8px',
+          marginBottom: '1rem' 
+        }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      <Tabs>
+        <Tab 
+          $active={activeTab === 'friends'}
+          onClick={() => setActiveTab('friends')}
+        >
+          Друзья ({friends.length})
+        </Tab>
+        <Tab 
+          $active={activeTab === 'requests'}
+          onClick={() => setActiveTab('requests')}
+        >
+          Заявки {requests.length > 0 && `(${requests.length})`}
+        </Tab>
+        {searchResults.length > 0 && (
+          <Tab 
+            $active={activeTab === 'search'}
+            onClick={() => setActiveTab('search')}
+          >
+            Поиск ({searchResults.length})
+          </Tab>
+        )}
+      </Tabs>
+
+      {activeTab === 'friends' && (
+        <UserList>
+          {friends.length === 0 ? (
+            <EmptyState>
+              У вас пока нет друзей.<br />
+              Найдите друзей через поиск!
+            </EmptyState>
+          ) : (
+            friends.map(friend => (
+              <UserCard key={friend._id}>
+                <UserInfo onClick={() => handleUserClick(friend._id || friend.userId)}>
+                  <Avatar>{friend.username[0]}</Avatar>
+                  <UserDetails>
+                    <UserName>{friend.username}</UserName>
+                    <UserMeta>
+                      Уровень {friend.level} • {friend.totalXp} XP
+                    </UserMeta>
+                  </UserDetails>
+                </UserInfo>
+                <Actions>
+                  <IconButton 
+                    $danger
+                    onClick={() => handleRemove(friend._id)}
+                    title="Удалить"
+                  >
+                    🗑️
+                  </IconButton>
+                </Actions>
+              </UserCard>
+            ))
+          )}
+        </UserList>
+      )}
+
+      {activeTab === 'requests' && (
+        <UserList>
+          {requests.length === 0 ? (
+            <EmptyState>Нет новых заявок</EmptyState>
+          ) : (
+            requests.map(request => (
+              <UserCard key={request._id}>
+                <UserInfo onClick={() => handleUserClick(request.from?._id)}>
+                  <Avatar>{request.from?.username?.[0] || '?'}</Avatar>
+                  <UserDetails>
+                    <UserName>{request.from?.username || 'Пользователь'}</UserName>
+                    <UserMeta>Хочет добавить вас в друзья</UserMeta>
+                  </UserDetails>
+                </UserInfo>
+                <Actions>
+                  <IconButton 
+                    onClick={() => handleRequest(request._id, 'accepted')}
+                    title="Принять"
+                  >
+                    ✅
+                  </IconButton>
+                  <IconButton 
+                    $danger
+                    onClick={() => handleRequest(request._id, 'rejected')}
+                    title="Отклонить"
+                  >
+                    ❌
+                  </IconButton>
+                </Actions>
+              </UserCard>
+            ))
+          )}
+        </UserList>
+      )}
+
+      {activeTab === 'search' && (
+        <UserList>
+          {searchResults.map(result => (
+            <UserCard key={result._id}>
+              <UserInfo>
+                <Avatar>{result.username[0]}</Avatar>
+                <UserDetails>
+                  <UserName>{result.username}</UserName>
+                  <UserMeta>
+                    Уровень {result.level} • {result.totalXp} XP
+                  </UserMeta>
+                </UserDetails>
+              </UserInfo>
+              <Actions>
+                <IconButton 
+                  onClick={() => handleAddFriend(result._id)}
+                  title="Добавить в друзья"
+                >
+                  ➕
+                </IconButton>
+              </Actions>
+            </UserCard>
+          ))}
+        </UserList>
+      )}
+    </Container>
+  );
+}
+
+export default FriendsList;
