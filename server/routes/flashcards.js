@@ -104,14 +104,58 @@ router.get('/public', async (req, res) => {
 });
 
 // Получение всех наборов текущего пользователя
+// Получить наборы пользователя с фильтрацией по тегам
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const sets = await FlashcardSet.find({ owner: req.user._id })
+    const { tag, search } = req.query;
+    
+    let query = { owner: req.user._id };
+    
+    // Фильтр по тегу
+    if (tag) {
+      query.tags = { $in: [tag] };
+    }
+    
+    // Поиск по названию/описанию/тегам
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } }
+      ];
+    }
+    
+    const sets = await FlashcardSet.find(query)
       .sort({ createdAt: -1 });
     
     res.json(sets);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// Получить популярные теги пользователя
+router.get('/tags/popular', authMiddleware, async (req, res) => {
+  try {
+    const sets = await FlashcardSet.find({ owner: req.user._id });
+    
+    // Считаем частоту тегов
+    const tagCounts = {};
+    sets.forEach(set => {
+      (set.tags || []).forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+    
+    // Сортируем по популярности
+    const popularTags = Object.entries(tagCounts)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20); // Топ 20
+    
+    res.json({ success: true, data: popularTags });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 
@@ -180,16 +224,24 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // Создание нового набора с карточками
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { title, description, flashcards = [], isPublic } = req.body;
+    const { title, description, flashcards = [], isPublic, tags = [] } = req.body;
     
     console.log('[Create Set] isPublic value:', isPublic, 'type:', typeof isPublic);
+    
+    // Нормализуем теги (убираем пробелы, дубликаты, пустые)
+    const normalizedTags = [...new Set(
+      tags
+        .map(t => t.trim().toLowerCase())
+        .filter(t => t.length > 0)
+    )];
     
     const set = new FlashcardSet({
       title,
       description,
       flashcards,
       isPublic: Boolean(isPublic),
-      owner: req.user._id
+      owner: req.user._id,
+      tags: normalizedTags
     });
     
     await set.save();
@@ -201,10 +253,10 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// Обновление набора (название, описание, карточки)
+// Обновление набора (название, описание, карточки, теги)
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { title, description, flashcards, isPublic } = req.body;
+    const { title, description, flashcards, isPublic, tags } = req.body;
     
     console.log('[Update Set] isPublic value:', isPublic, 'type:', typeof isPublic);
     
@@ -221,6 +273,14 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (description !== undefined) set.description = description;
     if (flashcards !== undefined) set.flashcards = flashcards;
     if (isPublic !== undefined) set.isPublic = Boolean(isPublic);
+    if (tags !== undefined) {
+      // Нормализуем теги
+      set.tags = [...new Set(
+        tags
+          .map(t => t.trim().toLowerCase())
+          .filter(t => t.length > 0)
+      )];
+    }
     
     await set.save();
     console.log('[Update Set] Saved with isPublic:', set.isPublic);

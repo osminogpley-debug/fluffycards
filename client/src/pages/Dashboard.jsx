@@ -231,11 +231,64 @@ const ControlPanel = styled.div`
   background: white;
   border-radius: 12px;
   padding: 16px 20px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   display: flex;
   gap: 16px;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+`;
+
+const TagsCloud = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  
+  .label {
+    font-size: 14px;
+    color: #6b7280;
+    margin-right: 8px;
+  }
+`;
+
+const TagFilterButton = styled.button`
+  padding: 5px 12px;
+  background: ${props => props.active 
+    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+    : '#f3f4f6'};
+  color: ${props => props.active ? 'white' : '#374151'};
+  border: none;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+`;
+
+const ClearTagButton = styled.button`
+  padding: 5px 10px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #fecaca;
+  }
 `;
 
 const SearchInput = styled.div`
@@ -375,6 +428,13 @@ const SetCard = styled.div`
     padding-top: 16px;
     border-top: 1px solid #f3f4f6;
   }
+  
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
 `;
 
 const DeleteButton = styled.button`
@@ -402,6 +462,22 @@ const DeleteButton = styled.button`
   &:hover {
     background: #fecaca;
     transform: scale(1.1);
+  }
+`;
+
+const TagBadge = styled.span`
+  display: inline-block;
+  padding: 3px 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: scale(1.05);
   }
 `;
 
@@ -773,6 +849,8 @@ function Dashboard() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
+  const [popularTags, setPopularTags] = useState([]);
+  const [selectedTag, setSelectedTag] = useState(null);
   
   // State для геймификации
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
@@ -857,6 +935,19 @@ function Dashboard() {
       setUserSets(setsData);
       setGamificationData(gamificationRes);
       setFolders(foldersData);
+      
+      // Извлекаем популярные теги из наборов
+      const tagCounts = {};
+      setsData.forEach(set => {
+        set.tags?.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      });
+      const sortedTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(([tag]) => tag);
+      setPopularTags(sortedTags);
     } catch (error) {
       console.error('Error loading dashboard:', error);
       setError(error.message);
@@ -933,10 +1024,14 @@ function Dashboard() {
   };
 
   // Фильтрация и сортировка наборов
-  const filteredSets = userSets.filter(set => 
-    set.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    set.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredSets = userSets.filter(set => {
+    const query = searchQuery.toLowerCase();
+    const matchesTitle = set.title?.toLowerCase().includes(query);
+    const matchesDescription = set.description?.toLowerCase().includes(query);
+    const matchesTags = set.tags?.some(tag => tag.toLowerCase().includes(query));
+    const matchesSelectedTag = !selectedTag || set.tags?.includes(selectedTag);
+    return (matchesTitle || matchesDescription || matchesTags) && matchesSelectedTag;
+  });
 
   const sortedSets = [...filteredSets].sort((a, b) => {
     switch (sortBy) {
@@ -964,7 +1059,7 @@ function Dashboard() {
           <span className="search-icon">🔍</span>
           <input
             type="text"
-            placeholder="Поиск по моим наборам..."
+            placeholder="Поиск по названию, описанию или тегам..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -983,6 +1078,27 @@ function Dashboard() {
           </FolderButton>
         </ButtonGroup>
       </ControlPanel>
+      
+      {/* Облако тегов */}
+      {popularTags.length > 0 && !searchQuery && (
+        <TagsCloud>
+          <span className="label">🏷️ Теги:</span>
+          {selectedTag && (
+            <ClearTagButton onClick={() => setSelectedTag(null)}>
+              ❌ Сбросить
+            </ClearTagButton>
+          )}
+          {popularTags.map((tag, idx) => (
+            <TagFilterButton
+              key={idx}
+              active={selectedTag === tag}
+              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+            >
+              {tag}
+            </TagFilterButton>
+          ))}
+        </TagsCloud>
+      )}
 
       {sortedSets.length > 0 ? (
         <SetsGrid>
@@ -1015,6 +1131,27 @@ function Dashboard() {
                 <span>•</span>
                 <span>{set.isPublic ? '🌍 Публичный' : '🔒 Приватный'}</span>
               </div>
+              {set.tags && set.tags.length > 0 && (
+                <div className="tags">
+                  {set.tags.slice(0, 5).map((tag, idx) => (
+                    <TagBadge 
+                      key={idx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSearchQuery(tag);
+                      }}
+                      title="Нажмите для фильтрации"
+                    >
+                      {tag}
+                    </TagBadge>
+                  ))}
+                  {set.tags.length > 5 && (
+                    <TagBadge style={{ background: '#718096' }}>
+                      +{set.tags.length - 5}
+                    </TagBadge>
+                  )}
+                </div>
+              )}
               <div className="actions">
                 <ActionButton 
                   className="primary"

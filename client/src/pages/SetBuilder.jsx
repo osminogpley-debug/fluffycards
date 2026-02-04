@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { API_ROUTES, authFetch } from '../constants/api';
 import { pinyin } from 'pinyin-pro';
+
 import VoiceInput from '../components/VoiceInput';
 
 // ===== КИТАЙСКИЙ ФУНКЦИОНАЛ =====
@@ -797,6 +798,106 @@ const EmptyCardsState = styled.div`
   }
 `;
 
+// Стили для тегов
+const TagInputContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #2d3748;
+  border: 2px solid #4a5568;
+  border-radius: 12px;
+  min-height: 48px;
+  align-items: center;
+  
+  &:focus-within {
+    border-color: #63b3ed;
+  }
+`;
+
+const TagList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const Tag = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+`;
+
+const TagRemove = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const TagInputField = styled.input`
+  flex: 1;
+  min-width: 120px;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 14px;
+  padding: 4px;
+  
+  &:focus {
+    outline: none;
+  }
+  
+  &::placeholder {
+    color: #718096;
+  }
+`;
+
+const PopularTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+  font-size: 13px;
+  color: #a0aec0;
+`;
+
+const PopularTag = styled.button`
+  padding: 3px 10px;
+  background: ${props => props.disabled ? '#4a5568' : '#2d3748'};
+  border: 1px solid ${props => props.disabled ? '#718096' : '#4a5568'};
+  color: ${props => props.disabled ? '#a0aec0' : '#e2e8f0'};
+  border-radius: 15px;
+  font-size: 12px;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  transition: all 0.2s;
+  
+  &:hover {
+    background: ${props => props.disabled ? '#4a5568' : '#4a5568'};
+    border-color: ${props => props.disabled ? '#718096' : '#63b3ed'};
+  }
+`;
+
 // ===== КОМПОНЕНТ =====
 function SetBuilder() {
   const navigate = useNavigate();
@@ -809,9 +910,12 @@ function SetBuilder() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [tags, setTags] = useState([]);
   const [cards, setCards] = useState([{ id: Date.now(), term: '', definition: '', pinyin: '', translation: '', imageUrl: '' }]);
   const [importText, setImportText] = useState('');
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [popularTags, setPopularTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
   
   // Состояние загрузки
   const [loading, setLoading] = useState(false);
@@ -830,7 +934,23 @@ function SetBuilder() {
     if (isEditMode && id) {
       loadSetData();
     }
+    // Загружаем популярные теги
+    loadPopularTags();
   }, [isEditMode, id]);
+  
+  const loadPopularTags = async () => {
+    try {
+      const response = await authFetch(`${API_ROUTES.DATA.SETS}/tags/popular`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setPopularTags(data.data.map(t => t.tag));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading popular tags:', error);
+    }
+  };
   
   // useEffect для отслеживания изменения term
   // Если term изменился и это китайское слово - сбрасываем pinyin и translation
@@ -862,6 +982,7 @@ function SetBuilder() {
       setTitle(data.title || '');
       setDescription(data.description || '');
       setIsPublic(data.isPublic || false);
+      setTags(data.tags || []);
       
       if (data.flashcards && data.flashcards.length > 0) {
         const loadedCards = data.flashcards.map((card, index) => ({
@@ -919,6 +1040,35 @@ function SetBuilder() {
       delete newTerms[cardId];
       return newTerms;
     });
+  };
+  
+  // Обработчики тегов
+  const handleAddTag = (tag) => {
+    const trimmedTag = tag.trim().toLowerCase();
+    if (trimmedTag && !tags.includes(trimmedTag)) {
+      setTags([...tags, trimmedTag]);
+    }
+    setTagInput('');
+  };
+  
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+  
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTag(tagInput);
+    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      // Удаляем последний тег при Backspace в пустом поле
+      handleRemoveTag(tags[tags.length - 1]);
+    }
+  };
+  
+  const handleTagBlur = () => {
+    if (tagInput.trim()) {
+      handleAddTag(tagInput);
+    }
   };
   
   // Обновление поля карточки
@@ -1144,6 +1294,7 @@ function SetBuilder() {
       title: title.trim(),
       description: description.trim(),
       isPublic,
+      tags: tags.filter(tag => tag.trim()),
       flashcards: validCards.map(card => ({
         term: card.term.trim(),
         definition: card.definition.trim(),
@@ -1291,6 +1442,43 @@ function SetBuilder() {
               Публичные наборы видны всем пользователям
             </span>
           </PrivacyToggle>
+          
+          {/* Теги */}
+          <FormGroup style={{ marginTop: '20px' }}>
+            <Label>🏷️ Теги</Label>
+            <TagInputContainer>
+              <TagList>
+                {tags.map((tag, index) => (
+                  <Tag key={index}>
+                    {tag}
+                    <TagRemove onClick={() => handleRemoveTag(tag)}>×</TagRemove>
+                  </Tag>
+                ))}
+              </TagList>
+              <TagInputField
+                type="text"
+                placeholder={tags.length === 0 ? "Добавьте теги (Enter или запятая)" : ""}
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={handleTagBlur}
+              />
+            </TagInputContainer>
+            {popularTags.length > 0 && (
+              <PopularTags>
+                <span>Популярные:</span>
+                {popularTags.slice(0, 8).map((tag, index) => (
+                  <PopularTag 
+                    key={index} 
+                    onClick={() => handleAddTag(tag)}
+                    disabled={tags.includes(tag)}
+                  >
+                    {tag}
+                  </PopularTag>
+                ))}
+              </PopularTags>
+            )}
+          </FormGroup>
         </FormSection>
         
         {/* Импорт из текста */}
