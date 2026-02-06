@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 
 import { authFetch } from './constants/api';
 import { useTheme } from './contexts/ThemeContext';
@@ -25,8 +26,28 @@ import ProfilePage from './pages/ProfilePage';
 import PublicProfile from './pages/PublicProfile';
 import AdminPage from './pages/AdminPage';
 import HelpPage from './pages/HelpPage';
+import ContactsPage from './pages/ContactsPage';
 
 const GlobalStyle = createGlobalStyle`
+  :root {
+    --bg-primary: ${props => props.$isDark ? '#1a202c' : '#f8f9fa'};
+    --bg-secondary: ${props => props.$isDark ? '#2d3748' : 'white'};
+    --bg-tertiary: ${props => props.$isDark ? '#4a5568' : '#f3f4f6'};
+    --bg-hover: ${props => props.$isDark ? '#4a5568' : '#f8fafc'};
+    --text-primary: ${props => props.$themeText || '#2d3748'};
+    --text-secondary: ${props => props.$isDark ? '#a0aec0' : '#6b7280'};
+    --text-muted: ${props => props.$isDark ? '#a0aec0' : '#9ca3af'};
+    --border-color: ${props => props.$isDark ? '#4a5568' : '#e2e8f0'};
+    --border-light: ${props => props.$isDark ? '#4a5568' : '#e5e7eb'};
+    --card-bg: ${props => props.$cardBg || (props.$isDark ? '#2d3748' : 'white')};
+    --primary-color: ${props => props.$themePrimary || '#63b3ed'};
+    --danger-bg: ${props => props.$isDark ? '#742a2a' : '#fee2e2'};
+    --danger-color: ${props => props.$isDark ? '#feb2b2' : '#dc2626'};
+    --danger-hover-bg: ${props => props.$isDark ? '#9b2c2c' : '#fecaca'};
+    --modal-bg: ${props => props.$isDark ? '#2d3748' : 'white'};
+    --shadow-color: ${props => props.$isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'};
+  }
+
   * {
     margin: 0;
     padding: 0;
@@ -35,14 +56,14 @@ const GlobalStyle = createGlobalStyle`
 
   body {
     font-family: 'Nunito', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #f8f9fa;
-    color: #2d3748;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
-    color: #2d3748;
+    color: var(--text-primary);
     margin-bottom: 1rem;
   }
 
@@ -53,17 +74,33 @@ const GlobalStyle = createGlobalStyle`
     transition: all 0.3s ease;
   }
 
-  input, textarea {
-    border: 2px solid #e2e8f0;
+  input, textarea, select {
+    border: 2px solid var(--border-color);
     border-radius: 12px;
     padding: 12px 16px;
     font-size: 16px;
     transition: all 0.3s ease;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
 
     &:focus {
-      border-color: #63b3ed;
+      border-color: var(--primary-color);
       box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
     }
+    
+    &::placeholder {
+      color: var(--text-muted);
+    }
+  }
+
+  table th {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  table td {
+    color: var(--text-primary);
+    border-bottom-color: var(--border-color);
   }
 `;
 
@@ -74,11 +111,11 @@ const AppContainer = styled.div`
 `;
 
 const Header = styled.header`
-  background: rgba(255, 255, 255, 0.95);
+  background: ${props => props.$isDark ? 'rgba(45, 55, 72, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
   backdrop-filter: blur(10px);
   padding: 1.5rem 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border-bottom: 2px solid #e6fffa;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, ${props => props.$isDark ? '0.3' : '0.1'});
+  border-bottom: 2px solid ${props => props.$isDark ? '#4a5568' : '#e6fffa'};
 `;
 
 const Logo = styled.h1`
@@ -113,7 +150,7 @@ const MainContent = styled.main`
 
 export const AuthContext = createContext(null);
 
-const NavLinks = styled.div`
+const HeaderActions = styled.div`
   position: absolute;
   right: 2rem;
   top: 50%;
@@ -121,6 +158,29 @@ const NavLinks = styled.div`
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  flex-wrap: wrap;
+`;
+
+const DonateLink = styled.a`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  opacity: 0.85;
+  transition: all 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+  }
 `;
 
 const NavButton = styled.button`
@@ -172,18 +232,30 @@ const LogoutButton = styled.button`
 // Header component with navigation
 function HeaderComponent({ authState, logout }) {
   const navigate = useNavigate();
+  const { themeData } = useTheme();
   
   return (
-    <Header>
+    <Header $isDark={themeData?.name === 'Темная' || themeData?.name === 'Космическая'}>
       <Logo onClick={() => navigate('/')}>FluffyCards</Logo>
       <Tagline>Learning made fun and friendly! 🎓</Tagline>
       
-      {authState.isAuthenticated && !authState.loading && (
-        <NavLinks>
-          <NavButton onClick={() => navigate('/dashboard')}>👤 Личный кабинет</NavButton>
-          <LogoutButton onClick={logout}>🚪 Выйти</LogoutButton>
-        </NavLinks>
-      )}
+      <HeaderActions>
+        <DonateLink
+          href="https://www.donationalerts.com/r/flufficards"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Поддержать FluffyCards"
+          title="Поддержать FluffyCards"
+        >
+          💙 Поддержать
+        </DonateLink>
+        {authState.isAuthenticated && !authState.loading && (
+          <>
+            <NavButton onClick={() => navigate('/dashboard')}>👤 Личный кабинет</NavButton>
+            <LogoutButton onClick={logout}>🚪 Выйти</LogoutButton>
+          </>
+        )}
+      </HeaderActions>
     </Header>
   );
 }
@@ -251,13 +323,19 @@ function App() {
 
   return (
     <AuthContext.Provider value={{ authState, role: authState.role, logout, setAuthState }}>
-      <Router>
-        <GlobalStyle />
-        <AppContainer $theme={themeData}>
-          <HeaderComponent authState={authState} logout={logout} />
-          
-          <MainContent>
-            <Routes>
+      <HelmetProvider>
+        <Router>
+          <GlobalStyle 
+            $isDark={themeData?.name === 'Темная' || themeData?.name === 'Космическая'}
+            $themeText={themeData?.text}
+            $themePrimary={themeData?.primary}
+            $cardBg={themeData?.cardBg}
+          />
+          <AppContainer $theme={themeData}>
+            <HeaderComponent authState={authState} logout={logout} />
+            
+            <MainContent>
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route 
                 path="/login" 
@@ -384,6 +462,7 @@ function App() {
                 }
               />
               <Route path="/help" element={<HelpPage />} />
+              <Route path="/contacts" element={<ContactsPage />} />
               <Route
                 path="/sets/create"
                 element={
@@ -454,10 +533,11 @@ function App() {
                   )
                 }
               />
-            </Routes>
-          </MainContent>
-        </AppContainer>
-      </Router>
+              </Routes>
+            </MainContent>
+          </AppContainer>
+        </Router>
+      </HelmetProvider>
     </AuthContext.Provider>
   );
 }

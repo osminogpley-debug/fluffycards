@@ -14,6 +14,8 @@ import gamificationRoutes from './routes/gamification.js';
 import socialRoutes from './routes/social.js';
 import liveRoutes from './routes/live.js';
 import adminRoutes from './routes/admin.js';
+import supportRoutes from './routes/support.js';
+import chatRoutes from './routes/chat.js';
 import authMiddleware from './middleware/auth.js';
 
 dotenv.config();
@@ -54,6 +56,8 @@ app.use('/api/gamification', gamificationRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/live', liveRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -25,7 +25,7 @@ const Title = styled.h1`
 `;
 
 const ProfileCard = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 24px;
   padding: 2rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
@@ -34,10 +34,10 @@ const ProfileCard = styled.div`
 
 const SectionTitle = styled.h2`
   font-size: 1.3rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--border-color);
 `;
 
 const AvatarSection = styled.div`
@@ -70,7 +70,7 @@ const AvatarInfo = styled.div`
 
 const UserName = styled.h3`
   font-size: 1.5rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 `;
 
@@ -87,17 +87,17 @@ const UserRole = styled.span`
 const UserID = styled.div`
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background: #f3f4f6;
+  background: var(--bg-tertiary);
   border-radius: 8px;
   font-size: 0.8rem;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-family: monospace;
   cursor: pointer;
   display: inline-block;
   transition: all 0.2s ease;
   
   &:hover {
-    background: #e5e7eb;
+    background: var(--border-color);
     transform: translateY(-1px);
   }
 `;
@@ -108,7 +108,7 @@ const FormGroup = styled.div`
 
 const Label = styled.label`
   display: block;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-weight: 600;
   margin-bottom: 0.5rem;
 `;
@@ -116,7 +116,7 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
   transition: all 0.2s ease;
@@ -128,7 +128,7 @@ const Input = styled.input`
   }
   
   &:disabled {
-    background: #f7fafc;
+    background: var(--bg-tertiary);
     cursor: not-allowed;
   }
 `;
@@ -154,7 +154,7 @@ const StatValue = styled.div`
 `;
 
 const StatLabel = styled.div`
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-top: 0.25rem;
 `;
@@ -219,24 +219,24 @@ const AvatarCard = styled.button`
   padding: 1rem;
   border-radius: 16px;
   border: 3px solid ${props => props.$selected ? '#63b3ed' : 'transparent'};
-  background: #f7fafc;
+  background: var(--bg-tertiary);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 2rem;
   
   &:hover {
     transform: scale(1.1);
-    background: #e2e8f0;
+    background: var(--border-color);
   }
 `;
 
 const FontSelect = styled.select`
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
-  background: white;
+  background: var(--bg-secondary);
   
   &:focus {
     outline: none;
@@ -306,21 +306,25 @@ function ProfilePage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const res = await authFetch('/api/auth/profile', {
+      const apiUrl = `http://${window.location.hostname}:5001/api/auth/profile`;
+      const res = await authFetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ username: formData.username })
       });
       
+      const data = await res.json();
+      
       if (res.ok) {
-        setMessage({ type: 'success', text: 'Профиль обновлен!' });
+        setUser(data.user);
+        setMessage({ type: 'success', text: data.message || 'Профиль обновлен!' });
         setTimeout(() => setMessage(null), 3000);
       } else {
-        throw new Error('Failed to update profile');
+        throw new Error(data.message || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Error saving profile:', error);
-      setMessage({ type: 'error', text: 'Ошибка сохранения' });
+      setMessage({ type: 'error', text: error.message || 'Ошибка сохранения' });
     } finally {
       setSaving(false);
     }

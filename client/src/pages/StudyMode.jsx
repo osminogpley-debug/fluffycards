@@ -29,7 +29,7 @@ const Title = styled.h1`
 const ProgressBar = styled.div`
   width: 100%;
   height: 20px;
-  background: #e2e8f0;
+  background: var(--border-color);
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -55,7 +55,7 @@ const ProgressFill = styled.div`
 
 const ProgressText = styled.div`
   text-align: center;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-size: 1rem;
   margin-bottom: 2rem;
 `;
@@ -78,7 +78,7 @@ const Column = styled.div`
 
 const ColumnHeader = styled.div`
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
@@ -87,20 +87,20 @@ const ColumnHeader = styled.div`
 `;
 
 const CardCount = styled.span`
-  background: white;
+  background: var(--bg-secondary);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
-  color: #4a5568;
+  color: var(--text-secondary);
 `;
 
 const CardBadge = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
   padding: 0.5rem;
   margin-bottom: 0.5rem;
   font-size: 0.8rem;
-  color: #4a5568;
+  color: var(--text-secondary);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease;
 `;
@@ -115,7 +115,7 @@ const QuestionCard = styled.div`
 `;
 
 const QuestionText = styled.h2`
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 1.8rem;
   text-align: center;
   margin-bottom: 2rem;
@@ -129,8 +129,8 @@ const ModeToggle = styled.div`
 `;
 
 const ModeButton = styled.button`
-  background: ${({ active }) => active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'white'};
-  color: ${({ active }) => active ? 'white' : '#4a5568'};
+  background: ${({ active }) => active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'var(--bg-secondary)'};
+  color: ${({ active }) => active ? 'white' : 'var(--text-secondary)'};
   border: 2px solid #63b3ed;
   padding: 8px 16px;
   border-radius: 20px;
@@ -155,13 +155,13 @@ const OptionButton = styled.button`
   background: ${({ selected, correct, wrong }) => 
     correct ? '#48bb78' : 
     wrong ? '#f56565' : 
-    selected ? '#63b3ed' : 'white'};
+    selected ? '#63b3ed' : 'var(--bg-secondary)'};
   color: ${({ selected, correct, wrong }) => 
-    selected || correct || wrong ? 'white' : '#2d3748'};
+    selected || correct || wrong ? 'white' : 'var(--text-primary)'};
   border: 2px solid ${({ selected, correct, wrong }) => 
     correct ? '#48bb78' : 
     wrong ? '#f56565' : 
-    selected ? '#63b3ed' : '#e2e8f0'};
+    selected ? '#63b3ed' : 'var(--border-color)'};
   padding: 1rem 1.5rem;
   border-radius: 12px;
   font-size: 1rem;
@@ -191,7 +191,7 @@ const InputField = styled.input`
   padding: 1rem 1.5rem;
   font-size: 1.1rem;
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   width: 100%;
   max-width: 400px;
   font-family: inherit;
@@ -245,7 +245,7 @@ const CompletionStats = styled.div`
 `;
 
 const StatBox = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   padding: 1.5rem;
   border-radius: 16px;
   min-width: 120px;
@@ -260,7 +260,7 @@ const StatValue = styled.div`
 
 const StatLabel = styled.div`
   font-size: 0.9rem;
-  color: #4a5568;
+  color: var(--text-secondary);
   margin-top: 0.5rem;
 `;
 

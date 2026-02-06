@@ -24,7 +24,7 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 1.1rem;
 `;
 
@@ -42,7 +42,7 @@ const SetInfo = styled.div`
   
   p {
     margin: 0.5rem 0 0;
-    color: #4a5568;
+    color: var(--text-secondary);
     font-size: 0.9rem;
   }
 `;
@@ -55,7 +55,7 @@ const ModesGrid = styled.div`
 `;
 
 const ModeCard = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -75,7 +75,7 @@ const SettingsButton = styled.button`
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: #f3f4f6;
+  background: var(--bg-tertiary);
   border: none;
   border-radius: 8px;
   padding: 0.5rem;
@@ -97,12 +97,12 @@ const ModeIcon = styled.div`
 
 const ModeTitle = styled.h3`
   font-size: 1.3rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 `;
 
 const ModeDescription = styled.p`
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   margin-bottom: 1rem;
   line-height: 1.5;
@@ -114,7 +114,7 @@ const ModeFeatures = styled.ul`
   margin: 0 0 1rem;
   
   li {
-    color: #4a5568;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     padding: 0.3rem 0;
     padding-left: 1.2rem;
@@ -131,14 +131,14 @@ const ModeFeatures = styled.ul`
 `;
 
 const OptionsSection = styled.div`
-  background: #f7fafc;
+  background: var(--bg-tertiary);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 2rem;
 `;
 
 const OptionsTitle = styled.h3`
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -156,7 +156,7 @@ const Option = styled.label`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;

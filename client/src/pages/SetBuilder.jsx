@@ -140,7 +140,7 @@ const PageContainer = styled.div`
 `;
 
 const Header = styled.header`
-  background: white;
+  background: var(--bg-secondary);
   padding: 16px 32px;
   display: flex;
   align-items: center;
@@ -239,13 +239,13 @@ const PrimaryButton = styled(Button)`
 `;
 
 const SecondaryButton = styled(Button)`
-  background: white;
-  color: #4a5568;
-  border: 2px solid #e2e8f0;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
   
   &:hover:not(:disabled) {
-    background: #f7fafc;
-    border-color: #cbd5e0;
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
     transform: translateY(-2px);
   }
 `;
@@ -289,18 +289,18 @@ const PageSubtitle = styled.p`
 `;
 
 const FormSection = styled.div`
-  background: white;
+  background: var(--card-bg);
   border-radius: 20px;
   padding: 28px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  border: 1px solid var(--border-color);
 `;
 
 const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary);
   margin: 0 0 20px 0;
   display: flex;
   align-items: center;
@@ -335,17 +335,17 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   padding: 14px 18px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 16px;
   font-family: inherit;
   transition: all 0.2s ease;
-  background: #fafafa;
+  background: var(--bg-tertiary);
   
   &:focus {
     outline: none;
     border-color: #63b3ed;
-    background: white;
+    background: var(--bg-secondary);
     box-shadow: 0 0 0 4px rgba(99, 179, 237, 0.1);
   }
   
@@ -357,19 +357,19 @@ const Input = styled.input`
 const TextArea = styled.textarea`
   width: 100%;
   padding: 14px 18px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 16px;
   font-family: inherit;
   resize: vertical;
   min-height: 100px;
   transition: all 0.2s ease;
-  background: #fafafa;
+  background: var(--bg-tertiary);
   
   &:focus {
     outline: none;
     border-color: #63b3ed;
-    background: white;
+    background: var(--bg-secondary);
     box-shadow: 0 0 0 4px rgba(99, 179, 237, 0.1);
   }
   
@@ -412,7 +412,7 @@ const CardItem = styled.div`
   background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
   border-radius: 16px;
   padding: 20px;
-  border: 2px solid ${props => props.$isChinese ? '#fc8181' : '#e2e8f0'};
+  border: 2px solid ${props => props.$isChinese ? '#fc8181' : 'var(--border-color)'};
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -466,12 +466,12 @@ const CardFieldLabel = styled.label`
 const CardInput = styled.input`
   flex: 1;
   padding: 14px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 16px;
   font-family: inherit;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--bg-secondary);
   min-height: 60px;
   
   &:focus {
@@ -665,12 +665,12 @@ const ImportButton = styled(PrimaryButton)`
 const ToggleSection = styled.button`
   width: 100%;
   padding: 16px;
-  background: #f7fafc;
-  border: 2px solid #e2e8f0;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
-  color: #4a5568;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -702,7 +702,7 @@ const FooterActions = styled.div`
   justify-content: flex-end;
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 2px solid #e2e8f0;
+  border-top: 2px solid var(--border-color);
 `;
 
 const LoadingOverlay = styled.div`
@@ -722,7 +722,7 @@ const LoadingOverlay = styled.div`
 const LoadingSpinner = styled.div`
   width: 60px;
   height: 60px;
-  border: 4px solid #e2e8f0;
+  border: 4px solid var(--border-color);
   border-top-color: #63b3ed;
   border-radius: 50%;
   transition: transform 0.5s linear;
@@ -760,9 +760,9 @@ const PrivacyToggle = styled.div`
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: #f7fafc;
+  background: var(--bg-tertiary);
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
 `;
 
 const ToggleLabel = styled.label`
@@ -772,7 +772,7 @@ const ToggleLabel = styled.label`
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  color: #4a5568;
+  color: var(--text-secondary);
   
   input {
     width: 20px;

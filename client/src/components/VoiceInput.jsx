@@ -59,10 +59,10 @@ const VoiceButton = styled.button`
 
 const LanguageSelect = styled.select`
   padding: 0.25rem 0.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 0.75rem;
-  background: white;
+  background: var(--bg-secondary);
   color: #4a5568;
   cursor: pointer;
   
@@ -121,55 +121,70 @@ const VoiceInput = ({ onResult, disabled = false, autoDetect = true }) => {
   const [transcript, setTranscript] = useState('');
   const [language, setLanguage] = useState('ru-RU');
   const recognitionRef = useRef(null);
+  const transcriptRef = useRef('');
+  const onResultRef = useRef(onResult);
+  
+  // Keep refs in sync with latest values
+  useEffect(() => {
+    onResultRef.current = onResult;
+  }, [onResult]);
   
   useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
+  
+  const setupRecognition = (lang) => {
     if (!isSpeechSupported()) return;
     
+    // Stop old instance
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch(e) {}
+    }
+    
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
+    const recognition = new SpeechRecognition();
     
-    recognitionRef.current.continuous = true;
-    recognitionRef.current.interimResults = true;
-    recognitionRef.current.lang = language;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = lang;
     
-    recognitionRef.current.onstart = () => {
+    recognition.onstart = () => {
       setIsListening(true);
       setTranscript('');
+      transcriptRef.current = '';
     };
     
-    recognitionRef.current.onresult = (event) => {
+    recognition.onresult = (event) => {
       let finalTranscript = '';
-      let interimTranscript = '';
       
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result && result[0] && result[0].transcript) {
           if (result.isFinal) {
             finalTranscript += result[0].transcript;
-          } else {
-            interimTranscript += result[0].transcript;
           }
         }
       }
       
       if (finalTranscript) {
-        setTranscript(prev => prev + finalTranscript);
+        setTranscript(prev => {
+          const updated = prev + finalTranscript;
+          transcriptRef.current = updated;
+          return updated;
+        });
       }
     };
     
-    recognitionRef.current.onerror = (event) => {
-      console.error('Speech recognition error:', event.error, 'Language:', language);
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error, 'Language:', lang);
       setIsListening(false);
       
-      // Обработка специфических ошибок
       switch (event.error) {
         case 'language-not-supported':
-          console.warn(`Language ${language} is not supported, falling back to English`);
-          // Автоматически переключаемся на английский
+          console.warn(`Language ${lang} is not supported, falling back to English`);
           setLanguage('en-US');
           break;
         case 'no-speech':
-          // Нормально - просто нет речи
           break;
         case 'audio-capture':
           console.error('No microphone found or microphone is not working');
@@ -182,27 +197,28 @@ const VoiceInput = ({ onResult, disabled = false, autoDetect = true }) => {
       }
     };
     
-    recognitionRef.current.onend = () => {
+    recognition.onend = () => {
       setIsListening(false);
-      if (transcript.trim()) {
-        onResult(transcript.trim());
+      const finalText = transcriptRef.current.trim();
+      if (finalText) {
+        onResultRef.current(finalText);
         setTranscript('');
+        transcriptRef.current = '';
       }
     };
     
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, [onResult, language]);
+    recognitionRef.current = recognition;
+  };
   
   useEffect(() => {
-    if (!isListening && transcript.trim()) {
-      onResult(transcript.trim());
-      setTranscript('');
-    }
-  }, [isListening, transcript, onResult]);
+    setupRecognition(language);
+    
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch(e) {}
+      }
+    };
+  }, [language]);
   
   const toggleListening = () => {
     if (!recognitionRef.current) {
@@ -214,24 +230,15 @@ const VoiceInput = ({ onResult, disabled = false, autoDetect = true }) => {
       recognitionRef.current.stop();
     } else {
       try {
-        // Устанавливаем язык перед началом
         recognitionRef.current.lang = language;
-        console.log('Starting speech recognition with language:', language);
         recognitionRef.current.start();
       } catch (error) {
         console.error('Error starting recognition:', error);
         
-        // Если ошибка с языком, пробуем fallback на английский
         if (language !== 'en-US') {
           console.log('Trying fallback to English...');
-          recognitionRef.current.lang = 'en-US';
-          try {
-            recognitionRef.current.start();
-            setLanguage('en-US');
-          } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
-            alert('Не удалось запустить распознавание речи. Проверьте настройки микрофона.');
-          }
+          setLanguage('en-US');
+          // setupRecognition will be called by the useEffect
         } else {
           alert('Не удалось запустить распознавание речи. Проверьте настройки микрофона.');
         }
@@ -242,79 +249,12 @@ const VoiceInput = ({ onResult, disabled = false, autoDetect = true }) => {
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     setLanguage(newLang);
-    
-    // Останавливаем текущее распознавание если активно
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-    }
-    
-    // Пересоздаем recognition с новым языком
-    if (recognitionRef.current) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = newLang;
-      
-      // Перепривязываем обработчики
-      recognitionRef.current.onstart = () => {
-        setIsListening(true);
-        setTranscript('');
-      };
-      
-      recognitionRef.current.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (result && result[0] && result[0].transcript) {
-            if (result.isFinal) {
-              finalTranscript += result[0].transcript;
-            } else {
-              interimTranscript += result[0].transcript;
-            }
-          }
-        }
-        
-        if (finalTranscript) {
-          setTranscript(prev => prev + finalTranscript);
-        }
-      };
-      
-      recognitionRef.current.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        
-        // Показываем ошибку пользователю
-        if (event.error === 'language-not-supported') {
-          alert(`Язык ${newLang} не поддерживается в вашем браузере. Попробуйте другой язык.`);
-        }
-      };
-      
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-        if (transcript.trim()) {
-          onResult(transcript.trim());
-          setTranscript('');
-        }
-      };
-    }
+    // Recognition will be recreated by useEffect[language]
   };
   
   if (!isSpeechSupported()) {
     return null;
   }
-  
-  // Проверка поддержки китайского
-  const isChineseSupported = () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return false;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const testRec = new SpeechRecognition();
-    // Пробуем установить китайский
-    testRec.lang = 'zh-CN';
-    return testRec.lang === 'zh-CN';
-  };
   
   return (
     <VoiceContainer>

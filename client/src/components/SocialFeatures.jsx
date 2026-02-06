@@ -18,7 +18,7 @@ const Container = styled.div`
 
 const SectionTitle = styled.h3`
   font-size: 1.3rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -26,7 +26,7 @@ const SectionTitle = styled.h3`
 `;
 
 const RatingSection = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -77,7 +77,7 @@ const Star = styled.button`
 `;
 
 const ShareSection = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -93,7 +93,7 @@ const ShareLink = styled.div`
 const LinkInput = styled.input`
   flex: 1;
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 0.9rem;
   background: #f7fafc;
@@ -105,7 +105,7 @@ const LinkInput = styled.input`
 `;
 
 const CommentsSection = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -170,7 +170,7 @@ const AuthorAvatar = styled.div`
 
 const AuthorName = styled.span`
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
 `;
 
 const CommentDate = styled.span`

@@ -1,10 +1,34 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
 import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET
+);
+
+const normalizeUsername = (name, email) => {
+  const base = (name || (email ? email.split('@')[0] : 'user'))
+    .toString()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_]/g, '')
+    .toLowerCase();
+  return base.length >= 3 ? base : `user_${Math.floor(Math.random() * 10000)}`;
+};
+
+const ensureUniqueUsername = async (base) => {
+  let candidate = base;
+  let suffix = 0;
+  while (await User.findOne({ username: candidate })) {
+    suffix += 1;
+    candidate = `${base}${suffix}`;
+  }
+  return candidate;
+};
 
 // Register new user
 router.post('/register', async (req, res) => {
@@ -61,7 +85,8 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Аккаунт успешно создан! Добро пожаловать! 🎉',
-      user: userData
+      user: userData,
+      token: token
     });
   } catch (error) {
     res.status(500).json({
@@ -125,6 +150,87 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Google login/register
+router.post('/google', async (req, res) => {
+  try {
+    const { idToken, role } = req.body;
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Отсутствует токен Google'
+      });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const googleId = payload?.sub;
+    const email = payload?.email;
+    const name = payload?.name;
+    const picture = payload?.picture;
+
+    if (!email || !googleId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Не удалось получить данные Google аккаунта'
+      });
+    }
+
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+    if (!user) {
+      const baseUsername = normalizeUsername(name, email);
+      const username = await ensureUniqueUsername(baseUsername);
+      const validRole = ['student', 'teacher'].includes(role) ? role : 'student';
+
+      user = new User({
+        username,
+        email,
+        googleId,
+        role: validRole,
+        profileImage: picture || undefined
+      });
+      await user.save();
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      if (picture && !user.profileImage) {
+        user.profileImage = picture;
+      }
+      await user.save();
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '30d'
+    });
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production'
+    });
+
+    const userData = user.toObject();
+    delete userData.password;
+
+    res.json({
+      success: true,
+      message: 'Вход через Google выполнен успешно! 👋',
+      user: userData,
+      token
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка авторизации через Google'
+    });
+  }
+});
+
 // Logout user
 router.get('/logout', (req, res) => {
   res.clearCookie('token', {
@@ -146,6 +252,65 @@ router.get('/me', authMiddleware, (req, res) => {
     message: 'Вы успешно авторизованы! ✅',
     user: req.user
   });
+});
+
+// Update profile (username)
+router.put('/profile', authMiddleware, async (req, res) => {
+  try {
+    const { username } = req.body;
+    
+    if (!username || username.trim().length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Имя пользователя должно содержать минимум 3 символа'
+      });
+    }
+
+    if (username.trim().length > 30) {
+      return res.status(400).json({
+        success: false,
+        message: 'Имя пользователя не должно превышать 30 символов'
+      });
+    }
+
+    // Check if username is already taken by another user
+    const existingUser = await User.findOne({ 
+      username: username.trim(),
+      _id: { $ne: req.user._id }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Это имя уже занято другим пользователем'
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { username: username.trim() },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Пользователь не найден'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Профиль успешно обновлен! ✅',
+      user
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка при обновлении профиля'
+    });
+  }
 });
 
 export default router;

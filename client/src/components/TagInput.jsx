@@ -18,9 +18,9 @@ const InputContainer = styled.div`
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.5rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
-  background: white;
+  background: var(--bg-secondary);
   min-height: 44px;
   align-items: center;
   

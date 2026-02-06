@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { SecondaryButton } from '../components/UI/Buttons';
 import { AuthContext } from '../App';
 
@@ -86,9 +87,34 @@ const CtaButton = styled(Link)`
 
 function Home() {
   const { authState, logout } = useContext(AuthContext);
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'FluffyCards',
+    url: 'https://fluffycards.ru/',
+    description: 'Образовательная платформа с флеш-карточками, играми и режимами обучения.'
+  };
 
   return (
     <HomeContainer>
+      <Helmet>
+        <title>FluffyCards — умные флеш-карточки и обучение</title>
+        <meta
+          name="description"
+          content="FluffyCards — платформа с флеш-карточками, играми и режимами обучения для учеников и учителей."
+        />
+        <link rel="canonical" href="https://fluffycards.ru/" />
+        <meta property="og:title" content="FluffyCards — умные флеш-карточки и обучение" />
+        <meta property="og:description" content="Флеш-карточки, игры и режимы обучения для эффективного изучения." />
+        <meta property="og:url" content="https://fluffycards.ru/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://fluffycards.ru/logo192.png" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="FluffyCards — умные флеш-карточки" />
+        <meta name="twitter:description" content="Флеш-карточки, игры и режимы обучения." />
+        <meta name="twitter:image" content="https://fluffycards.ru/logo192.png" />
+        <script type="application/ld+json">{JSON.stringify(schema)}</script>
+      </Helmet>
       <HeroTitle>
         {authState.isAuthenticated ? `Добро пожаловать, ${authState.user?.username}!` : 'Изучайте всё легко'}
       </HeroTitle>

@@ -91,8 +91,8 @@ const LevelLabel = styled.span`
   position: absolute;
   bottom: -4px;
   right: -4px;
-  background: white;
-  color: #1a1a1a;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;

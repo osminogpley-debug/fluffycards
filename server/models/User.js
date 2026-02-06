@@ -18,9 +18,16 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     match: [/\S+@\S+\.\S+/, 'is invalid']
   },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   password: {
     type: String,
-    required: true,
+    required: function requiredPassword() {
+      return !this.googleId;
+    },
     minlength: 6
   },
   role: {
@@ -45,6 +52,7 @@ const userSchema = new mongoose.Schema({
 // Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
+  if (!this.password) return next();
   
   try {
     const salt = await bcrypt.genSalt(10);
@@ -57,6 +65,7 @@ userSchema.pre('save', async function(next) {
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { Helmet } from 'react-helmet-async';
 import { SecondaryButton } from '../components/UI/Buttons';
+import { AuthContext } from '../App';
+import { authFetch } from '../constants/api';
 
 
 
@@ -23,12 +26,12 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 1.1rem;
 `;
 
 const HelpSection = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 20px;
   padding: 1.5rem;
   margin-bottom: 1rem;
@@ -44,7 +47,7 @@ const SectionHeader = styled.button`
   border: none;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   cursor: pointer;
   padding: 0.5rem 0;
   
@@ -80,7 +83,7 @@ const SectionContent = styled.div`
 const FAQItem = styled.div`
   margin-bottom: 1rem;
   padding: 1rem;
-  background: #f7fafc;
+  background: var(--bg-tertiary);
   border-radius: 12px;
   
   &:last-child {
@@ -89,13 +92,13 @@ const FAQItem = styled.div`
 `;
 
 const Question = styled.h4`
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   font-size: 1rem;
 `;
 
 const Answer = styled.p`
-  color: #718096;
+  color: var(--text-secondary);
   line-height: 1.6;
   margin: 0;
 `;
@@ -125,7 +128,7 @@ const TipTitle = styled.h4`
 `;
 
 const TipText = styled.p`
-  color: #4a5568;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.5;
 `;
@@ -146,6 +149,123 @@ const ContactTitle = styled.h3`
 const ContactText = styled.p`
   color: #78350f;
   margin-bottom: 1.5rem;
+`;
+
+const SupportFormSection = styled.div`
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 4px 15px var(--shadow-color);
+`;
+
+const SupportFormTitle = styled.h3`
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const FormRow = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const FormLabel = styled.label`
+  display: block;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+`;
+
+const FormInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+
+  &:focus {
+    outline: none;
+    border-color: #63b3ed;
+  }
+`;
+
+const FormTextarea = styled.textarea`
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 1rem;
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+
+  &:focus {
+    outline: none;
+    border-color: #63b3ed;
+  }
+`;
+
+const FormSelect = styled.select`
+  padding: 10px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #63b3ed;
+  }
+`;
+
+const SubmitButton = styled.button`
+  background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 179, 237, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const SuccessMessage = styled.div`
+  background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+  color: #22543d;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-top: 1rem;
+  font-weight: 500;
+`;
+
+const ErrorMessageBox = styled.div`
+  background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+  color: #c53030;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-top: 1rem;
+  font-weight: 500;
 `;
 
 const helpSections = [
@@ -247,7 +367,43 @@ const tips = [
 
 function HelpPage() {
   const navigate = useNavigate();
+  const { authState } = useContext(AuthContext);
   const [openSections, setOpenSections] = useState(['getting-started']);
+  const [supportForm, setSupportForm] = useState({ subject: '', message: '', category: 'question' });
+  const [supportLoading, setSupportLoading] = useState(false);
+  const [supportSuccess, setSupportSuccess] = useState('');
+  const [supportError, setSupportError] = useState('');
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Как создать набор карточек?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Откройте личный кабинет и нажмите «Создать набор». Заполните термины и определения и сохраните набор.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Как добавить друга?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Перейдите во вкладку «Друзья», найдите пользователя и отправьте запрос в друзья.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'Где посмотреть публичные наборы?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Откройте раздел «Публичная библиотека» и выберите интересующий набор.'
+        }
+      }
+    ]
+  };
 
   const toggleSection = (id) => {
     setOpenSections(prev => 
@@ -257,8 +413,52 @@ function HelpPage() {
     );
   };
 
+  const handleSupportSubmit = async (e) => {
+    e.preventDefault();
+    if (!supportForm.subject.trim() || !supportForm.message.trim()) {
+      setSupportError('Заполните тему и сообщение');
+      return;
+    }
+    setSupportLoading(true);
+    setSupportError('');
+    setSupportSuccess('');
+    try {
+      const url = `http://${window.location.hostname}:5001/api/support`;
+      const response = await authFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(supportForm)
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSupportSuccess('Обращение успешно отправлено! Мы ответим в ближайшее время.');
+        setSupportForm({ subject: '', message: '', category: 'question' });
+      } else {
+        setSupportError(data.message || 'Ошибка при отправке');
+      }
+    } catch (err) {
+      setSupportError('Ошибка сети');
+    } finally {
+      setSupportLoading(false);
+    }
+  };
+
   return (
     <Container>
+      <Helmet>
+        <title>Помощь и поддержка — FluffyCards</title>
+        <meta
+          name="description"
+          content="Ответы на популярные вопросы, советы по обучению и форма поддержки FluffyCards."
+        />
+        <link rel="canonical" href="https://fluffycards.ru/help" />
+        <meta property="og:title" content="Помощь и поддержка — FluffyCards" />
+        <meta property="og:description" content="FAQ, советы и поддержка пользователей FluffyCards." />
+        <meta property="og:url" content="https://fluffycards.ru/help" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://fluffycards.ru/logo192.png" />
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+      </Helmet>
       <Header>
         <Title>❓ Помощь</Title>
         <Subtitle>Ответы на часто задаваемые вопросы</Subtitle>
@@ -286,7 +486,7 @@ function HelpPage() {
       ))}
 
       <div style={{ marginTop: '2rem' }}>
-        <h2 style={{ color: '#2d3748', marginBottom: '1rem' }}>💡 Полезные советы</h2>
+        <h2 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>💡 Полезные советы</h2>
         {tips.map((tip, idx) => (
           <TipCard key={idx}>
             <TipIcon>{tip.icon}</TipIcon>
@@ -303,10 +503,67 @@ function HelpPage() {
         <ContactText>
           Если вы не нашли ответ на свой вопрос, свяжитесь с нами.
         </ContactText>
-        <SecondaryButton onClick={() => navigate('/dashboard')}>
-          ← Вернуться на главную
-        </SecondaryButton>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <SecondaryButton 
+            as="a" 
+            href="https://t.me/Osminog123" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            ✈️ Telegram: @Osminog123
+          </SecondaryButton>
+          <SecondaryButton onClick={() => navigate('/contacts')}>
+            📞 Все контакты
+          </SecondaryButton>
+          <SecondaryButton onClick={() => navigate('/dashboard')}>
+            ← Вернуться на главную
+          </SecondaryButton>
+        </div>
       </ContactSection>
+
+      {authState?.isAuthenticated && (
+        <SupportFormSection>
+          <SupportFormTitle>📝 Отправить обращение в поддержку</SupportFormTitle>
+          <form onSubmit={handleSupportSubmit}>
+            <FormRow>
+              <FormLabel>Категория</FormLabel>
+              <FormSelect 
+                value={supportForm.category}
+                onChange={e => setSupportForm(prev => ({ ...prev, category: e.target.value }))}
+              >
+                <option value="question">❓ Вопрос</option>
+                <option value="bug">🐛 Баг / Ошибка</option>
+                <option value="feature">💡 Предложение</option>
+                <option value="other">📌 Другое</option>
+              </FormSelect>
+            </FormRow>
+            <FormRow>
+              <FormLabel>Тема</FormLabel>
+              <FormInput 
+                value={supportForm.subject}
+                onChange={e => setSupportForm(prev => ({ ...prev, subject: e.target.value }))}
+                placeholder="Кратко опишите проблему"
+                maxLength={200}
+              />
+            </FormRow>
+            <FormRow>
+              <FormLabel>Сообщение</FormLabel>
+              <FormTextarea 
+                value={supportForm.message}
+                onChange={e => setSupportForm(prev => ({ ...prev, message: e.target.value }))}
+                placeholder="Подробно опишите вашу проблему или предложение..."
+                maxLength={2000}
+              />
+            </FormRow>
+            <SubmitButton type="submit" disabled={supportLoading}>
+              {supportLoading ? '⏳ Отправка...' : '📨 Отправить'}
+            </SubmitButton>
+          </form>
+          {supportSuccess && <SuccessMessage>{supportSuccess}</SuccessMessage>}
+          {supportError && <ErrorMessageBox>{supportError}</ErrorMessageBox>}
+        </SupportFormSection>
+      )}
     </Container>
   );
 }

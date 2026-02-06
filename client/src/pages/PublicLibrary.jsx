@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import SearchBar from '../components/Library/SearchBar';
 import SetCard from '../components/Library/SetCard';
 import MergeSetsModal from '../components/Library/MergeSetsModal';
@@ -23,7 +24,7 @@ const Header = styled.div`
 
 const Title = styled.h1`
   font-size: 2.5rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
@@ -70,7 +71,7 @@ const FilterGroup = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: white;
+  background: var(--bg-secondary);
   padding: 0.5rem 1rem;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -96,7 +97,7 @@ const CategorySelect = styled.select`
 const SortButton = styled.button`
   background: ${props => props.$active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'white'};
   color: ${props => props.$active ? 'white' : '#4a5568'};
-  border: 2px solid ${props => props.$active ? '#63b3ed' : '#e2e8f0'};
+  border: 2px solid ${props => props.$active ? '#63b3ed' : 'var(--border-color)'};
   padding: 8px 16px;
   border-radius: 12px;
   font-size: 0.9rem;
@@ -186,7 +187,7 @@ const PlantIcon = styled.div`
 
 const EmptyLibraryTitle = styled.h2`
   font-size: 2rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 1rem;
   font-weight: 700;
 `;
@@ -197,6 +198,15 @@ const EmptyLibraryText = styled.p`
   margin-bottom: 2rem;
   max-width: 500px;
   line-height: 1.6;
+`;
+
+const SeoHiddenText = styled.p`
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 `;
 
 const CreateSetButton = styled.button`
@@ -227,7 +237,7 @@ const CreateSetButton = styled.button`
 const LoadingSpinner = styled.div`
   width: 50px;
   height: 50px;
-  border: 4px solid #e2e8f0;
+  border: 4px solid var(--border-color);
   border-top-color: #63b3ed;
   border-radius: 50%;
   animation: none;
@@ -258,7 +268,7 @@ const PaginationContainer = styled.div`
 const PageButton = styled.button`
   background: ${props => props.$active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'white'};
   color: ${props => props.$active ? 'white' : '#4a5568'};
-  border: 2px solid ${props => props.$active ? '#63b3ed' : '#e2e8f0'};
+  border: 2px solid ${props => props.$active ? '#63b3ed' : 'var(--border-color)'};
   width: 44px;
   height: 44px;
   border-radius: 12px;
@@ -291,7 +301,7 @@ const StatsBar = styled.div`
 `;
 
 const StatItem = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   padding: 1rem 1.5rem;
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -313,7 +323,7 @@ const StatIcon = styled.span`
 const StatValue = styled.span`
   font-size: 1.25rem;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary);
 `;
 
 const StatLabel = styled.span`
@@ -474,6 +484,22 @@ function PublicLibrary() {
 
   return (
     <PageContainer>
+      <Helmet>
+        <title>Публичная библиотека наборов — FluffyCards</title>
+        <meta
+          name="description"
+          content="Публичная библиотека наборов флеш-карточек. Ищите, изучайте и сохраняйте наборы для обучения."
+        />
+        <link rel="canonical" href="https://fluffycards.ru/library" />
+        <meta property="og:title" content="Публичная библиотека — FluffyCards" />
+        <meta property="og:description" content="Наборы флеш-карточек для обучения и практики." />
+        <meta property="og:url" content="https://fluffycards.ru/library" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://fluffycards.ru/logo192.png" />
+      </Helmet>
+      <SeoHiddenText>
+        Публичные наборы флеш-карточек по языкам, экзаменам и школьным предметам.
+      </SeoHiddenText>
       <Header>
         <Title>Публичная библиотека</Title>
         <Subtitle>

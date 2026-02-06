@@ -16,14 +16,14 @@ const isChinese = (text) => {
 // ===== СТИЛИ =====
 const PageContainer = styled.div`
   min-height: 100vh;
-  background: #f6f7fb;
+  background: var(--bg-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   padding-bottom: 40px;
 `;
 
 const Header = styled.div`
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   padding: 24px 32px;
   transition: opacity 0.3s ease;
 `;
@@ -36,7 +36,7 @@ const HeaderContent = styled.div`
 const BackButton = styled.button`
   background: none;
   border: none;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
   cursor: pointer;
   display: flex;
@@ -54,14 +54,14 @@ const BackButton = styled.button`
 const SetTitle = styled.h1`
   font-size: 32px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin: 0 0 12px 0;
   line-height: 1.3;
 `;
 
 const SetDescription = styled.p`
   font-size: 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 16px 0;
   line-height: 1.5;
 `;
@@ -92,7 +92,7 @@ const Avatar = styled.div`
 
 const AuthorName = styled.span`
   font-size: 14px;
-  color: #374151;
+  color: var(--text-primary);
   font-weight: 500;
 `;
 
@@ -102,7 +102,7 @@ const MetaDivider = styled.span`
 
 const CardCount = styled.span`
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -112,8 +112,8 @@ const VisibilityBadge = styled.span`
   font-size: 13px;
   padding: 4px 12px;
   border-radius: 20px;
-  background: ${props => props.isPublic ? '#dcfce7' : '#f3f4f6'};
-  color: ${props => props.isPublic ? '#16a34a' : '#6b7280'};
+  background: ${props => props.isPublic ? '#dcfce7' : 'var(--bg-tertiary)'};
+  color: ${props => props.isPublic ? '#16a34a' : 'var(--text-secondary)'};
   font-weight: 500;
 `;
 
@@ -145,17 +145,17 @@ const RightColumn = styled.div`
 
 // Секция режимов обучения
 const Section = styled.div`
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
 `;
 
 const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin: 0 0 16px 0;
   display: flex;
   align-items: center;
@@ -177,9 +177,9 @@ const StudyModeButton = styled.button`
     ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' 
     : props.$highlight
       ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
-      : '#f8fafc'};
-  color: ${props => props.primary || props.$highlight ? 'white' : '#374151'};
-  border: 2px solid ${props => props.primary ? '#63b3ed' : props.$highlight ? '#f59e0b' : '#e5e7eb'};
+      : 'var(--bg-tertiary)'};
+  color: ${props => props.primary || props.$highlight ? 'white' : 'var(--text-primary)'};
+  border: 2px solid ${props => props.primary ? '#63b3ed' : props.$highlight ? '#f59e0b' : 'var(--border-light)'};
   border-radius: 12px;
   padding: 16px;
   font-size: 15px;
@@ -262,9 +262,9 @@ const AuthorActions = styled.div`
 
 const EditButton = styled.button`
   width: 100%;
-  background: white;
-  color: #374151;
-  border: 2px solid #e5e7eb;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-light);
   border-radius: 12px;
   padding: 14px;
   font-size: 15px;
@@ -277,7 +277,7 @@ const EditButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f9fafb;
+    background: var(--bg-tertiary);
     border-color: #63b3ed;
     color: #63b3ed;
   }
@@ -285,7 +285,7 @@ const EditButton = styled.button`
 
 const DeleteButton = styled.button`
   width: 100%;
-  background: white;
+  background: var(--bg-secondary);
   color: #ef4444;
   border: 2px solid #fecaca;
   border-radius: 12px;
@@ -316,10 +316,10 @@ const CardsGrid = styled.div`
 `;
 
 const FlashcardItem = styled.div`
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
@@ -347,7 +347,7 @@ const FlashcardItem = styled.div`
 const CardDivider = styled.div`
   width: 1px;
   height: 40px;
-  background: #e5e7eb;
+  background: var(--border-light);
 
   @media (max-width: 600px) {
     width: 100%;
@@ -358,7 +358,7 @@ const CardDivider = styled.div`
 const CardTerm = styled.div`
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
   line-height: 1.5;
 `;
 
@@ -371,7 +371,7 @@ const CardTermHeader = styled.div`
 
 const CardDefinition = styled.div`
   font-size: 15px;
-  color: #4b5563;
+  color: var(--text-secondary);
   line-height: 1.5;
 `;
 
@@ -430,7 +430,7 @@ const LoadingContainer = styled.div`
 const LoadingSpinner = styled.div`
   width: 48px;
   height: 48px;
-  border: 4px solid #f3f3f3;
+  border: 4px solid var(--bg-tertiary);
   border-top: 4px solid #63b3ed;
   border-radius: 50%;
   animation: none;
@@ -438,7 +438,7 @@ const LoadingSpinner = styled.div`
 
 const LoadingText = styled.p`
   margin-top: 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 15px;
 `;
 
@@ -456,12 +456,12 @@ const ErrorIcon = styled.div`
 const ErrorTitle = styled.h2`
   font-size: 24px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 `;
 
 const ErrorText = styled.p`
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 24px 0;
 `;
 
@@ -481,7 +481,7 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background: var(--modal-bg);
   border-radius: 16px;
   padding: 32px;
   max-width: 400px;
@@ -493,12 +493,12 @@ const ModalContent = styled.div`
 const ModalTitle = styled.h3`
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin: 0 0 12px 0;
 `;
 
 const ModalText = styled.p`
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 24px 0;
   line-height: 1.5;
 `;
@@ -516,12 +516,12 @@ const ModalButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: ${props => props.danger ? 'none' : '2px solid #e5e7eb'};
-  background: ${props => props.danger ? '#ef4444' : 'white'};
-  color: ${props => props.danger ? 'white' : '#374151'};
+  border: ${props => props.danger ? 'none' : '2px solid var(--border-light)'};
+  background: ${props => props.danger ? '#ef4444' : 'var(--bg-secondary)'};
+  color: ${props => props.danger ? 'white' : 'var(--text-primary)'};
 
   &:hover {
-    background: ${props => props.danger ? '#dc2626' : '#f9fafb'};
+    background: ${props => props.danger ? '#dc2626' : 'var(--bg-tertiary)'};
   }
 `;
 
@@ -570,6 +570,10 @@ function SetDetail() {
 
   // Проверка, является ли пользователь автором
   const isAuthor = user && setData && (
+    user.id === setData.owner || 
+    user._id === setData.owner ||
+    user.id === setData.owner?._id ||
+    user._id === setData.owner?._id ||
     user.id === setData.authorId || 
     user._id === setData.authorId ||
     user.id === setData.author?._id ||

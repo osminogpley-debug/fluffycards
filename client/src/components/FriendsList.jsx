@@ -14,7 +14,7 @@ import {
 
 
 const Container = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -31,7 +31,7 @@ const Header = styled.div`
 
 const Title = styled.h3`
   font-size: 1.3rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin: 0;
   display: flex;
   align-items: center;
@@ -131,7 +131,7 @@ const UserDetails = styled.div``;
 
 const UserName = styled.div`
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   
   &:hover {
     color: #63b3ed;

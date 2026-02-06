@@ -11,18 +11,19 @@ import FriendsList from '../components/FriendsList';
 import AchievementsModal from '../components/AchievementsModal';
 import LeaderboardModal from '../components/LeaderboardModal';
 import LevelBadge from '../components/LevelBadge';
+import ChatModal from '../components/ChatModal';
 
 // ===== СТИЛИ =====
 const DashboardContainer = styled.div`
   min-height: 100vh;
-  background: #f6f7fb;
+  background: var(--bg-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 `;
 
 // Верхняя панель пользователя
 const UserHeader = styled.div`
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   padding: 20px 32px;
   display: flex;
   align-items: center;
@@ -54,7 +55,7 @@ const UserDetails = styled.div`
     margin: 0;
     font-size: 24px;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--text-primary);
   }
   
   .role {
@@ -83,12 +84,12 @@ const StatItem = styled.div`
   .value {
     font-size: 24px;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--text-primary);
   }
   
   .label {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -176,8 +177,8 @@ const ButtonGroup = styled.div`
 
 // Навигация по вкладкам
 const TabNavigation = styled.div`
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   padding: 0 32px;
   display: flex;
   gap: 8px;
@@ -199,7 +200,7 @@ const Tab = styled.button`
   
   &:hover {
     color: #63b3ed;
-    background: #f8fafc;
+    background: var(--bg-hover);
   }
 `;
 
@@ -228,14 +229,14 @@ const Sidebar = styled.div`
 
 // Панель поиска и сортировки
 const ControlPanel = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 16px 20px;
   margin-bottom: 16px;
   display: flex;
   gap: 16px;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
 `;
 
 const TagsCloud = styled.div`
@@ -245,13 +246,13 @@ const TagsCloud = styled.div`
   align-items: center;
   margin-bottom: 24px;
   padding: 12px 16px;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
   
   .label {
     font-size: 14px;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin-right: 8px;
   }
 `;
@@ -260,8 +261,8 @@ const TagFilterButton = styled.button`
   padding: 5px 12px;
   background: ${props => props.active 
     ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-    : '#f3f4f6'};
-  color: ${props => props.active ? 'white' : '#374151'};
+    : 'var(--bg-tertiary)'};
+  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
   border: none;
   border-radius: 16px;
   font-size: 13px;
@@ -277,8 +278,8 @@ const TagFilterButton = styled.button`
 
 const ClearTagButton = styled.button`
   padding: 5px 10px;
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--danger-bg);
+  color: var(--danger-color);
   border: none;
   border-radius: 16px;
   font-size: 12px;
@@ -287,7 +288,7 @@ const ClearTagButton = styled.button`
   transition: all 0.2s;
   
   &:hover {
-    background: #fecaca;
+    background: var(--danger-hover-bg);
   }
 `;
 
@@ -325,11 +326,11 @@ const SearchInput = styled.div`
 
 const SortSelect = styled.select`
   padding: 12px 16px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--border-light);
   border-radius: 8px;
   font-size: 14px;
-  color: #374151;
-  background: white;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
   cursor: pointer;
   
   &:focus {
@@ -340,12 +341,12 @@ const SortSelect = styled.select`
 
 const FolderButton = styled.button`
   padding: 12px 20px;
-  background: #f3f4f6;
-  border: 2px dashed #d1d5db;
+  background: var(--bg-tertiary);
+  border: 2px dashed var(--border-color);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -353,9 +354,9 @@ const FolderButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover {
-    background: #e5e7eb;
-    border-color: #9ca3af;
-    color: #374151;
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+    color: var(--text-primary);
   }
 `;
 
@@ -368,10 +369,10 @@ const SetsGrid = styled.div`
 `;
 
 const SetCard = styled.div`
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
@@ -396,12 +397,12 @@ const SetCard = styled.div`
   
   .preview-term {
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
     font-size: 15px;
   }
   
   .preview-definition {
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 13px;
     margin-top: 4px;
   }
@@ -410,14 +411,14 @@ const SetCard = styled.div`
     margin: 0 0 8px 0;
     font-size: 17px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
   }
   
   .meta {
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 13px;
   }
   
@@ -426,7 +427,7 @@ const SetCard = styled.div`
     gap: 8px;
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid var(--border-light);
   }
   
   .tags {
@@ -445,8 +446,8 @@ const DeleteButton = styled.button`
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--danger-bg);
+  color: var(--danger-color);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -460,7 +461,7 @@ const DeleteButton = styled.button`
   }
   
   &:hover {
-    background: #fecaca;
+    background: var(--danger-hover-bg);
     transform: scale(1.1);
   }
 `;
@@ -484,18 +485,18 @@ const TagBadge = styled.span`
 const ActionButton = styled.button`
   flex: 1;
   padding: 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-light);
   border-radius: 6px;
-  background: white;
+  background: var(--bg-secondary);
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
-    background: #f3f4f6;
-    border-color: #d1d5db;
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
   }
   
   &.primary {
@@ -512,10 +513,10 @@ const ActionButton = styled.button`
 
 // Папки
 const FolderCard = styled.div`
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
@@ -536,11 +537,11 @@ const FolderCard = styled.div`
     margin: 0 0 8px 0;
     font-size: 17px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
   }
   
   .description {
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 14px;
     margin-bottom: 12px;
     line-height: 1.4;
@@ -554,7 +555,7 @@ const FolderCard = styled.div`
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 13px;
   }
 `;
@@ -574,7 +575,7 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background: var(--modal-bg);
   border-radius: 16px;
   padding: 32px;
   width: 100%;
@@ -585,7 +586,7 @@ const ModalContent = styled.div`
     margin: 0 0 24px 0;
     font-size: 22px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
   }
 `;
 
@@ -641,7 +642,7 @@ const ColorOption = styled.button`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 3px solid ${props => props.$selected ? '#1a1a1a' : 'transparent'};
+  border: 3px solid ${props => props.$selected ? 'var(--text-primary)' : 'transparent'};
   background: ${props => props.$color};
   cursor: pointer;
   transition: all 0.2s ease;
@@ -666,12 +667,12 @@ const ModalButton = styled.button`
   transition: all 0.2s ease;
   
   &.cancel {
-    background: #f3f4f6;
-    color: #374151;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     border: none;
     
     &:hover {
-      background: #e5e7eb;
+      background: var(--bg-hover);
     }
   }
   
@@ -688,17 +689,17 @@ const ModalButton = styled.button`
 
 // Блок рекомендаций
 const RecommendationsSection = styled.div`
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
   margin-bottom: 32px;
   
   h2 {
     margin: 0 0 20px 0;
     font-size: 18px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -707,17 +708,17 @@ const RecommendationsSection = styled.div`
 
 // Боковая панель
 const SidebarCard = styled.div`
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-color);
   margin-bottom: 20px;
   
   h3 {
     margin: 0 0 16px 0;
     font-size: 15px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -739,13 +740,13 @@ const SidebarItem = styled.button`
   border: none;
   border-radius: 8px;
   font-size: 14px;
-  color: #374151;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
   
   &:hover {
-    background: #f3f4f6;
+    background: var(--bg-tertiary);
   }
   
   .icon {
@@ -760,7 +761,7 @@ const AchievementBadge = styled.div`
   gap: 12px;
   padding: 12px;
   border-radius: 8px;
-  background: ${props => props.locked ? '#f9fafb' : '#fef3c7'};
+  background: ${props => props.locked ? 'var(--bg-tertiary)' : '#fef3c7'};
   margin-bottom: 8px;
   opacity: ${props => props.locked ? 0.6 : 1};
   
@@ -774,12 +775,12 @@ const AchievementBadge = styled.div`
     .name {
       font-weight: 600;
       font-size: 14px;
-      color: #1a1a1a;
+      color: var(--text-primary);
     }
     
     .desc {
       font-size: 12px;
-      color: #6b7280;
+      color: var(--text-secondary);
     }
   }
 `;
@@ -794,7 +795,7 @@ const LoadingSpinner = styled.div`
   .spinner {
     width: 48px;
     height: 48px;
-    border: 4px solid #f3f3f3;
+    border: 4px solid var(--bg-tertiary);
     border-top: 4px solid #63b3ed;
     border-radius: 50%;
     /* animation removed for compatibility */
@@ -814,12 +815,12 @@ const EmptyState = styled.div`
     margin: 0 0 8px 0;
     font-size: 20px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
   }
   
   p {
     margin: 0 0 24px 0;
-    color: #6b7280;
+    color: var(--text-secondary);
   }
 `;
 
@@ -857,6 +858,9 @@ function Dashboard() {
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [gamificationData, setGamificationData] = useState(null);
   
+  // State для чата
+  const [showChat, setShowChat] = useState(false);
+
   // State для папок
   const [folders, setFolders] = useState([]);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
@@ -1617,6 +1621,23 @@ function Dashboard() {
           )}
           {activeTab === 'friends' && (
             <div style={{ display: 'grid', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setShowChat(true)}
+                  style={{
+                    background: 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)',
+                    border: 'none',
+                    color: 'white',
+                    padding: '10px 20px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.95rem'
+                  }}
+                >
+                  💬 Открыть чат
+                </button>
+              </div>
               <FriendsList user={user} />
               <Challenges user={user} />
             </div>
@@ -1716,6 +1737,12 @@ function Dashboard() {
         isOpen={showLeaderboardModal} 
         onClose={() => setShowLeaderboardModal(false)}
       />
+      {showChat && (
+        <ChatModal 
+          onClose={() => setShowChat(false)}
+          userId={user?._id || user?.id}
+        />
+      )}
     </DashboardContainer>
   );
 }

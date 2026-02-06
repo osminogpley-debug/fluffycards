@@ -71,6 +71,7 @@ const CardContainer = styled.div`
   position: relative;
   overflow: visible;
   border: 2px solid transparent;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-8px) scale(1.02);
@@ -376,8 +377,15 @@ function SetCard({ set, isPopular = false, onSave, showSaveButton = true }) {
     }
   };
 
+  const handleCardClick = () => {
+    const setId = set._id || set.id;
+    if (setId) {
+      navigate(`/sets/${setId}`);
+    }
+  };
+
   return (
-    <CardContainer>
+    <CardContainer onClick={handleCardClick}>
       {showSaveButton && (
         <>
           {error ? (

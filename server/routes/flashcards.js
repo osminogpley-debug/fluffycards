@@ -206,10 +206,14 @@ router.post('/:id/copy', authMiddleware, async (req, res) => {
 // Получение одного набора с карточками
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
-    const set = await FlashcardSet.findOne({
+    // Try to find set owned by user OR public set
+    let set = await FlashcardSet.findOne({
       _id: req.params.id,
-      owner: req.user._id
-    });
+      $or: [
+        { owner: req.user._id },
+        { isPublic: true }
+      ]
+    }).populate('owner', 'username profileImage');
     
     if (!set) {
       return res.status(404).json({ message: 'Набор не найден' });
@@ -380,24 +384,6 @@ router.post('/:id/import', authMiddleware, async (req, res) => {
     
     set.importFromText(req.body.text);
     await set.save();
-    res.json(set);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Получение конкретного набора по ID
-router.get('/:id', authMiddleware, async (req, res) => {
-  try {
-    const set = await FlashcardSet.findOne({
-      _id: req.params.id,
-      owner: req.user._id
-    });
-    
-    if (!set) {
-      return res.status(404).json({ message: 'Набор не найден' });
-    }
-    
     res.json(set);
   } catch (error) {
     res.status(400).json({ message: error.message });

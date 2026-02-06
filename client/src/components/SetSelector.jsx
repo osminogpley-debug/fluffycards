@@ -34,7 +34,7 @@ const SetsGrid = styled.div`
 `;
 
 const SetCard = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -51,7 +51,7 @@ const SetCard = styled.div`
 
 const SetTitle = styled.h3`
   margin: 0 0 0.5rem 0;
-  color: #1a1a1a;
+  color: var(--text-primary);
   font-size: 1.2rem;
 `;
 
@@ -108,7 +108,7 @@ const EmptyState = styled.div`
   
   h3 {
     margin: 0 0 0.5rem 0;
-    color: #1a1a1a;
+    color: var(--text-primary);
     font-size: 1.5rem;
   }
   

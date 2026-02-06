@@ -6,7 +6,7 @@ import { getChallenges, createChallenge, joinChallenge } from '../services/socia
 
 
 const Container = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -23,7 +23,7 @@ const Header = styled.div`
 
 const Title = styled.h3`
   font-size: 1.3rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin: 0;
   display: flex;
   align-items: center;
@@ -167,7 +167,7 @@ const Modal = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 20px;
   padding: 2rem;
   max-width: 500px;
@@ -178,7 +178,7 @@ const ModalContent = styled.div`
 
 const ModalTitle = styled.h3`
   font-size: 1.5rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
 `;
 
@@ -196,7 +196,7 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
   
@@ -209,10 +209,10 @@ const Input = styled.input`
 const Select = styled.select`
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
-  background: white;
+  background: var(--bg-secondary);
   
   &:focus {
     outline: none;
