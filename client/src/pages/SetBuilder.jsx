@@ -45,7 +45,7 @@ const convertToPinyin = (text) => {
 // Кэш для переводов (чтобы не дублировать запросы)
 const translationCache = new Map();
 
-// API для получения перевода китайского текста (MyMemory - бесплатный API)
+// API для получения перевода китайского текста (через серверный переводчик)
 const translateChinese = async (chineseText) => {
   if (!chineseText || typeof chineseText !== 'string') {
     return '（введите перевод вручную）';
@@ -62,29 +62,26 @@ const translateChinese = async (chineseText) => {
   }
   
   try {
-    // MyMemory API - бесплатный переводчик
-    const encodedText = encodeURIComponent(trimmedText);
-    const response = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=zh|ru`
-    );
-    
+    const response = await authFetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: trimmedText, source: 'auto', target: 'ru' })
+    });
+
     if (!response.ok) {
       throw new Error('Ошибка API перевода');
     }
-    
+
     const data = await response.json();
-    
-    if (data.responseStatus === 200 && data.responseData?.translatedText) {
-      const translated = data.responseData.translatedText;
-      // Сохраняем в кэш
+    const translated = data?.data?.translatedText;
+    if (translated) {
       translationCache.set(trimmedText, translated);
       return translated;
     }
-    
+
     throw new Error('Нет результата перевода');
   } catch (error) {
     console.warn('Ошибка получения перевода:', error.message);
-    // Fallback: пробуем другой API или возвращаем placeholder
     return translateChineseFallback(trimmedText);
   }
 };
@@ -461,6 +458,39 @@ const CardFieldLabel = styled.label`
   display: flex;
   align-items: center;
   gap: 6px;
+`;
+
+const TranslateButton = styled.button`
+  margin-left: auto;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-transform: none;
+
+  &:hover {
+    border-color: #63b3ed;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const TabSplitBadge = styled.span`
+  font-size: 10px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #fde68a;
+  border: 1px solid #f59e0b;
+  padding: 1px 6px;
+  border-radius: 999px;
+  text-transform: none;
 `;
 
 const CardInput = styled.input`
@@ -903,6 +933,7 @@ function SetBuilder() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
+  const isTeacher = user?.role === 'teacher';
   
   const isEditMode = Boolean(id);
   
@@ -911,7 +942,7 @@ function SetBuilder() {
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [tags, setTags] = useState([]);
-  const [cards, setCards] = useState([{ id: Date.now(), term: '', definition: '', pinyin: '', translation: '', imageUrl: '' }]);
+  const [cards, setCards] = useState([{ id: Date.now(), term: '', definition: '', pinyin: '', translation: '', imageUrl: '', tabSplit: false }]);
   const [importText, setImportText] = useState('');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [popularTags, setPopularTags] = useState([]);
@@ -925,6 +956,7 @@ function SetBuilder() {
   
   // Состояние загрузки пиньиня для каждой карточки
   const [loadingPinyin, setLoadingPinyin] = useState({});
+  const [loadingTranslate, setLoadingTranslate] = useState({});
   
   // Состояние для отслеживания изменений терминов (для китайских карточек)
   const [originalTerms, setOriginalTerms] = useState({});
@@ -991,7 +1023,8 @@ function SetBuilder() {
           definition: card.definition || '',
           pinyin: card.pinyin || '',
           translation: card.translation || '',
-          imageUrl: card.imageUrl || ''
+          imageUrl: card.imageUrl || '',
+          tabSplit: false
         }));
         
         setCards(loadedCards);
@@ -1012,7 +1045,7 @@ function SetBuilder() {
   
   // Добавление новой карточки
   const addCard = () => {
-    const newCard = { id: Date.now(), term: '', definition: '', pinyin: '', translation: '', imageUrl: '' };
+    const newCard = { id: Date.now(), term: '', definition: '', pinyin: '', translation: '', imageUrl: '', tabSplit: false };
     setCards([...cards, newCard]);
     // Сохраняем пустой оригинальный термин для новой карточки
     setOriginalTerms(prev => ({ ...prev, [newCard.id]: '' }));
@@ -1086,6 +1119,53 @@ function SetBuilder() {
       }
       return card;
     }));
+  };
+
+  const applyTabSplit = (cardId, value) => {
+    const parts = value.split('\t');
+    const termValue = parts[0]?.trim() || '';
+    const definitionValue = parts.slice(1).join(' ').trim();
+
+    if (!termValue) return;
+
+    setCards(prev => prev.map(card => (
+      card.id === cardId
+        ? { ...card, term: termValue, definition: definitionValue, tabSplit: true }
+        : card
+    )));
+
+    requestAnimationFrame(() => {
+      const defInput = document.querySelector(`[data-definition-input="${cardId}"]`);
+      defInput?.focus();
+    });
+  };
+
+  const handleTranslate = async (cardId, text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    setLoadingTranslate(prev => ({ ...prev, [cardId]: true }));
+    try {
+      const res = await authFetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: trimmed, source: 'auto', target: 'ru' })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.data?.translatedText) {
+        throw new Error(data?.message || 'Ошибка перевода');
+      }
+
+      updateCard(cardId, 'definition', data.data.translatedText);
+      setSuccess('Перевод добавлен ✅');
+      setTimeout(() => setSuccess(null), 2000);
+    } catch (err) {
+      setError(err.message || 'Ошибка перевода');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoadingTranslate(prev => ({ ...prev, [cardId]: false }));
+    }
   };
   
   // Добавление пиньиня и перевода для китайской карточки
@@ -1240,7 +1320,9 @@ function SetBuilder() {
           term,
           definition,
           pinyin,
-          translation
+          translation,
+          imageUrl: '',
+          tabSplit: false
         };
         newCards.push(newCard);
       }
@@ -1549,6 +1631,9 @@ function SetBuilder() {
                       <CardField>
                         <CardFieldLabel>
                           Термин
+                          {isTeacher && card.tabSplit && (
+                            <TabSplitBadge>TAB</TabSplitBadge>
+                          )}
                           {cardIsChinese && (
                             <ChineseBadge>🇨🇳 Китайский</ChineseBadge>
                           )}
@@ -1557,7 +1642,20 @@ function SetBuilder() {
                           <CardInput
                             placeholder="Введите термин..."
                             value={card.term}
-                            onChange={(e) => updateCard(card.id, 'term', e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (isTeacher && value.includes('\t')) {
+                                applyTabSplit(card.id, value);
+                                return;
+                              }
+                              updateCard(card.id, 'term', value);
+                            }}
+                            onKeyDown={(e) => {
+                              if (isTeacher && e.key === 'Tab') {
+                                e.preventDefault();
+                                applyTabSplit(card.id, e.target.value);
+                              }
+                            }}
                             style={{ ...cardIsChinese ? { borderColor: '#fc8181' } : {}, flex: 1 }}
                           />
                           <VoiceInput
@@ -1606,12 +1704,23 @@ function SetBuilder() {
                       </CardField>
                       
                       <CardField>
-                        <CardFieldLabel>Определение</CardFieldLabel>
+                        <CardFieldLabel>
+                          Определение
+                          <TranslateButton
+                            type="button"
+                            disabled={!card.term.trim() || loadingTranslate[card.id]}
+                            onClick={() => handleTranslate(card.id, card.term)}
+                            title="Автоперевод термина"
+                          >
+                            {loadingTranslate[card.id] ? '...' : '🌐 Перевести'}
+                          </TranslateButton>
+                        </CardFieldLabel>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <CardInput
                             placeholder="Введите определение..."
                             value={card.definition}
                             onChange={(e) => updateCard(card.id, 'definition', e.target.value)}
+                            data-definition-input={card.id}
                             style={{ flex: 1 }}
                           />
                           <VoiceInput

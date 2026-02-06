@@ -16,6 +16,7 @@ import liveRoutes from './routes/live.js';
 import adminRoutes from './routes/admin.js';
 import supportRoutes from './routes/support.js';
 import chatRoutes from './routes/chat.js';
+import translateRoutes from './routes/translate.js';
 import authMiddleware from './middleware/auth.js';
 
 dotenv.config();
@@ -58,6 +59,7 @@ app.use('/api/live', liveRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/translate', translateRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

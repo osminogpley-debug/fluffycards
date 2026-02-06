@@ -21,6 +21,7 @@ router.get('/', authMiddleware, async (req, res) => {
     
     // Generate daily quests if needed
     gamification.generateDailyQuests();
+    gamification.generateWeeklyExam();
     await gamification.save();
     
     // Calculate XP needed for next level
@@ -40,6 +41,7 @@ router.get('/', authMiddleware, async (req, res) => {
         },
         achievements: gamification.achievements,
         dailyQuests: gamification.dailyQuests,
+        weeklyExam: gamification.weeklyExam,
         streak: gamification.streak,
         stats: gamification.stats
       }
@@ -74,6 +76,9 @@ router.post('/xp', authMiddleware, async (req, res) => {
         streak: { current: 0, longest: 0, lastActive: null }
       });
     }
+
+    gamification.generateDailyQuests();
+    gamification.generateWeeklyExam();
     
     // Ensure stats object exists with defaults
     if (!gamification.stats) {
@@ -366,11 +371,43 @@ router.post('/stats', authMiddleware, async (req, res) => {
       questResults.xpEarned += perfectQuestResult.xpEarned;
       questResults.completedQuests.push(...perfectQuestResult.completedQuests);
     }
+
+    // Update weekly exam progress
+    let weeklyExamResult = { xpEarned: 0, completedExam: null };
+    if (cardsStudied > 0) {
+      const result = await gamification.updateWeeklyExamProgress('study_cards', cardsStudied);
+      weeklyExamResult = {
+        xpEarned: weeklyExamResult.xpEarned + result.xpEarned,
+        completedExam: result.completedExam || weeklyExamResult.completedExam
+      };
+    }
+    if (testsPassed > 0) {
+      const result = await gamification.updateWeeklyExamProgress('pass_test', testsPassed);
+      weeklyExamResult = {
+        xpEarned: weeklyExamResult.xpEarned + result.xpEarned,
+        completedExam: result.completedExam || weeklyExamResult.completedExam
+      };
+    }
+    if (gamesWon > 0) {
+      const result = await gamification.updateWeeklyExamProgress('win_game', gamesWon);
+      weeklyExamResult = {
+        xpEarned: weeklyExamResult.xpEarned + result.xpEarned,
+        completedExam: result.completedExam || weeklyExamResult.completedExam
+      };
+    }
+    if (perfectScore) {
+      const result = await gamification.updateWeeklyExamProgress('perfect_score', 1);
+      weeklyExamResult = {
+        xpEarned: weeklyExamResult.xpEarned + result.xpEarned,
+        completedExam: result.completedExam || weeklyExamResult.completedExam
+      };
+    }
     
     // Add XP from completed quests
     let xpResult = null;
-    if (questResults.xpEarned > 0) {
-      xpResult = await gamification.addXp(questResults.xpEarned, 'quest_completion');
+    const totalBonusXp = questResults.xpEarned + weeklyExamResult.xpEarned;
+    if (totalBonusXp > 0) {
+      xpResult = await gamification.addXp(totalBonusXp, 'quest_completion');
     }
     
     await gamification.save();
@@ -382,6 +419,7 @@ router.post('/stats', authMiddleware, async (req, res) => {
         streak: gamification.streak,
         newAchievements,
         questResults,
+        weeklyExamResult,
         xpResult,
         challengeUpdates
       }

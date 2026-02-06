@@ -228,6 +228,7 @@ function GamificationPanel() {
           progress: { current: 0, total: 100, percentage: 0 },
           achievements: [],
           dailyQuests: [],
+          weeklyExam: null,
           streak: { current: 0, longest: 0 },
           stats: { cardsStudied: 0, testsPassed: 0, gamesWon: 0, perfectScores: 0 }
         });
@@ -244,6 +245,7 @@ function GamificationPanel() {
         progress: { current: 0, total: 100, percentage: 0 },
         achievements: [],
         dailyQuests: [],
+        weeklyExam: null,
         streak: { current: 0, longest: 0 },
         stats: { cardsStudied: 0, testsPassed: 0, gamesWon: 0, perfectScores: 0 }
       });
@@ -315,6 +317,28 @@ function GamificationPanel() {
         ) : (
           <EmptyState $isDark={isDark}>
             Нет активных заданий. Начните учиться!
+          </EmptyState>
+        )}
+      </QuestsSection>
+
+      <QuestsSection>
+        <QuestsTitle $isDark={isDark}>🧪 Еженедельный экзамен</QuestsTitle>
+        {data?.weeklyExam ? (
+          <QuestItem $completed={data.weeklyExam.completed} $isDark={isDark}>
+            <QuestIcon $completed={data.weeklyExam.completed}>🧪</QuestIcon>
+            <QuestInfo>
+              <QuestName $completed={data.weeklyExam.completed} $isDark={isDark}>
+                {data.weeklyExam.completed ? '✅ ' : ''}{data.weeklyExam.name}
+              </QuestName>
+              <QuestProgress $isDark={isDark}>
+                {data.weeklyExam.current} / {data.weeklyExam.target}
+              </QuestProgress>
+            </QuestInfo>
+            <QuestReward $isDark={isDark}>+{data.weeklyExam.reward} XP</QuestReward>
+          </QuestItem>
+        ) : (
+          <EmptyState $isDark={isDark}>
+            Экзамен появится в начале недели
           </EmptyState>
         )}
       </QuestsSection>

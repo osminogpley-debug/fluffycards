@@ -13,7 +13,7 @@ import { API_ROUTES } from '../constants/api';
 const PageContainer = styled.div`
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
+  background: var(--bg-primary);
 `;
 
 const Header = styled.div`
@@ -37,7 +37,7 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 1.1rem;
   margin-bottom: 2rem;
 `;
@@ -53,10 +53,11 @@ const ControlsContainer = styled.div`
 `;
 
 const SearchSection = styled.div`
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   padding: 1.5rem;
   border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px var(--shadow-color);
 `;
 
 const FiltersSection = styled.div`
@@ -79,14 +80,14 @@ const FilterGroup = styled.div`
 
 const FilterLabel = styled.span`
   font-size: 0.9rem;
-  color: #718096;
+  color: var(--text-secondary);
   font-weight: 500;
 `;
 
 const CategorySelect = styled.select`
   border: none;
   background: transparent;
-  color: #4a5568;
+  color: var(--text-primary);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -95,8 +96,8 @@ const CategorySelect = styled.select`
 `;
 
 const SortButton = styled.button`
-  background: ${props => props.$active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'white'};
-  color: ${props => props.$active ? 'white' : '#4a5568'};
+  background: ${props => props.$active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'var(--bg-secondary)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
   border: 2px solid ${props => props.$active ? '#63b3ed' : 'var(--border-color)'};
   padding: 8px 16px;
   border-radius: 12px;
@@ -152,7 +153,7 @@ const SetsGrid = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 4rem 2rem;
-  color: #718096;
+  color: var(--text-secondary);
   grid-column: 1 / -1;
 `;
 
@@ -164,7 +165,7 @@ const EmptyIcon = styled.div`
 
 const EmptyTitle = styled.h3`
   font-size: 1.5rem;
-  color: #4a5568;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 `;
 
@@ -194,7 +195,7 @@ const EmptyLibraryTitle = styled.h2`
 
 const EmptyLibraryText = styled.p`
   font-size: 1.1rem;
-  color: #718096;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
   max-width: 500px;
   line-height: 1.6;
@@ -251,7 +252,7 @@ const LoadingContainer = styled.div`
 `;
 
 const LoadingText = styled.p`
-  color: #718096;
+  color: var(--text-secondary);
   margin-top: 1rem;
   font-size: 1.1rem;
 `;
@@ -266,8 +267,8 @@ const PaginationContainer = styled.div`
 `;
 
 const PageButton = styled.button`
-  background: ${props => props.$active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'white'};
-  color: ${props => props.$active ? 'white' : '#4a5568'};
+  background: ${props => props.$active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'var(--bg-secondary)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
   border: 2px solid ${props => props.$active ? '#63b3ed' : 'var(--border-color)'};
   width: 44px;
   height: 44px;
@@ -288,7 +289,7 @@ const PageButton = styled.button`
 `;
 
 const PageInfo = styled.span`
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 0.95rem;
 `;
 
@@ -328,7 +329,7 @@ const StatValue = styled.span`
 
 const StatLabel = styled.span`
   font-size: 0.9rem;
-  color: #718096;
+  color: var(--text-secondary);
 `;
 
 const Toast = styled.div`

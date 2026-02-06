@@ -63,20 +63,20 @@ const SuccessMessage = styled.div`
 `;
 
 const CardContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   border-radius: 20px;
   padding: 1.5rem;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px var(--shadow-color);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: visible;
-  border: 2px solid transparent;
+  border: 2px solid var(--border-color);
   cursor: pointer;
 
   &:hover {
     transform: translateY(-8px) scale(1.02);
     box-shadow: 0 15px 40px rgba(99, 179, 237, 0.2);
-    border-color: #e0f2fe;
+    border-color: #63b3ed;
   }
 
   &:hover ${SaveButton} {
@@ -111,7 +111,7 @@ const CardHeader = styled.div`
 
 const Title = styled.h3`
   font-size: 1.25rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin: 0;
   font-weight: 700;
   line-height: 1.3;
@@ -131,7 +131,7 @@ const Rating = styled.div`
 `;
 
 const Description = styled.p`
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   margin-bottom: 1rem;
   line-height: 1.5;
@@ -159,7 +159,7 @@ const Tag = styled.span`
       'Технологии': '#e0e7ff',
       'Литература': '#ffedd5'
     };
-    return colors[props.$category] || '#f1f5f9';
+    return colors[props.$category] || 'var(--bg-tertiary)';
   }};
   color: ${props => {
     const colors = {
@@ -171,7 +171,7 @@ const Tag = styled.span`
       'Технологии': '#4338ca',
       'Литература': '#ea580c'
     };
-    return colors[props.$category] || '#64748b';
+    return colors[props.$category] || 'var(--text-secondary)';
   }};
   padding: 4px 10px;
   border-radius: 12px;
@@ -185,7 +185,7 @@ const Tag = styled.span`
 `;
 
 const PreviewContainer = styled.div`
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: var(--bg-tertiary);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -193,7 +193,7 @@ const PreviewContainer = styled.div`
 
 const PreviewTitle = styled.div`
   font-size: 0.8rem;
-  color: #63b3ed;
+  color: var(--text-secondary);
   font-weight: 600;
   margin-bottom: 0.5rem;
   display: flex;
@@ -205,9 +205,9 @@ const PreviewItem = styled.div`
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
-  border-bottom: 1px dashed #bae6fd;
+  border-bottom: 1px dashed var(--border-color);
   font-size: 0.85rem;
-  color: #4a5568;
+  color: var(--text-secondary);
 
   &:last-child {
     border-bottom: none;

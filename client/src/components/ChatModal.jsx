@@ -198,6 +198,53 @@ const InputArea = styled.form`
   border-top: 1px solid var(--border-color);
   display: flex;
   gap: 10px;
+  position: relative;
+`;
+
+const EmojiButton = styled.button`
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: #63b3ed;
+  }
+`;
+
+const EmojiPicker = styled.div`
+  position: absolute;
+  bottom: 60px;
+  left: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  box-shadow: 0 8px 24px var(--shadow-color);
+  z-index: 2;
+`;
+
+const EmojiItem = styled.button`
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+
+  &:hover {
+    background: var(--bg-tertiary);
+  }
 `;
 
 const MessageInput = styled.input`
@@ -252,8 +299,12 @@ function ChatModal({ onClose, userId }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
   const pollingRef = useRef(null);
+
+  const emojiList = ['😀', '😃', '😄', '😁', '😂', '🤣', '😊', '😍', '😘', '😎', '🤔', '😭', '😡', '👍', '👎', '🙏', '🔥', '🎉', '💯', '⭐', '⚡', '❤️', '💙', '💚'];
 
   const baseUrl = `http://${window.location.hostname}:5001/api/chat`;
 
@@ -318,6 +369,7 @@ function ChatModal({ onClose, userId }) {
         const newMsg = await res.json();
         setMessages(prev => [...prev, newMsg]);
         setInputText('');
+        setShowEmojiPicker(false);
         fetchConversations();
       }
     } catch (err) {
@@ -403,7 +455,28 @@ function ChatModal({ onClose, userId }) {
                 <div ref={messagesEndRef} />
               </MessagesArea>
               <InputArea onSubmit={handleSend}>
+                <EmojiButton type="button" onClick={() => setShowEmojiPicker(prev => !prev)}>
+                  😊
+                </EmojiButton>
+                {showEmojiPicker && (
+                  <EmojiPicker>
+                    {emojiList.map(emoji => (
+                      <EmojiItem
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          setInputText(prev => prev + emoji);
+                          setShowEmojiPicker(false);
+                          inputRef.current?.focus();
+                        }}
+                      >
+                        {emoji}
+                      </EmojiItem>
+                    ))}
+                  </EmojiPicker>
+                )}
                 <MessageInput 
+                  ref={inputRef}
                   value={inputText}
                   onChange={e => setInputText(e.target.value)}
                   placeholder="Написать сообщение..."

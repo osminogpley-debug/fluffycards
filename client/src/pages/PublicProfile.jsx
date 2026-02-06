@@ -214,20 +214,19 @@ function PublicProfile() {
       const profilePublic = userObj.isProfilePublic !== false;
       setIsProfilePublic(profilePublic);
       
-      // Загружаем расширенные данные только для открытых профилей
+      // Получаем статистику пользователя (частичная видимость даже при закрытом профиле)
+      const statsRes = await authFetch(`${API_ROUTES.SOCIAL}/users/${userId}/stats`);
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData.data || stats);
+      }
+
+      // Загружаем публичные наборы только для открытых профилей
       if (profilePublic) {
-        // Получаем публичные наборы пользователя
         const setsRes = await authFetch(`${API_ROUTES.DATA.SETS}/public?userId=${userId}`);
         if (setsRes.ok) {
           const setsData = await setsRes.json();
           setUserSets(setsData.data || []);
-        }
-        
-        // Получаем статистику пользователя
-        const statsRes = await authFetch(`${API_ROUTES.SOCIAL}/users/${userId}/stats`);
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setStats(statsData.data || stats);
         }
       }
     } catch (error) {
@@ -286,13 +285,33 @@ function PublicProfile() {
       </ProfileCard>
 
       {!isProfilePublic ? (
-        <ProfileCard>
-          <PrivateProfileNotice>
-            <div className="icon">🔒</div>
-            <h3>Профиль закрыт</h3>
-            <p>Этот пользователь скрыл свою статистику и наборы карточек</p>
-          </PrivateProfileNotice>
-        </ProfileCard>
+        <>
+          <ProfileCard>
+            <PrivateProfileNotice>
+              <div className="icon">🔒</div>
+              <h3>Профиль закрыт</h3>
+              <p>Часть информации доступна, но подробная статистика и наборы скрыты</p>
+            </PrivateProfileNotice>
+          </ProfileCard>
+
+          <ProfileCard>
+            <SectionTitle>📊 Частичная информация</SectionTitle>
+            <StatsGrid>
+              <StatCard>
+                <StatValue>{user?.level || 1}</StatValue>
+                <StatLabel>Уровень</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatValue>{stats.cardsStudied || 0}</StatValue>
+                <StatLabel>Карточек изучено</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatValue>{stats.streakDays || 0}</StatValue>
+                <StatLabel>Дней подряд</StatLabel>
+              </StatCard>
+            </StatsGrid>
+          </ProfileCard>
+        </>
       ) : (
         <>
           <ProfileCard>

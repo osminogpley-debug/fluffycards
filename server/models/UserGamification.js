@@ -77,6 +77,46 @@ const dailyQuestSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+const weeklyExamSchema = new mongoose.Schema({
+  examId: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  target: {
+    type: Number,
+    required: true
+  },
+  current: {
+    type: Number,
+    default: 0
+  },
+  completed: {
+    type: Boolean,
+    default: false
+  },
+  reward: {
+    type: Number,
+    required: true
+  },
+  type: {
+    type: String,
+    enum: ['study_cards', 'pass_test', 'win_game', 'perfect_score'],
+    required: true
+  },
+  weekStart: {
+    type: Date,
+    default: Date.now
+  }
+}, { _id: false });
+
 const streakSchema = new mongoose.Schema({
   current: {
     type: Number,
@@ -135,6 +175,10 @@ const userGamificationSchema = new mongoose.Schema({
   },
   achievements: [achievementSchema],
   dailyQuests: [dailyQuestSchema],
+  weeklyExam: {
+    type: weeklyExamSchema,
+    default: null
+  },
   streak: {
     type: streakSchema,
     default: () => ({ current: 0, longest: 0, lastActive: null })
@@ -348,55 +392,121 @@ userGamificationSchema.methods.generateDailyQuests = function() {
     return this.dailyQuests;
   }
   
-  // Reset daily quests with new ones for today
-  this.dailyQuests = [
+  // Reset daily quests with new random ones for today
+  const questPool = [
+    {
+      questId: 'study_10',
+      name: '📚 Изучить 10 карточек',
+      description: 'Изучите 10 карточек сегодня',
+      target: 10,
+      reward: 30,
+      type: 'study_cards'
+    },
     {
       questId: 'study_20',
       name: '📚 Изучить 20 карточек',
-      description: 'Изучите至少 20 карточек сегодня',
+      description: 'Изучите 20 карточек сегодня',
       target: 20,
-      current: 0,
-      completed: false,
       reward: 50,
-      type: 'study_cards',
-      date: today
+      type: 'study_cards'
+    },
+    {
+      questId: 'study_40',
+      name: '📚 Изучить 40 карточек',
+      description: 'Изучите 40 карточек сегодня',
+      target: 40,
+      reward: 90,
+      type: 'study_cards'
     },
     {
       questId: 'pass_test',
       name: '📝 Пройти тест',
       description: 'Успешно пройдите тест',
       target: 1,
-      current: 0,
-      completed: false,
       reward: 100,
-      type: 'pass_test',
-      date: today
+      type: 'pass_test'
     },
     {
       questId: 'win_game',
       name: '🎮 Выиграть в игру',
       description: 'Победите в любой игровой режим',
       target: 1,
-      current: 0,
-      completed: false,
       reward: 75,
-      type: 'win_game',
-      date: today
+      type: 'win_game'
     },
     {
       questId: 'perfect_score',
       name: '💎 Идеальный результат',
       description: 'Наберите 90% или выше на тесте',
       target: 1,
-      current: 0,
-      completed: false,
       reward: 150,
-      type: 'perfect_score',
-      date: today
+      type: 'perfect_score'
     }
   ];
+
+  const picked = questPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+  this.dailyQuests = picked.map(q => ({
+    ...q,
+    current: 0,
+    completed: false,
+    date: today
+  }));
   
   return this.dailyQuests;
+};
+
+// Method to generate weekly exam
+userGamificationSchema.methods.generateWeeklyExam = function() {
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setHours(0, 0, 0, 0);
+  const day = weekStart.getDay() || 7;
+  weekStart.setDate(weekStart.getDate() - (day - 1));
+
+  const hasCurrentWeekExam = this.weeklyExam && this.weeklyExam.weekStart &&
+    new Date(this.weeklyExam.weekStart).getTime() === weekStart.getTime();
+
+  if (hasCurrentWeekExam) {
+    return this.weeklyExam;
+  }
+
+  const weeklyPool = [
+    {
+      examId: 'weekly_tests_3',
+      name: '📅 Еженедельный экзамен',
+      description: 'Пройдите 3 теста на этой неделе',
+      target: 3,
+      reward: 300,
+      type: 'pass_test'
+    },
+    {
+      examId: 'weekly_cards_100',
+      name: '📅 Еженедельный экзамен',
+      description: 'Изучите 100 карточек на этой неделе',
+      target: 100,
+      reward: 350,
+      type: 'study_cards'
+    },
+    {
+      examId: 'weekly_perfect_2',
+      name: '📅 Еженедельный экзамен',
+      description: 'Сделайте 2 идеальных теста (90%+)',
+      target: 2,
+      reward: 400,
+      type: 'perfect_score'
+    }
+  ];
+
+  const pick = weeklyPool[Math.floor(Math.random() * weeklyPool.length)];
+
+  this.weeklyExam = {
+    ...pick,
+    current: 0,
+    completed: false,
+    weekStart
+  };
+
+  return this.weeklyExam;
 };
 
 // Method to update quest progress
@@ -433,6 +543,36 @@ userGamificationSchema.methods.updateQuestProgress = async function(type, amount
     xpEarned,
     completedQuests
   };
+};
+
+// Method to update weekly exam progress
+userGamificationSchema.methods.updateWeeklyExamProgress = async function(type, amount = 1) {
+  if (!this.weeklyExam) return { xpEarned: 0, completedExam: null };
+
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setHours(0, 0, 0, 0);
+  const day = weekStart.getDay() || 7;
+  weekStart.setDate(weekStart.getDate() - (day - 1));
+
+  const examWeekStart = new Date(this.weeklyExam.weekStart);
+  examWeekStart.setHours(0, 0, 0, 0);
+
+  if (examWeekStart.getTime() !== weekStart.getTime()) {
+    return { xpEarned: 0, completedExam: null };
+  }
+
+  if (this.weeklyExam.completed || this.weeklyExam.type !== type) {
+    return { xpEarned: 0, completedExam: null };
+  }
+
+  this.weeklyExam.current = Math.min(this.weeklyExam.current + amount, this.weeklyExam.target);
+  if (this.weeklyExam.current >= this.weeklyExam.target) {
+    this.weeklyExam.completed = true;
+    return { xpEarned: this.weeklyExam.reward, completedExam: this.weeklyExam };
+  }
+
+  return { xpEarned: 0, completedExam: null };
 };
 
 // Method to update streak

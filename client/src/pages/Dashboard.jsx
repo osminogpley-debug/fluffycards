@@ -38,7 +38,24 @@ const UserInfo = styled.div`
   align-items: center;
   gap: 16px;
 `;
-
+  position: relative;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  
+  &:hover {
+    background: var(--bg-tertiary);
+  }
+  
+  .icon {
+    font-size: 18px;
+  }
+`;
 const Avatar = styled.div`
   width: 64px;
   height: 64px;
@@ -230,6 +247,7 @@ const NotificationBadge = styled.span`
     50% { transform: scale(1.1); }
   }
 `;
+
 
 // Основной контент
 const MainContent = styled.div`
@@ -759,6 +777,7 @@ const SidebarMenu = styled.div`
 `;
 
 const SidebarItem = styled.button`
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -779,6 +798,25 @@ const SidebarItem = styled.button`
   .icon {
     font-size: 18px;
   }
+`;
+
+const SidebarBadge = styled.span`
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
 `;
 
 // Достижения
@@ -1667,23 +1705,6 @@ function Dashboard() {
           )}
           {activeTab === 'friends' && (
             <div style={{ display: 'grid', gap: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => setShowChat(true)}
-                  style={{
-                    background: 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)',
-                    border: 'none',
-                    color: 'white',
-                    padding: '10px 20px',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    fontSize: '0.95rem'
-                  }}
-                >
-                  💬 Открыть чат
-                </button>
-              </div>
               <FriendsList user={user} />
               <Challenges user={user} />
             </div>
@@ -1698,6 +1719,15 @@ function Dashboard() {
               <SidebarItem onClick={() => navigate('/profile')}>
                 <span className="icon">⚙️</span>
                 Настройки
+              </SidebarItem>
+              <SidebarItem onClick={() => setShowChat(true)}>
+                <span className="icon">💬</span>
+                Чаты
+                {notificationCount.unreadMessages > 0 && (
+                  <SidebarBadge>
+                    {notificationCount.unreadMessages > 99 ? '99+' : notificationCount.unreadMessages}
+                  </SidebarBadge>
+                )}
               </SidebarItem>
               <SidebarItem onClick={() => navigate('/help')}>
                 <span className="icon">❓</span>
