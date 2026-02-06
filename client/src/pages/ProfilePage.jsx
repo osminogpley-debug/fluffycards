@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { API_ROUTES, authFetch } from '../constants/api';
 import { useTheme, themes, fonts, avatars } from '../contexts/ThemeContext';
+import { AuthContext } from '../App';
 
 
 
@@ -244,9 +245,62 @@ const FontSelect = styled.select`
   }
 `;
 
+const ToggleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+`;
+
+const ToggleLabel = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`;
+
+const ToggleTitle = styled.span`
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+`;
+
+const ToggleDescription = styled.span`
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+`;
+
+const ToggleSwitch = styled.button`
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
+  border: none;
+  background: ${props => props.$active ? '#63b3ed' : '#cbd5e0'};
+  cursor: pointer;
+  position: relative;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: ${props => props.$active ? '27px' : '3px'};
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: left 0.3s ease;
+  }
+`;
+
 function ProfilePage() {
   const navigate = useNavigate();
   const { theme, setTheme, themes, font, setFont, fonts, avatar, setAvatar, avatars } = useTheme();
+  const { setAuthState } = useContext(AuthContext);
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
     setsCreated: 0,
@@ -259,7 +313,8 @@ function ProfilePage() {
   const [message, setMessage] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
-    email: ''
+    email: '',
+    isProfilePublic: true
   });
 
   useEffect(() => {
@@ -279,8 +334,15 @@ function ProfilePage() {
         setUser(userData.user);
         setFormData({
           username: userData.user?.username || '',
-          email: userData.user?.email || ''
+          email: userData.user?.email || '',
+          isProfilePublic: userData.user?.isProfilePublic !== false
         });
+        setAuthState(prev => ({
+          ...prev,
+          isAuthenticated: true,
+          user: userData.user,
+          role: userData.user?.role || prev.role
+        }));
       }
       
       // Fetch stats
@@ -310,13 +372,19 @@ function ProfilePage() {
       const res = await authFetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: formData.username })
+        body: JSON.stringify({ username: formData.username, isProfilePublic: formData.isProfilePublic })
       });
       
       const data = await res.json();
       
       if (res.ok) {
         setUser(data.user);
+        setAuthState(prev => ({
+          ...prev,
+          isAuthenticated: true,
+          user: data.user,
+          role: data.user?.role || prev.role
+        }));
         setMessage({ type: 'success', text: data.message || 'Профиль обновлен!' });
         setTimeout(() => setMessage(null), 3000);
       } else {
@@ -426,6 +494,26 @@ function ProfilePage() {
             onChange={handleChange}
             disabled
           />
+        </FormGroup>
+
+        <FormGroup>
+          <Label>🔒 Приватность</Label>
+          <ToggleContainer>
+            <ToggleLabel>
+              <ToggleTitle>
+                {formData.isProfilePublic ? '🌐 Профиль открыт' : '🔒 Профиль закрыт'}
+              </ToggleTitle>
+              <ToggleDescription>
+                {formData.isProfilePublic 
+                  ? 'Другие пользователи видят вашу статистику и публичные наборы' 
+                  : 'Другие пользователи видят только имя и роль'}
+              </ToggleDescription>
+            </ToggleLabel>
+            <ToggleSwitch 
+              $active={formData.isProfilePublic}
+              onClick={() => setFormData(prev => ({ ...prev, isProfilePublic: !prev.isProfilePublic }))}
+            />
+          </ToggleContainer>
         </FormGroup>
 
         <ButtonGroup>

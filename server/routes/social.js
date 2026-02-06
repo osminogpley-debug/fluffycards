@@ -10,6 +10,7 @@ import {
 } from '../models/Social.js';
 import User from '../models/User.js';
 import FlashcardSet from '../models/FlashcardSet.js';
+import Message from '../models/Message.js';
 
 const router = express.Router();
 
@@ -41,7 +42,7 @@ router.get('/friends', authMiddleware, async (req, res) => {
 router.get('/users/:userId', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
-      .select('username profileImage level totalXp role');
+      .select('username profileImage level totalXp role isProfilePublic');
     
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -232,6 +233,32 @@ router.delete('/friends/:friendId', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error removing friend:', error);
     res.status(500).json({ success: false, message: 'Failed to remove friend' });
+  }
+});
+
+// ==================== NOTIFICATIONS ====================
+
+// Get notification counts (unread messages + pending friend requests)
+router.get('/notifications/count', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const [unreadMessages, pendingRequests] = await Promise.all([
+      Message.countDocuments({ to: userId, read: false }),
+      FriendRequest.countDocuments({ to: userId, status: 'pending' })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        unreadMessages,
+        pendingRequests,
+        total: unreadMessages + pendingRequests
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching notification count:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch notifications' });
   }
 });
 

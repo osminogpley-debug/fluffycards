@@ -4,11 +4,11 @@ import { API_ROUTES, authFetch } from '../constants/api';
 import LevelBadge from './LevelBadge';
 
 const PanelContainer = styled.div`
-  background: ${props => props.$isDark ? '#1f2937' : 'white'};
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid ${props => props.$isDark ? '#374151' : '#e5e7eb'};
+  box-shadow: 0 4px 20px var(--shadow-color);
+  border: 1px solid var(--border-color);
   transition: all 0.3s ease;
 `;
 
@@ -18,7 +18,7 @@ const HeaderSection = styled.div`
   gap: 16px;
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid ${props => props.$isDark ? '#374151' : '#f3f4f6'};
+  border-bottom: 1px solid var(--border-light);
 `;
 
 const LevelInfo = styled.div`
@@ -27,14 +27,14 @@ const LevelInfo = styled.div`
 
 const LevelText = styled.div`
   font-size: 14px;
-  color: ${props => props.$isDark ? '#9ca3af' : '#6b7280'};
+  color: var(--text-secondary);
   margin-bottom: 4px;
 `;
 
 const LevelNumber = styled.div`
   font-size: 24px;
   font-weight: 700;
-  color: ${props => props.$isDark ? '#f9fafb' : '#1f2937'};
+  color: var(--text-primary);
 `;
 
 const XpInfo = styled.div`
@@ -43,7 +43,7 @@ const XpInfo = styled.div`
 
 const XpText = styled.div`
   font-size: 14px;
-  color: ${props => props.$isDark ? '#9ca3af' : '#6b7280'};
+  color: var(--text-secondary);
 `;
 
 const XpNumber = styled.div`
@@ -54,7 +54,7 @@ const XpNumber = styled.div`
 
 const ProgressBar = styled.div`
   height: 12px;
-  background: ${props => props.$isDark ? '#374151' : '#f3f4f6'};
+  background: var(--bg-tertiary);
   border-radius: 10px;
   overflow: hidden;
   margin: 12px 0;
@@ -79,7 +79,7 @@ const StatsGrid = styled.div`
 const StatBox = styled.div`
   text-align: center;
   padding: 12px;
-  background: ${props => props.$isDark ? '#374151' : '#f9fafb'};
+  background: var(--bg-tertiary);
   border-radius: 12px;
   transition: transform 0.2s ease;
   
@@ -91,12 +91,12 @@ const StatBox = styled.div`
 const StatValue = styled.div`
   font-size: 20px;
   font-weight: 700;
-  color: ${props => props.$color || (props.$isDark ? '#f9fafb' : '#1f2937')};
+  color: ${props => props.$color || 'var(--text-primary)'};
 `;
 
 const StatLabel = styled.div`
   font-size: 12px;
-  color: ${props => props.$isDark ? '#9ca3af' : '#6b7280'};
+  color: var(--text-secondary);
   margin-top: 4px;
 `;
 
@@ -107,7 +107,7 @@ const QuestsSection = styled.div`
 const QuestsTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: ${props => props.$isDark ? '#f9fafb' : '#1f2937'};
+  color: var(--text-primary);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -120,8 +120,9 @@ const QuestItem = styled.div`
   gap: 12px;
   padding: 12px;
   background: ${props => props.$completed 
-    ? (props.$isDark ? '#064e3b' : '#d1fae5') 
-    : (props.$isDark ? '#374151' : '#f9fafb')};  border-radius: 10px;
+    ? 'rgba(16, 185, 129, 0.18)'
+    : 'var(--bg-tertiary)'};
+  border-radius: 10px;
   margin-bottom: 8px;
   transition: all 0.2s ease;
   
@@ -138,7 +139,7 @@ const QuestIcon = styled.div`
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  background: ${props => props.$completed ? '#10b981' : '#e5e7eb'};
+  background: ${props => props.$completed ? '#10b981' : 'var(--bg-hover)'};
   transition: all 0.3s ease;
 `;
 
@@ -149,14 +150,12 @@ const QuestInfo = styled.div`
 const QuestName = styled.div`
   font-size: 14px;
   font-weight: 500;
-  color: ${props => props.$completed 
-    ? (props.$isDark ? '#6ee7b7' : '#065f46') 
-    : (props.$isDark ? '#f9fafb' : '#1f2937')};
+  color: ${props => props.$completed ? '#10b981' : 'var(--text-primary)'};
 `;
 
 const QuestProgress = styled.div`
   font-size: 12px;
-  color: ${props => props.$isDark ? '#9ca3af' : '#6b7280'};
+  color: var(--text-secondary);
   margin-top: 2px;
 `;
 
@@ -165,7 +164,7 @@ const QuestReward = styled.div`
   font-weight: 600;
   color: #f59e0b;
   padding: 4px 8px;
-  background: ${props => props.$isDark ? '#451a03' : '#fef3c7'};
+  background: var(--bg-hover);
   border-radius: 6px;
 `;
 
@@ -178,8 +177,8 @@ const LoadingSpinner = styled.div`
   .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #63b3ed;
+    border: 3px solid var(--border-light);
+    border-top: 3px solid var(--primary-color);
     border-radius: 50%;
   }
 `;
@@ -187,11 +186,11 @@ const LoadingSpinner = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 20px;
-  color: ${props => props.$isDark ? '#9ca3af' : '#6b7280'};
+  color: var(--text-secondary);
   font-size: 14px;
 `;
 
-function GamificationPanel({ isDark = false }) {
+function GamificationPanel() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

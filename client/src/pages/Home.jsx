@@ -25,7 +25,7 @@ const HeroTitle = styled.h1`
 
 const HeroSubtitle = styled.h2`
   font-size: 1.8rem;
-  color: #4a5568;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
   font-weight: 500;
 `;
@@ -38,10 +38,11 @@ const FeaturesGrid = styled.div`
 `;
 
 const FeatureCard = styled.div`
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px var(--shadow-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 
   &:hover {
@@ -62,7 +63,7 @@ const FeatureTitle = styled.h3`
 `;
 
 const FeatureText = styled.p`
-  color: #718096;
+  color: var(--text-secondary);
   line-height: 1.8;
 `;
 

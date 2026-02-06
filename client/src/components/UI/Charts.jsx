@@ -16,9 +16,10 @@ import {
 
 const ChartContainer = styled.div`
   padding: 1rem;
-  background: white;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 10px var(--shadow-color);
 `;
 
 function LineChartComponent({ data }) {

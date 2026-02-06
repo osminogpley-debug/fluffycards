@@ -10,10 +10,10 @@ const Container = styled.div`
 `;
 
 const ProfileCard = styled.div`
-  background: white;
+  background: var(--card-bg, var(--bg-secondary));
   border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px var(--shadow-color, rgba(0, 0, 0, 0.1));
   margin-bottom: 1.5rem;
 `;
 
@@ -47,7 +47,7 @@ const AvatarInfo = styled.div`
 
 const UserName = styled.h3`
   font-size: 1.5rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 `;
 
@@ -63,10 +63,10 @@ const UserRole = styled.span`
 
 const SectionTitle = styled.h2`
   font-size: 1.3rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--border-color, #e2e8f0);
 `;
 
 const StatsGrid = styled.div`
@@ -90,7 +90,7 @@ const StatValue = styled.div`
 `;
 
 const StatLabel = styled.div`
-  color: #718096;
+  color: var(--text-secondary, #718096);
   font-size: 0.9rem;
   margin-top: 0.25rem;
 `;
@@ -130,19 +130,47 @@ const SetsGrid = styled.div`
 `;
 
 const SetCard = styled.div`
-  background: #f7fafc;
+  background: var(--bg-tertiary, #f7fafc);
   border-radius: 12px;
   padding: 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color, #e2e8f0);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color, rgba(0,0,0,0.1));
+  }
   
   h4 {
     margin: 0 0 0.5rem 0;
-    color: #2d3748;
+    color: var(--text-primary, #2d3748);
   }
   
   .meta {
-    color: #718096;
+    color: var(--text-secondary, #718096);
     font-size: 0.85rem;
+  }
+`;
+
+const PrivateProfileNotice = styled.div`
+  text-align: center;
+  padding: 3rem 2rem;
+  
+  .icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    font-size: 1.3rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
   }
 `;
 
@@ -159,6 +187,7 @@ function PublicProfile() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isProfilePublic, setIsProfilePublic] = useState(true);
 
   useEffect(() => {
     fetchUserProfile();
@@ -178,20 +207,28 @@ function PublicProfile() {
         throw new Error('Ошибка загрузки профиля');
       }
       const userData = await userRes.json();
-      setUser(userData.data || userData);
+      const userObj = userData.data || userData;
+      setUser(userObj);
       
-      // Получаем публичные наборы пользователя
-      const setsRes = await authFetch(`${API_ROUTES.DATA.SETS}/public?userId=${userId}`);
-      if (setsRes.ok) {
-        const setsData = await setsRes.json();
-        setUserSets(setsData.data || []);
-      }
+      // Проверяем, открыт ли профиль
+      const profilePublic = userObj.isProfilePublic !== false;
+      setIsProfilePublic(profilePublic);
       
-      // Получаем статистику пользователя
-      const statsRes = await authFetch(`${API_ROUTES.SOCIAL}/users/${userId}/stats`);
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData.data || stats);
+      // Загружаем расширенные данные только для открытых профилей
+      if (profilePublic) {
+        // Получаем публичные наборы пользователя
+        const setsRes = await authFetch(`${API_ROUTES.DATA.SETS}/public?userId=${userId}`);
+        if (setsRes.ok) {
+          const setsData = await setsRes.json();
+          setUserSets(setsData.data || []);
+        }
+        
+        // Получаем статистику пользователя
+        const statsRes = await authFetch(`${API_ROUTES.SOCIAL}/users/${userId}/stats`);
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData.data || stats);
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -234,7 +271,7 @@ function PublicProfile() {
 
   return (
     <Container>
-      <BackButton onClick={() => navigate(-1)}>← Назад</BackButton>
+      <BackButton onClick={() => navigate(-1)}>|← Назад</BackButton>
       
       <ProfileCard>
         <AvatarSection>
@@ -248,42 +285,54 @@ function PublicProfile() {
         </AvatarSection>
       </ProfileCard>
 
-      <ProfileCard>
-        <SectionTitle>📊 Статистика</SectionTitle>
-        <StatsGrid>
-          <StatCard>
-            <StatValue>{stats.setsCreated || 0}</StatValue>
-            <StatLabel>Наборов создано</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.cardsStudied || 0}</StatValue>
-            <StatLabel>Карточек изучено</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.testsPassed || 0}</StatValue>
-            <StatLabel>Тестов пройдено</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.streakDays || 0}</StatValue>
-            <StatLabel>Дней подряд</StatLabel>
-          </StatCard>
-        </StatsGrid>
-      </ProfileCard>
-
-      {userSets.length > 0 && (
+      {!isProfilePublic ? (
         <ProfileCard>
-          <SectionTitle>📚 Публичные наборы</SectionTitle>
-          <SetsGrid>
-            {userSets.map(set => (
-              <SetCard key={set._id}>
-                <h4>{set.title}</h4>
-                <div className="meta">
-                  📝 {set.flashcards?.length || set.cards?.length || 0} терминов
-                </div>
-              </SetCard>
-            ))}
-          </SetsGrid>
+          <PrivateProfileNotice>
+            <div className="icon">🔒</div>
+            <h3>Профиль закрыт</h3>
+            <p>Этот пользователь скрыл свою статистику и наборы карточек</p>
+          </PrivateProfileNotice>
         </ProfileCard>
+      ) : (
+        <>
+          <ProfileCard>
+            <SectionTitle>📊 Статистика</SectionTitle>
+            <StatsGrid>
+              <StatCard>
+                <StatValue>{stats.setsCreated || 0}</StatValue>
+                <StatLabel>Наборов создано</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatValue>{stats.cardsStudied || 0}</StatValue>
+                <StatLabel>Карточек изучено</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatValue>{stats.testsPassed || 0}</StatValue>
+                <StatLabel>Тестов пройдено</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatValue>{stats.streakDays || 0}</StatValue>
+                <StatLabel>Дней подряд</StatLabel>
+              </StatCard>
+            </StatsGrid>
+          </ProfileCard>
+
+          {userSets.length > 0 && (
+            <ProfileCard>
+              <SectionTitle>📚 Публичные наборы</SectionTitle>
+              <SetsGrid>
+                {userSets.map(set => (
+                  <SetCard key={set._id} onClick={() => navigate(`/set/${set._id}`)}>
+                    <h4>{set.title}</h4>
+                    <div className="meta">
+                      📝 {set.flashcards?.length || set.cards?.length || 0} терминов
+                    </div>
+                  </SetCard>
+                ))}
+              </SetsGrid>
+            </ProfileCard>
+          )}
+        </>
       )}
     </Container>
   );

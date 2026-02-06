@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isProfilePublic: {
+    type: Boolean,
+    default: true
+  },
   flashcardsSets: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'FlashcardSet'

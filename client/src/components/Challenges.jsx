@@ -63,7 +63,7 @@ const ChallengeHeader = styled.div`
 
 const ChallengeTitle = styled.h4`
   font-size: 1.1rem;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0;
 `;
 
@@ -72,11 +72,11 @@ const ChallengeType = styled.span`
   padding: 0.25rem 0.5rem;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.5);
-  color: #4b5563;
+  color: var(--text-secondary);
 `;
 
 const ChallengeDescription = styled.p`
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin: 0 0 1rem;
   line-height: 1.4;
@@ -84,7 +84,7 @@ const ChallengeDescription = styled.p`
 
 const ProgressBar = styled.div`
   height: 8px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--bg-hover);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -102,7 +102,7 @@ const ProgressInfo = styled.div`
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 0.75rem;
 `;
 
@@ -122,7 +122,7 @@ const ParticipantAvatar = styled.div`
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
-  border: 2px solid white;
+  border: 2px solid var(--bg-secondary);
   margin-left: -8px;
   
   &:first-child {
@@ -132,7 +132,7 @@ const ParticipantAvatar = styled.div`
 
 const ParticipantCount = styled.span`
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-left: 0.5rem;
 `;
 

@@ -9,10 +9,10 @@ const TableContainer = styled.div`
 const StyledTable = styled.table`
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px var(--shadow-color);
 `;
 
 const TableHeader = styled.thead`
@@ -22,18 +22,19 @@ const TableHeader = styled.thead`
 
 const TableRow = styled.tr`
   &:nth-child(even) {
-    background-color: #f8fafc;
+    background-color: var(--bg-tertiary);
   }
 
   &:hover {
-    background-color: #ebf8ff;
+    background-color: var(--bg-hover);
   }
 `;
 
 const TableCell = styled.td`
   padding: 1rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
 `;
 
 const TableHeaderCell = styled.th`

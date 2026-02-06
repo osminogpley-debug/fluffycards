@@ -257,7 +257,7 @@ router.get('/me', authMiddleware, (req, res) => {
 // Update profile (username)
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, isProfilePublic } = req.body;
     
     if (!username || username.trim().length < 3) {
       return res.status(400).json({
@@ -286,9 +286,14 @@ router.put('/profile', authMiddleware, async (req, res) => {
       });
     }
 
+    const updateData = { username: username.trim() };
+    if (typeof isProfilePublic === 'boolean') {
+      updateData.isProfilePublic = isProfilePublic;
+    }
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { username: username.trim() },
+      updateData,
       { new: true }
     ).select('-password');
 

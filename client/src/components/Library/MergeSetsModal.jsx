@@ -18,7 +18,7 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background: var(--modal-bg);
   border-radius: 24px;
   width: 100%;
   max-width: 600px;
@@ -32,13 +32,13 @@ const ModalContent = styled.div`
 
 const ModalHeader = styled.div`
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border-bottom: 2px solid #bae6fd;
+  background: var(--bg-tertiary);
+  border-bottom: 2px solid var(--border-color);
 `;
 
 const ModalTitle = styled.h2`
   margin: 0;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 1.5rem;
   display: flex;
   align-items: center;
@@ -47,7 +47,7 @@ const ModalTitle = styled.h2`
 
 const ModalSubtitle = styled.p`
   margin: 0.5rem 0 0 0;
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 0.95rem;
 `;
 
@@ -55,7 +55,7 @@ const CloseButton = styled.button`
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border: none;
   width: 36px;
   height: 36px;
@@ -70,7 +70,7 @@ const CloseButton = styled.button`
 
   &:hover {
     transform: rotate(90deg) scale(1.1);
-    background: #fee2e2;
+    background: var(--danger-bg);
   }
 `;
 
@@ -82,7 +82,7 @@ const ModalBody = styled.div`
 
 const SectionTitle = styled.h3`
   font-size: 1.1rem;
-  color: #4a5568;
+  color: var(--text-primary);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -101,14 +101,14 @@ const SetItem = styled.div`
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: ${props => props.$selected ? '#e0f2fe' : '#f8fafc'};
+  background: ${props => props.$selected ? 'var(--bg-hover)' : 'var(--bg-tertiary)'};
   border: 2px solid ${props => props.$selected ? '#63b3ed' : 'transparent'};
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${props => props.$selected ? '#e0f2fe' : '#f1f5f9'};
+    background: ${props => props.$selected ? 'var(--bg-hover)' : 'var(--bg-secondary)'};
     transform: translateX(5px);
   }
 `;
@@ -117,8 +117,8 @@ const Checkbox = styled.div`
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  border: 2px solid ${props => props.$checked ? '#63b3ed' : '#cbd5e0'};
-  background: ${props => props.$checked ? '#63b3ed' : 'white'};
+  border: 2px solid ${props => props.$checked ? '#63b3ed' : 'var(--border-color)'};
+  background: ${props => props.$checked ? '#63b3ed' : 'var(--bg-secondary)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -140,18 +140,18 @@ const SetInfo = styled.div`
 
 const SetName = styled.div`
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 0.95rem;
 `;
 
 const SetMeta = styled.div`
   font-size: 0.8rem;
-  color: #718096;
+  color: var(--text-secondary);
   margin-top: 2px;
 `;
 
 const PreviewSection = styled.div`
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: var(--bg-tertiary);
   border-radius: 16px;
   padding: 1.25rem;
   margin-bottom: 1.5rem;
@@ -166,7 +166,7 @@ const PreviewHeader = styled.div`
 
 const PreviewTitle = styled.h4`
   margin: 0;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 1rem;
   display: flex;
   align-items: center;
@@ -191,7 +191,7 @@ const PreviewItem = styled.div`
   display: flex;
   gap: 12px;
   padding: 10px;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 10px;
   margin-bottom: 8px;
   font-size: 0.9rem;
@@ -203,12 +203,12 @@ const PreviewItem = styled.div`
 
 const PreviewTerm = styled.span`
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   min-width: 120px;
 `;
 
 const PreviewDefinition = styled.span`
-  color: #718096;
+  color: var(--text-secondary);
   flex: 1;
 `;
 
@@ -220,16 +220,18 @@ const InputLabel = styled.label`
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #4a5568;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 `;
 
 const TextInput = styled.input`
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   transition: all 0.3s ease;
 
   &:focus {
@@ -246,9 +248,11 @@ const TextInput = styled.input`
 const TextArea = styled.textarea`
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   resize: vertical;
   min-height: 80px;
   font-family: inherit;

@@ -12,6 +12,7 @@ import AchievementsModal from '../components/AchievementsModal';
 import LeaderboardModal from '../components/LeaderboardModal';
 import LevelBadge from '../components/LevelBadge';
 import ChatModal from '../components/ChatModal';
+import { getNotificationCount } from '../services/socialService';
 
 // ===== СТИЛИ =====
 const DashboardContainer = styled.div`
@@ -189,7 +190,7 @@ const Tab = styled.button`
   background: none;
   border: none;
   border-bottom: 3px solid ${props => props.active ? '#63b3ed' : 'transparent'};
-  color: ${props => props.active ? '#63b3ed' : '#6b7280'};
+  color: ${props => props.active ? '#63b3ed' : 'var(--text-secondary)'};
   font-size: 15px;
   font-weight: ${props => props.active ? '600' : '500'};
   cursor: pointer;
@@ -197,10 +198,36 @@ const Tab = styled.button`
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
+  position: relative;
   
   &:hover {
     color: #63b3ed;
     background: var(--bg-hover);
+  }
+`;
+
+const NotificationBadge = styled.span`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+  animation: badgePulse 2s ease-in-out infinite;
+  
+  @keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
   }
 `;
 
@@ -860,6 +887,9 @@ function Dashboard() {
   
   // State для чата
   const [showChat, setShowChat] = useState(false);
+  
+  // State для уведомлений (друзья + сообщения)
+  const [notificationCount, setNotificationCount] = useState({ unreadMessages: 0, pendingRequests: 0, total: 0 });
 
   // State для папок
   const [folders, setFolders] = useState([]);
@@ -965,6 +995,17 @@ function Dashboard() {
     const intervalId = setInterval(fetchData, 30000);
     return () => clearInterval(intervalId);
   }, [fetchData]);
+
+  // Загрузка и polling уведомлений (заявки в друзья + непрочитанные сообщения)
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const data = await getNotificationCount();
+      setNotificationCount(data);
+    };
+    fetchNotifications();
+    const notifInterval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(notifInterval);
+  }, []);
 
   // API вызовы
   const fetchFolders = async () => {
@@ -1150,7 +1191,7 @@ function Dashboard() {
                     </TagBadge>
                   ))}
                   {set.tags.length > 5 && (
-                    <TagBadge style={{ background: '#718096' }}>
+                    <TagBadge style={{ background: 'var(--text-muted)' }}>
                       +{set.tags.length - 5}
                     </TagBadge>
                   )}
@@ -1511,7 +1552,7 @@ function Dashboard() {
               <div 
                 style={{ 
                   fontSize: '0.75rem', 
-                  color: '#718096', 
+                  color: 'var(--text-muted)', 
                   fontFamily: 'monospace',
                   marginTop: '0.25rem',
                   cursor: 'pointer'
@@ -1598,6 +1639,11 @@ function Dashboard() {
           onClick={() => setActiveTab('friends')}
         >
           👥 Друзья
+          {notificationCount.total > 0 && (
+            <NotificationBadge>
+              {notificationCount.total > 99 ? '99+' : notificationCount.total}
+            </NotificationBadge>
+          )}
         </Tab>
       </TabNavigation>
 

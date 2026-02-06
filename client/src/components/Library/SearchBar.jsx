@@ -12,7 +12,7 @@ const SearchWrapper = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-secondary);
   border-radius: 24px;
   box-shadow: 0 4px 20px rgba(99, 179, 237, 0.15);
   border: 2px solid ${props => props.$isFocused ? '#63b3ed' : 'transparent'};
@@ -34,16 +34,16 @@ const SearchInput = styled.input`
   border: none;
   background: transparent;
   font-size: 1rem;
-  color: #2d3748;
+  color: var(--text-primary);
   outline: none;
 
   &::placeholder {
-    color: #a0aec0;
+    color: var(--text-muted);
   }
 `;
 
 const VoiceButton = styled.button`
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: var(--bg-tertiary);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -69,14 +69,14 @@ const VoiceButton = styled.button`
 const ClearButton = styled.button`
   background: none;
   border: none;
-  color: #a0aec0;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 8px;
   font-size: 1rem;
   transition: all 0.2s ease;
 
   &:hover {
-    color: #718096;
+    color: var(--text-secondary);
     transform: rotate(90deg);
   }
 `;
@@ -86,7 +86,7 @@ const AutocompleteDropdown = styled.div`
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 16px;
   margin-top: 8px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
@@ -104,11 +104,11 @@ const AutocompleteItem = styled.div`
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f0f9ff;
+    background: var(--bg-hover);
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border-color);
   }
 `;
 
@@ -119,7 +119,7 @@ const HighlightText = styled.span`
 
 const HistorySection = styled.div`
   padding: 12px 16px;
-  background: #f8fafc;
+  background: var(--bg-tertiary);
 `;
 
 const HistoryHeader = styled.div`
@@ -128,7 +128,7 @@ const HistoryHeader = styled.div`
   align-items: center;
   margin-bottom: 8px;
   font-size: 0.85rem;
-  color: #718096;
+  color: var(--text-secondary);
 `;
 
 const HistoryItem = styled.div`
@@ -136,17 +136,17 @@ const HistoryItem = styled.div`
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 16px;
   margin: 4px;
   font-size: 0.9rem;
-  color: #4a5568;
+  color: var(--text-primary);
   cursor: pointer;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   transition: all 0.2s ease;
 
   &:hover {
-    background: #e0f2fe;
+    background: var(--bg-hover);
     border-color: #63b3ed;
     transform: translateY(-2px);
   }
@@ -179,7 +179,7 @@ const VoiceModal = styled.div`
 `;
 
 const VoiceModalContent = styled.div`
-  background: white;
+  background: var(--modal-bg);
   padding: 2rem;
   border-radius: 24px;
   text-align: center;
@@ -193,7 +193,7 @@ const VoiceIcon = styled.div`
 
 const VoiceText = styled.p`
   font-size: 1.2rem;
-  color: #4a5568;
+  color: var(--text-secondary);
   margin-bottom: 1.5rem;
 `;
 

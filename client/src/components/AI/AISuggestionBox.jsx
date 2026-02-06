@@ -5,9 +5,9 @@ import { PrimaryButton } from '../UI/Buttons';
 const Container = styled.div`
   margin: 1.5rem 0;
   padding: 1.5rem;
-  background: #f8fafc;
+  background: var(--card-bg);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 10px var(--shadow-color);
 `;
 
 const Title = styled.h4`
@@ -23,7 +23,7 @@ const Title = styled.h4`
 
 const SuggestionBox = styled.div`
   padding: 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
   margin-bottom: 1rem;
   border-left: 4px solid #4299e1;
@@ -32,7 +32,7 @@ const SuggestionBox = styled.div`
 const Loading = styled.div`
   padding: 1rem;
   text-align: center;
-  color: #718096;
+  color: var(--text-secondary);
 `;
 
 function AISuggestionBox({ term, onApply }) {

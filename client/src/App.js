@@ -229,6 +229,16 @@ const LogoutButton = styled.button`
   }
 `;
 
+const AuthButton = styled(NavButton)`
+  background: linear-gradient(135deg, #86efac 0%, #4ade80 100%);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.28);
+
+  &:hover {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.32);
+  }
+`;
+
 // Header component with navigation
 function HeaderComponent({ authState, logout }) {
   const navigate = useNavigate();
@@ -249,10 +259,16 @@ function HeaderComponent({ authState, logout }) {
         >
           💙 Поддержать
         </DonateLink>
-        {authState.isAuthenticated && !authState.loading && (
+        {!authState.loading && authState.isAuthenticated && (
           <>
             <NavButton onClick={() => navigate('/dashboard')}>👤 Личный кабинет</NavButton>
             <LogoutButton onClick={logout}>🚪 Выйти</LogoutButton>
+          </>
+        )}
+        {!authState.loading && !authState.isAuthenticated && (
+          <>
+            <NavButton onClick={() => navigate('/login')}>🔑 Вход</NavButton>
+            <AuthButton onClick={() => navigate('/register')}>✨ Регистрация</AuthButton>
           </>
         )}
       </HeaderActions>

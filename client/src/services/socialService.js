@@ -281,3 +281,18 @@ export const copySharedSet = async (shareLink) => {
   }
   return null;
 };
+
+// ==================== NOTIFICATIONS ====================
+
+export const getNotificationCount = async () => {
+  try {
+    const response = await authFetch(`${SOCIAL_API}/notifications/count`);
+    if (response.ok) {
+      const result = await response.json();
+      return result.data;
+    }
+  } catch (error) {
+    console.error('Error fetching notification count:', error);
+  }
+  return { unreadMessages: 0, pendingRequests: 0, total: 0 };
+};

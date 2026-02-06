@@ -67,7 +67,7 @@ const Tabs = styled.div`
 
 const Tab = styled.button`
   background: ${props => props.$active ? '#63b3ed' : 'transparent'};
-  color: ${props => props.$active ? 'white' : '#4a5568'};
+  color: ${props => props.$active ? 'white' : 'var(--text-secondary)'};
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -93,12 +93,12 @@ const UserCard = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background: #f7fafc;
+  background: var(--bg-tertiary);
   border-radius: 12px;
   transition: all 0.2s ease;
   
   &:hover {
-    background: #edf2f7;
+    background: var(--bg-hover);
   }
 `;
 
@@ -140,7 +140,7 @@ const UserName = styled.div`
 
 const UserMeta = styled.div`
   font-size: 0.85rem;
-  color: #718096;
+  color: var(--text-secondary);
 `;
 
 const Actions = styled.div`
