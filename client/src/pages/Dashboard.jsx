@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef, useContext } from 'rea
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import { API_ROUTES, authFetch } from '../constants/api';
+import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import { useTheme, avatars } from '../contexts/ThemeContext';
 import GamificationPanel from '../components/GamificationPanel';
 import SocialFeatures from '../components/SocialFeatures';
@@ -38,24 +38,6 @@ const UserInfo = styled.div`
   align-items: center;
   gap: 16px;
 `;
-  position: relative;
-  background: none;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-  
-  &:hover {
-    background: var(--bg-tertiary);
-  }
-  
-  .icon {
-    font-size: 18px;
-  }
-`;
 const Avatar = styled.div`
   width: 64px;
   height: 64px;
@@ -66,6 +48,14 @@ const Avatar = styled.div`
   justify-content: center;
   font-size: 28px;
   box-shadow: 0 4px 12px rgba(99, 179, 237, 0.3);
+  overflow: hidden;
+`;
+
+const AvatarImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 `;
 
 const UserDetails = styled.div`
@@ -929,6 +919,12 @@ function Dashboard() {
   // State для уведомлений (друзья + сообщения)
   const [notificationCount, setNotificationCount] = useState({ unreadMessages: 0, pendingRequests: 0, total: 0 });
 
+  const resolveProfileImage = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+    return url;
+  };
+
   // State для папок
   const [folders, setFolders] = useState([]);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
@@ -1581,7 +1577,13 @@ function Dashboard() {
       {/* Верхняя панель пользователя */}
       <UserHeader>
         <UserInfo>
-          <Avatar>{avatars.find(a => a.id === avatar)?.emoji || '👤'}</Avatar>
+          <Avatar>
+            {user?.profileImage ? (
+              <AvatarImage src={resolveProfileImage(user.profileImage)} alt="Avatar" />
+            ) : (
+              avatars.find(a => a.id === avatar)?.emoji || '👤'
+            )}
+          </Avatar>
           <UserDetails $role={userRole}>
             <h1>{user?.username || user?.name || 'Пользователь'}</h1>
             <span className="role">

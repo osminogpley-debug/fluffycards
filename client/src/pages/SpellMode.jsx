@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
@@ -332,6 +332,8 @@ function SpellMode() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentSet, setCurrentSet] = useState(null);
+  const sessionStartRef = useRef(Date.now());
+  const statsRecordedRef = useRef(false);
 
   // Загрузка набора
   useEffect(() => {
@@ -353,6 +355,8 @@ function SpellMode() {
       
       const setData = await response.json();
       setCurrentSet(setData);
+      sessionStartRef.current = Date.now();
+      statsRecordedRef.current = false;
       
       if (setData.flashcards && setData.flashcards.length > 0) {
         // Фильтруем только карточки с терминами на английском (для произношения)
@@ -474,6 +478,8 @@ function SpellMode() {
     setAttempts(0);
     setStreak(0);
     setIsComplete(false);
+    sessionStartRef.current = Date.now();
+    statsRecordedRef.current = false;
   };
 
   const handleKeyPress = (e) => {
@@ -487,6 +493,31 @@ function SpellMode() {
   };
 
   const accuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
+
+  const recordStatsSession = async () => {
+    try {
+      const timeSpent = Math.max(0, Math.round((Date.now() - sessionStartRef.current) / 1000));
+      await authFetch(API_ROUTES.DATA.STATS_SESSION, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'spell',
+          cardsCount: terms.length,
+          correctCount,
+          timeSpent
+        })
+      });
+    } catch (err) {
+      console.error('Error recording spell stats:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isComplete && !statsRecordedRef.current && terms.length > 0) {
+      statsRecordedRef.current = true;
+      recordStatsSession();
+    }
+  }, [isComplete, terms.length, correctCount]);
 
   const handleSelectSet = (set) => {
     navigate(`/learn/spell?setId=${set._id || set.id}`);

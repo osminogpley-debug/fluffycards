@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { API_ROUTES, authFetch } from '../constants/api';
+import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import LevelBadge from './LevelBadge';
 
 
@@ -151,6 +151,14 @@ const TopUserAvatar = styled.div`
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   margin-bottom: 12px;
   position: relative;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+  }
   
   &::after {
     content: '${props => props.$rank}';
@@ -296,6 +304,14 @@ const UserCell = styled.div`
     justify-content: center;
     font-size: 18px;
     flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
   }
   
   .info {
@@ -436,6 +452,20 @@ function LeaderboardModal({ isOpen, onClose, isDark = false, currentUserId }) {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
+  const resolveProfileImage = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+    return url;
+  };
+
+  const renderAvatar = (avatarUrl, fallback = '👤') => {
+    const resolved = resolveProfileImage(avatarUrl);
+    if (resolved) {
+      return <img src={resolved} alt="Avatar" />;
+    }
+    return <span>{fallback}</span>;
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchLeaderboard();
@@ -452,7 +482,14 @@ function LeaderboardModal({ isOpen, onClose, isDark = false, currentUserId }) {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
-          setLeaderboard(result.data || []);
+          const normalized = (result.data || []).map((entry) => ({
+            id: entry.userId || entry.id,
+            username: entry.username,
+            level: entry.level,
+            totalXp: entry.totalXp,
+            avatarUrl: entry.profileImage || entry.avatar
+          }));
+          setLeaderboard(normalized);
         } else {
           setLeaderboard([]);
         }
@@ -498,7 +535,9 @@ function LeaderboardModal({ isOpen, onClose, isDark = false, currentUserId }) {
             <TopThreeSection $isDark={isDark}>
               {topThree[1] && (
                 <TopUserCard className="second">
-                  <TopUserAvatar $rank={2}>{topThree[1].avatar || '👤'}</TopUserAvatar>
+                  <TopUserAvatar $rank={2}>
+                    {renderAvatar(topThree[1].avatarUrl, topThree[1].username?.[0]?.toUpperCase())}
+                  </TopUserAvatar>
                   <TopUserInfo $rank={2} $isDark={isDark}>
                     <div className="username">{topThree[1].username}</div>
                     <div className="level">
@@ -512,7 +551,9 @@ function LeaderboardModal({ isOpen, onClose, isDark = false, currentUserId }) {
               {topThree[0] && (
                 <TopUserCard className="first">
                   <CrownIcon>👑</CrownIcon>
-                  <TopUserAvatar $rank={1}>{topThree[0].avatar || '👤'}</TopUserAvatar>
+                  <TopUserAvatar $rank={1}>
+                    {renderAvatar(topThree[0].avatarUrl, topThree[0].username?.[0]?.toUpperCase())}
+                  </TopUserAvatar>
                   <TopUserInfo $rank={1} $isDark={isDark}>
                     <div className="username">{topThree[0].username}</div>
                     <div className="level">
@@ -525,7 +566,9 @@ function LeaderboardModal({ isOpen, onClose, isDark = false, currentUserId }) {
               
               {topThree[2] && (
                 <TopUserCard className="third">
-                  <TopUserAvatar $rank={3}>{topThree[2].avatar || '👤'}</TopUserAvatar>
+                  <TopUserAvatar $rank={3}>
+                    {renderAvatar(topThree[2].avatarUrl, topThree[2].username?.[0]?.toUpperCase())}
+                  </TopUserAvatar>
                   <TopUserInfo $rank={3} $isDark={isDark}>
                     <div className="username">{topThree[2].username}</div>
                     <div className="level">
@@ -561,7 +604,9 @@ function LeaderboardModal({ isOpen, onClose, isDark = false, currentUserId }) {
                         {rank > 10 && rank}
                       </RankCell>
                       <UserCell $isDark={isDark}>
-                        <div className="avatar">{user.avatar}</div>
+                        <div className="avatar">
+                          {renderAvatar(user.avatarUrl, user.username?.[0]?.toUpperCase())}
+                        </div>
                         <div className="info">
                           <div className="username">{user.username}</div>
                           {isCurrentUser && <span className="you-badge">ВЫ</span>}

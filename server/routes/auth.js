@@ -150,6 +150,11 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Heartbeat to keep lastSeen fresh while user is on the site
+router.post('/heartbeat', authMiddleware, async (req, res) => {
+  res.json({ success: true });
+});
+
 // Google login/register
 router.post('/google', async (req, res) => {
   try {
@@ -257,7 +262,7 @@ router.get('/me', authMiddleware, (req, res) => {
 // Update profile (username)
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
-    const { username, isProfilePublic } = req.body;
+    const { username, isProfilePublic, profileImage } = req.body;
     
     if (!username || username.trim().length < 3) {
       return res.status(400).json({
@@ -289,6 +294,9 @@ router.put('/profile', authMiddleware, async (req, res) => {
     const updateData = { username: username.trim() };
     if (typeof isProfilePublic === 'boolean') {
       updateData.isProfilePublic = isProfilePublic;
+    }
+    if (typeof profileImage === 'string' && profileImage.trim()) {
+      updateData.profileImage = profileImage.trim();
     }
 
     const user = await User.findByIdAndUpdate(

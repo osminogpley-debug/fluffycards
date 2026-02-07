@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
@@ -326,6 +326,8 @@ function WriteMode() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentSet, setCurrentSet] = useState(null);
+  const sessionStartRef = useRef(Date.now());
+  const statsRecordedRef = useRef(false);
 
   // Загрузка набора
   useEffect(() => {
@@ -347,6 +349,8 @@ function WriteMode() {
       
       const setData = await response.json();
       setCurrentSet(setData);
+      sessionStartRef.current = Date.now();
+      statsRecordedRef.current = false;
       
       if (setData.flashcards && setData.flashcards.length > 0) {
         const cards = setData.flashcards.map((card, idx) => ({ ...card, id: card._id || idx + 1 }));
@@ -456,7 +460,34 @@ function WriteMode() {
     setStreak(0);
     setAnsweredCards([]);
     setIsComplete(false);
+    sessionStartRef.current = Date.now();
+    statsRecordedRef.current = false;
   };
+
+  const recordStatsSession = async () => {
+    try {
+      const timeSpent = Math.max(0, Math.round((Date.now() - sessionStartRef.current) / 1000));
+      await authFetch(API_ROUTES.DATA.STATS_SESSION, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'write',
+          cardsCount: flashcards.length,
+          correctCount,
+          timeSpent
+        })
+      });
+    } catch (err) {
+      console.error('Error recording write stats:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isComplete && !statsRecordedRef.current && flashcards.length > 0) {
+      statsRecordedRef.current = true;
+      recordStatsSession();
+    }
+  }, [isComplete, flashcards.length, correctCount]);
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {

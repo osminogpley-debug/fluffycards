@@ -29,15 +29,25 @@ router.post('/session', authMiddleware, async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // Calculate new accuracy
+    // Calculate new accuracy (% correct over total attempts)
     const accuracyUpdate = await UserStats.aggregate([
       { $match: { userId: req.user._id } },
-      { $project: { accuracy: { $avg: '$sessionHistory.correctAnswers' } } }  
+      {
+        $project: {
+          totalCorrect: { $sum: '$sessionHistory.correctAnswers' },
+          totalAttempted: { $sum: '$sessionHistory.cardsAttempted' }
+        }
+      }
     ]);
+
+    const totals = accuracyUpdate[0] || { totalCorrect: 0, totalAttempted: 0 };
+    const accuracy = totals.totalAttempted > 0
+      ? (totals.totalCorrect / totals.totalAttempted) * 100
+      : 0;
 
     await UserStats.updateOne(
       { userId: req.user._id },
-      { $set: { accuracy: accuracyUpdate[0].accuracy } }
+      { $set: { accuracy } }
     );
 
     res.json({ success: true, stats });

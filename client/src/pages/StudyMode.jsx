@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
@@ -69,11 +69,13 @@ const ColumnsContainer = styled.div`
 `;
 
 const Column = styled.div`
-  background: ${({ color }) => color};
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 1rem;
   min-height: 120px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color);
+  border-top: 6px solid ${({ color }) => color};
 `;
 
 const ColumnHeader = styled.div`
@@ -301,13 +303,13 @@ const SetInfo = styled.div`
   
   h3 {
     margin: 0 0 0.25rem 0;
-    color: #0369a1;
+    color: var(--text-primary);
     font-size: 1.1rem;
   }
   
   p {
     margin: 0;
-    color: #0ea5e9;
+    color: var(--text-secondary);
     font-size: 0.9rem;
   }
 `;
@@ -357,6 +359,8 @@ function StudyMode() {
   const [error, setError] = useState(null);
   const [currentSet, setCurrentSet] = useState(null);
   const [options, setOptions] = useState([]);
+  const sessionStartRef = useRef(Date.now());
+  const statsRecordedRef = useRef(false);
 
   // Загрузка набора
   useEffect(() => {
@@ -378,6 +382,8 @@ function StudyMode() {
       
       const setData = await response.json();
       setCurrentSet(setData);
+      sessionStartRef.current = Date.now();
+      statsRecordedRef.current = false;
       
       if (setData.flashcards && setData.flashcards.length > 0) {
         const cards = setData.flashcards.map((card, idx) => ({ ...card, id: card._id || idx + 1 }));
@@ -523,12 +529,39 @@ function StudyMode() {
     setCorrectCount(0);
     setAttempts(0);
     setShowFeedback(false);
+    sessionStartRef.current = Date.now();
+    statsRecordedRef.current = false;
   };
 
   const getCardTerm = (id) => flashcards.find(c => c.id === id)?.term;
 
   const progress = flashcards.length > 0 ? Math.round(((familiar.length + mastered.length) / flashcards.length) * 100) : 0;
   const accuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
+
+  const recordStatsSession = async () => {
+    try {
+      const timeSpent = Math.max(0, Math.round((Date.now() - sessionStartRef.current) / 1000));
+      await authFetch(API_ROUTES.DATA.STATS_SESSION, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'study',
+          cardsCount: flashcards.length,
+          correctCount,
+          timeSpent
+        })
+      });
+    } catch (err) {
+      console.error('Error recording study stats:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isComplete && !statsRecordedRef.current && flashcards.length > 0) {
+      statsRecordedRef.current = true;
+      recordStatsSession();
+    }
+  }, [isComplete, flashcards.length, correctCount]);
 
   const handleSelectSet = (set) => {
     navigate(`/learn/study?setId=${set._id || set.id}`);

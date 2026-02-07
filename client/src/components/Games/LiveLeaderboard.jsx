@@ -3,16 +3,16 @@ import styled from 'styled-components';
 
 // Контейнер лидерборда
 const LeaderboardContainer = styled.div`
-  background: linear-gradient(135deg, #fff5f7 0%, #ffe4ec 100%);
+  background: var(--card-bg, linear-gradient(135deg, #fff5f7 0%, #ffe4ec 100%));
   border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 8px 32px rgba(255, 182, 193, 0.3);
-  border: 3px solid #ffcdd2;
+  box-shadow: 0 8px 32px var(--shadow-color, rgba(255, 182, 193, 0.3));
+  border: 1px solid var(--border-color, #ffcdd2);
 `;
 
 const Title = styled.h2`
   text-align: center;
-  color: #e91e63;
+  color: var(--text-primary, #e91e63);
   font-size: 2rem;
   margin-bottom: 1.5rem;
   
@@ -35,17 +35,17 @@ const RaceTrack = styled.div`
 
 // Дорожка для каждой команды
 const TrackLane = styled.div`
-  background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+  background: var(--bg-secondary, linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%));
   border-radius: 16px;
   padding: 1rem;
   position: relative;
   overflow: hidden;
-  border: 2px solid #dee2e6;
+  border: 1px solid var(--border-color, #dee2e6);
   transition: all 0.3s ease;
   
   &:hover {
     border-color: #ffb6c1;
-    box-shadow: 0 4px 15px rgba(255, 182, 193, 0.3);
+    box-shadow: 0 4px 15px var(--shadow-color, rgba(255, 182, 193, 0.3));
   }
 `;
 
@@ -65,7 +65,7 @@ const TeamEmoji = styled.span`
 const TeamName = styled.span`
   font-weight: 700;
   font-size: 1.2rem;
-  color: #2d3748;
+  color: var(--text-primary, #2d3748);
 `;
 
 const TeamScore = styled.span`
@@ -80,7 +80,7 @@ const TeamScore = styled.span`
 
 // Прогресс бар
 const ProgressContainer = styled.div`
-  background: #e2e8f0;
+  background: var(--bg-tertiary, #e2e8f0);
   border-radius: 12px;
   height: 24px;
   overflow: hidden;
@@ -228,7 +228,7 @@ const LiveLeaderboard = ({ teams, totalQuestions, showPodium = false }) => {
             </PodiumPlace>
           ))}
         </PodiumContainer>
-        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+        <div style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--text-primary)' }}>
           <h3>🎉 {top3[0].name} побеждают! 🎉</h3>
         </div>
       </LeaderboardContainer>

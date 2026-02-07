@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import LiveLeaderboard from '../components/Games/LiveLeaderboard';
 import LiveRoom from '../components/Games/LiveRoom';
 import { API_ROUTES, authFetch } from '../constants/api';
+import { AuthContext } from '../App';
 import { 
   createRoom, 
   joinRoom, 
@@ -559,12 +560,14 @@ const DEFAULT_QUESTIONS = [
 // ==================== КОМПОНЕНТ ====================
 const LiveGame = () => {
   const navigate = useNavigate();
+  const { authState } = useContext(AuthContext);
+  const accountName = authState?.user?.username || authState?.user?.name || '';
   
   // Состояния
   const [role, setRole] = useState(null); // 'teacher' | 'student'
   const [gameState, setGameState] = useState('select-role'); // select-role | select-set | join | lobby | playing | finished
   const [pin, setPin] = useState('');
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(accountName);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [roomData, setRoomData] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -574,6 +577,11 @@ const LiveGame = () => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
   const [teamScores, setTeamScores] = useState([]);
+    useEffect(() => {
+      if (accountName && !playerName) {
+        setPlayerName(accountName);
+      }
+    }, [accountName, playerName]);
   
   // Для учителя - выбор набора карточек
   const [userSets, setUserSets] = useState([]);
@@ -645,7 +653,7 @@ const LiveGame = () => {
     setRole(null);
     setGameState('select-role');
     setPin('');
-    setPlayerName('');
+    setPlayerName(accountName);
     setSelectedTeam(null);
     setRoomData(null);
     setCurrentQuestion(0);
@@ -971,16 +979,6 @@ const LiveGame = () => {
                     placeholder="000000"
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                  />
-                </InputGroup>
-                
-                <InputGroup>
-                  <Label>👤 Ваше имя</Label>
-                  <Input 
-                    type="text"
-                    placeholder="Введите имя"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
                   />
                 </InputGroup>
                 

@@ -95,6 +95,22 @@ const CategorySelect = styled.select`
   padding: 4px;
 `;
 
+const FilterInput = styled.input`
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  padding: 4px 2px;
+  min-width: 140px;
+
+  &::placeholder {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+`;
+
 const SortButton = styled.button`
   background: ${props => props.$active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'var(--bg-secondary)'};
   color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
@@ -112,6 +128,24 @@ const SortButton = styled.button`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(99, 179, 237, 0.2);
+  }
+`;
+
+const ClearFiltersButton = styled.button`
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-color);
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+    transform: translateY(-1px);
   }
 `;
 
@@ -138,6 +172,32 @@ const MergeButton = styled.button`
 
   &:active {
     transform: translateY(0) scale(0.98);
+  }
+`;
+
+const ActiveFilters = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem auto 0;
+  max-width: 1200px;
+`;
+
+const FilterChip = styled.button`
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+    transform: translateY(-1px);
   }
 `;
 
@@ -350,17 +410,25 @@ const Toast = styled.div`
 
 // Categories list
 const categories = ['Все', 'Языки', 'Наука', 'История', 'Математика', 'Искусство', 'Технологии', 'Литература'];
+const languageOptions = ['Все', 'Английский', 'Испанский', 'Французский', 'Немецкий', 'Китайский', 'Японский', 'Корейский', 'Русский', 'Итальянский'];
+const levelOptions = ['Все', 'Начинающий', 'Средний', 'Продвинутый', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+const examOptions = ['Все', 'ЕГЭ', 'ОГЭ', 'TOEFL', 'IELTS', 'HSK', 'JLPT', 'DELF', 'SAT', 'GRE'];
 
 function PublicLibrary() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [selectedLanguage, setSelectedLanguage] = useState('Все');
+  const [selectedLevel, setSelectedLevel] = useState('Все');
+  const [selectedExam, setSelectedExam] = useState('Все');
+  const [selectedTag, setSelectedTag] = useState('');
+  const [tagInput, setTagInput] = useState('');
   const [sortBy, setSortBy] = useState('popular'); // popular, new, alphabetical
   const [sets, setSets] = useState([]);
-  const [filteredSets, setFilteredSets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalSets, setTotalSets] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
@@ -375,77 +443,61 @@ function PublicLibrary() {
     return { totalCards, uniqueAuthors };
   }, [sets]);
 
-  // Load public sets from API
+  // Debounce tag input to avoid excessive requests
   useEffect(() => {
-    const loadSets = async () => {
-      setLoading(true);
-      try {
-        const apiUrl = `${API_ROUTES.DATA.SETS}/public`;
-        const response = await fetch(apiUrl);
-        const result = await response.json();
-        
-        if (result.success) {
-          setSets(result.data || []);
-          setTotalSets(result.pagination?.total || 0);
-        } else {
-          setSets([]);
-          setTotalSets(0);
-        }
-      } catch (error) {
-        console.error('Error loading public sets:', error);
+    const handle = setTimeout(() => {
+      setSelectedTag(tagInput.trim());
+    }, 300);
+
+    return () => clearTimeout(handle);
+  }, [tagInput]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedLanguage, selectedLevel, selectedExam, selectedTag, sortBy]);
+
+  const loadSets = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('search', searchQuery);
+      if (selectedCategory !== 'Все') params.set('category', selectedCategory);
+      if (selectedLanguage !== 'Все') params.set('language', selectedLanguage);
+      if (selectedLevel !== 'Все') params.set('level', selectedLevel);
+      if (selectedExam !== 'Все') params.set('exam', selectedExam);
+      if (selectedTag) params.set('tags', selectedTag);
+      params.set('sort', sortBy);
+      params.set('page', currentPage.toString());
+      params.set('limit', itemsPerPage.toString());
+
+      const apiUrl = `${API_ROUTES.DATA.SETS}/public?${params.toString()}`;
+      const response = await fetch(apiUrl);
+      const result = await response.json();
+
+      if (result.success) {
+        setSets(result.data || []);
+        setTotalSets(result.pagination?.total || 0);
+        setTotalPages(result.pagination?.totalPages || 1);
+      } else {
         setSets([]);
         setTotalSets(0);
-      } finally {
-        setLoading(false);
+        setTotalPages(1);
       }
-    };
-    loadSets();
-  }, []);
+    } catch (error) {
+      console.error('Error loading public sets:', error);
+      setSets([]);
+      setTotalSets(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, selectedCategory, selectedLanguage, selectedLevel, selectedExam, selectedTag, sortBy, currentPage, itemsPerPage]);
 
-  // Filter and sort sets
+  // Load public sets from API
   useEffect(() => {
-    let result = [...sets];
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(set => 
-        set.title?.toLowerCase().includes(query) ||
-        set.description?.toLowerCase().includes(query) ||
-        set.tags?.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-
-    // Category filter
-    if (selectedCategory !== 'Все') {
-      result = result.filter(set => set.tags?.includes(selectedCategory));
-    }
-
-    // Sort
-    switch (sortBy) {
-      case 'popular':
-        result.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-        break;
-      case 'new':
-        result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-        break;
-      case 'alphabetical':
-        result.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-        break;
-      default:
-        break;
-    }
-
-    setFilteredSets(result);
-    setCurrentPage(1);
-  }, [sets, searchQuery, selectedCategory, sortBy]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredSets.length / itemsPerPage);
-  const paginatedSets = filteredSets.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+    loadSets();
+  }, [loadSets]);
 
   const handleMerge = (mergedData) => {
     setToastMessage(`🔀 Наборы объединены в "${mergedData.name}"!`);
@@ -465,6 +517,25 @@ function PublicLibrary() {
 
   const handleCreateSet = () => {
     navigate('/dashboard');
+  };
+
+  const hasActiveFilters = Boolean(
+    searchQuery ||
+    selectedCategory !== 'Все' ||
+    selectedLanguage !== 'Все' ||
+    selectedLevel !== 'Все' ||
+    selectedExam !== 'Все' ||
+    selectedTag
+  );
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('Все');
+    setSelectedLanguage('Все');
+    setSelectedLevel('Все');
+    setSelectedExam('Все');
+    setTagInput('');
+    setSelectedTag('');
   };
 
   // Empty library state
@@ -556,6 +627,51 @@ function PublicLibrary() {
           </FilterGroup>
 
           <FilterGroup>
+            <FilterLabel>🌍 Язык:</FilterLabel>
+            <CategorySelect
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+            >
+              {languageOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </CategorySelect>
+          </FilterGroup>
+
+          <FilterGroup>
+            <FilterLabel>📈 Уровень:</FilterLabel>
+            <CategorySelect
+              value={selectedLevel}
+              onChange={(e) => setSelectedLevel(e.target.value)}
+            >
+              {levelOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </CategorySelect>
+          </FilterGroup>
+
+          <FilterGroup>
+            <FilterLabel>🎓 Экзамен:</FilterLabel>
+            <CategorySelect
+              value={selectedExam}
+              onChange={(e) => setSelectedExam(e.target.value)}
+            >
+              {examOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </CategorySelect>
+          </FilterGroup>
+
+          <FilterGroup>
+            <FilterLabel>🔖 Тег:</FilterLabel>
+            <FilterInput
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              placeholder="Введите тег"
+            />
+          </FilterGroup>
+
+          <FilterGroup>
             <FilterLabel>📊 Сортировка:</FilterLabel>
             <SortButton 
               $active={sortBy === 'popular'}
@@ -577,10 +693,51 @@ function PublicLibrary() {
             </SortButton>
           </FilterGroup>
 
+          {hasActiveFilters && (
+            <ClearFiltersButton onClick={clearAllFilters}>
+              ✨ Сбросить фильтры
+            </ClearFiltersButton>
+          )}
+
           <MergeButton onClick={() => setIsMergeModalOpen(true)}>
             🔀 Объединить наборы
           </MergeButton>
         </FiltersSection>
+
+        {hasActiveFilters && (
+          <ActiveFilters>
+            {searchQuery && (
+              <FilterChip onClick={() => setSearchQuery('')}>
+                🔍 {searchQuery} ×
+              </FilterChip>
+            )}
+            {selectedCategory !== 'Все' && (
+              <FilterChip onClick={() => setSelectedCategory('Все')}>
+                🏷️ {selectedCategory} ×
+              </FilterChip>
+            )}
+            {selectedLanguage !== 'Все' && (
+              <FilterChip onClick={() => setSelectedLanguage('Все')}>
+                🌍 {selectedLanguage} ×
+              </FilterChip>
+            )}
+            {selectedLevel !== 'Все' && (
+              <FilterChip onClick={() => setSelectedLevel('Все')}>
+                📈 {selectedLevel} ×
+              </FilterChip>
+            )}
+            {selectedExam !== 'Все' && (
+              <FilterChip onClick={() => setSelectedExam('Все')}>
+                🎓 {selectedExam} ×
+              </FilterChip>
+            )}
+            {selectedTag && (
+              <FilterChip onClick={() => { setTagInput(''); setSelectedTag(''); }}>
+                🔖 {selectedTag} ×
+              </FilterChip>
+            )}
+          </ActiveFilters>
+        )}
       </ControlsContainer>
 
       {loading ? (
@@ -588,13 +745,13 @@ function PublicLibrary() {
           <LoadingSpinner />
           <LoadingText>Загружаем библиотеку... ✨</LoadingText>
         </LoadingContainer>
-      ) : sets.length === 0 ? (
+      ) : totalSets === 0 && !hasActiveFilters ? (
         renderEmptyLibrary()
       ) : (
         <>
           <SetsGrid>
-            {paginatedSets.length > 0 ? (
-              paginatedSets.map((set, index) => (
+            {sets.length > 0 ? (
+              sets.map((set, index) => (
                 <SetCard
                   key={set._id}
                   set={set}

@@ -96,7 +96,8 @@ const LinkInput = styled.input`
   border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 0.9rem;
-  background: #f7fafc;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
@@ -118,12 +119,14 @@ const CommentForm = styled.div`
 const TextArea = styled.textarea`
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
@@ -140,7 +143,8 @@ const CommentList = styled.div`
 
 const CommentItem = styled.div`
   padding: 1rem;
-  background: #f7fafc;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
 `;
 
@@ -174,12 +178,12 @@ const AuthorName = styled.span`
 `;
 
 const CommentDate = styled.span`
-  color: #a0aec0;
+  color: var(--text-muted);
   font-size: 0.85rem;
 `;
 
 const CommentText = styled.p`
-  color: #4a5568;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin: 0;
 `;
@@ -199,7 +203,7 @@ const DeleteButton = styled.button`
 const EmptyState = styled.div`
   text-align: center;
   padding: 2rem;
-  color: #a0aec0;
+  color: var(--text-muted);
 `;
 
 function SocialFeatures({ setId, isOwner, user }) {

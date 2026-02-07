@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { PrimaryButton, SecondaryButton } from './UI/Buttons';
@@ -202,25 +202,59 @@ function FriendsList({ user }) {
   
   const isOnline = (lastSeen) => {
     if (!lastSeen) return false;
-    return (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000; // 5 min
+    return (Date.now() - new Date(lastSeen).getTime()) < 90 * 1000; // 90 sec
   };
   
   const handleUserClick = (userId) => {
     navigate(`/users/${userId}`);
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const pollRef = useRef(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     const [friendsData, requestsData] = await Promise.all([
       getFriends(),
       getFriendRequests()
     ]);
     setFriends(friendsData);
     setRequests(requestsData);
-  };
+  }, []);
+
+  useEffect(() => {
+    const startPolling = () => {
+      if (pollRef.current) return;
+      loadData();
+      pollRef.current = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          loadData();
+        }
+      }, 30000);
+    };
+
+    const stopPolling = () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+
+    startPolling();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [loadData]);
 
   const handleSearch = async () => {
     if (searchQuery.length < 2) return;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
-import { API_ROUTES, authFetch } from '../constants/api';
+import { authFetch, FILE_BASE_URL } from '../constants/api';
 import { useTheme, themes, fonts, avatars } from '../contexts/ThemeContext';
 import { AuthContext } from '../App';
 
@@ -63,6 +63,45 @@ const Avatar = styled.div`
   justify-content: center;
   font-size: 3rem;
   flex-shrink: 0;
+  overflow: hidden;
+`;
+
+const AvatarImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+`;
+
+const AvatarUploadGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const AvatarUploadButton = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--bg-secondary);
+    border-color: #63b3ed;
+  }
+`;
+
+const AvatarHint = styled.span`
+  font-size: 0.8rem;
+  color: var(--text-muted);
 `;
 
 const AvatarInfo = styled.div`
@@ -134,31 +173,6 @@ const Input = styled.input`
   }
 `;
 
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
-`;
-
-const StatCard = styled.div`
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  padding: 1.5rem;
-  border-radius: 16px;
-  text-align: center;
-`;
-
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: 700;
-  color: #63b3ed;
-`;
-
-const StatLabel = styled.div`
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
-`;
 
 const ButtonGroup = styled.div`
   display: flex;
@@ -314,14 +328,9 @@ function ProfilePage() {
   const { theme, setTheme, themes, font, setFont, fonts, avatar, setAvatar, avatars } = useTheme();
   const { setAuthState } = useContext(AuthContext);
   const [user, setUser] = useState(null);
-  const [stats, setStats] = useState({
-    setsCreated: 0,
-    cardsStudied: 0,
-    testsPassed: 0,
-    streakDays: 0
-  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [message, setMessage] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
@@ -332,6 +341,12 @@ function ProfilePage() {
   useEffect(() => {
     fetchUserData();
   }, []);
+
+  const resolveProfileImage = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+    return url;
+  };
 
   const fetchUserData = async () => {
     try {
@@ -357,18 +372,6 @@ function ProfilePage() {
         }));
       }
       
-      // Fetch stats
-      const statsUrl = `http://${window.location.hostname}:5001/api/stats`;
-      const statsRes = await authFetch(statsUrl);
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats({
-          setsCreated: statsData.data?.setsCreated || 0,
-          cardsStudied: statsData.data?.cardsStudied || 0,
-          testsPassed: statsData.data?.testsPassed || 0,
-          streakDays: statsData.data?.streakDays || 0
-        });
-      }
     } catch (error) {
       console.error('Error fetching user data:', error);
       setMessage({ type: 'error', text: 'Ошибка загрузки данных' });
@@ -384,7 +387,11 @@ function ProfilePage() {
       const res = await authFetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: formData.username, isProfilePublic: formData.isProfilePublic })
+        body: JSON.stringify({
+          username: formData.username,
+          isProfilePublic: formData.isProfilePublic,
+          profileImage: user?.profileImage
+        })
       });
       
       const data = await res.json();
@@ -417,6 +424,61 @@ function ProfilePage() {
     }));
   };
 
+  const handleAvatarUpload = async (file) => {
+    if (!file) return;
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setMessage({ type: 'error', text: 'Файл слишком большой (макс. 5 МБ)' });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('image', file);
+      const token = localStorage.getItem('token');
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formDataUpload
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData?.data?.imageUrl) {
+        throw new Error(uploadData?.message || 'Ошибка загрузки изображения');
+      }
+
+      const apiUrl = `http://${window.location.hostname}:5001/api/auth/profile`;
+      const res = await authFetch(apiUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          isProfilePublic: formData.isProfilePublic,
+          profileImage: uploadData.data.imageUrl
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Ошибка сохранения профиля');
+      }
+
+      setUser(data.user);
+      setAuthState(prev => ({
+        ...prev,
+        isAuthenticated: true,
+        user: data.user,
+        role: data.user?.role || prev.role
+      }));
+      setMessage({ type: 'success', text: 'Аватар обновлен ✅' });
+      setTimeout(() => setMessage(null), 2000);
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      setMessage({ type: 'error', text: error.message || 'Ошибка загрузки' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   if (loading) {
     return (
       <Container>
@@ -434,7 +496,11 @@ function ProfilePage() {
       <ProfileCard>
         <AvatarSection>
           <Avatar style={{fontSize: '3rem'}}>
-            {avatars.find(a => a.id === avatar)?.emoji || '👤'}
+            {user?.profileImage ? (
+              <AvatarImage src={resolveProfileImage(user.profileImage)} alt="Avatar" />
+            ) : (
+              avatars.find(a => a.id === avatar)?.emoji || '👤'
+            )}
           </Avatar>
           <AvatarInfo>
             <UserName>{user?.username || 'Пользователь'}</UserName>
@@ -453,29 +519,24 @@ function ProfilePage() {
               <UserID>🆔 Загрузка...</UserID>
             )}
           </AvatarInfo>
+          <AvatarUploadGroup>
+            <AvatarUploadButton>
+              {uploadingAvatar ? '⏳ Загрузка...' : '📷 Загрузить фото'}
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAvatarUpload(file);
+                  e.target.value = '';
+                }}
+                disabled={uploadingAvatar}
+              />
+            </AvatarUploadButton>
+            <AvatarHint>JPG/PNG/WebP, до 5 МБ</AvatarHint>
+          </AvatarUploadGroup>
         </AvatarSection>
-      </ProfileCard>
-
-      <ProfileCard>
-        <SectionTitle>📊 Статистика</SectionTitle>
-        <StatsGrid>
-          <StatCard>
-            <StatValue>{stats.setsCreated}</StatValue>
-            <StatLabel>Наборов создано</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.cardsStudied}</StatValue>
-            <StatLabel>Карточек изучено</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.testsPassed}</StatValue>
-            <StatLabel>Тестов пройдено</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.streakDays}</StatValue>
-            <StatLabel>Дней подряд</StatLabel>
-          </StatCard>
-        </StatsGrid>
       </ProfileCard>
 
       <ProfileCard>

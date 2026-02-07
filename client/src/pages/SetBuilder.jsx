@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import { API_ROUTES, authFetch } from '../constants/api';
+import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import { pinyin } from 'pinyin-pro';
 
 import VoiceInput from '../components/VoiceInput';
@@ -14,6 +14,12 @@ const isChinese = (text) => {
   if (!text || typeof text !== 'string') return false;
   const chineseRegex = /[\u4e00-\u9fff\u3400-\u4dbf]/;
   return chineseRegex.test(text);
+};
+
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+  return url;
 };
 
 // Подсчет количества китайских иероглифов в тексте
@@ -268,7 +274,7 @@ const MainContent = styled.main`
 const PageTitle = styled.h1`
   font-size: 32px;
   font-weight: 800;
-  color: #1a202c;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
   display: flex;
   align-items: center;
@@ -281,7 +287,7 @@ const PageTitle = styled.h1`
 
 const PageSubtitle = styled.p`
   font-size: 16px;
-  color: #718096;
+  color: var(--text-secondary);
   margin: 0 0 32px 0;
 `;
 
@@ -320,7 +326,7 @@ const Label = styled.label`
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #4a5568;
+  color: var(--text-secondary);
   margin-bottom: 8px;
   
   .required {
@@ -338,6 +344,7 @@ const Input = styled.input`
   font-family: inherit;
   transition: all 0.2s ease;
   background: var(--bg-tertiary);
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
@@ -347,7 +354,7 @@ const Input = styled.input`
   }
   
   &::placeholder {
-    color: #a0aec0;
+    color: var(--text-muted);
   }
 `;
 
@@ -362,6 +369,7 @@ const TextArea = styled.textarea`
   min-height: 100px;
   transition: all 0.2s ease;
   background: var(--bg-tertiary);
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
@@ -371,7 +379,7 @@ const TextArea = styled.textarea`
   }
   
   &::placeholder {
-    color: #a0aec0;
+    color: var(--text-muted);
   }
 `;
 
@@ -384,18 +392,18 @@ const ImportTextArea = styled(TextArea)`
 
 const ImportHint = styled.div`
   font-size: 13px;
-  color: #718096;
+  color: var(--text-secondary);
   margin-top: 8px;
   padding: 12px;
-  background: #f7fafc;
+  background: var(--bg-tertiary);
   border-radius: 8px;
   
   code {
-    background: #edf2f7;
+    background: var(--bg-secondary);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: 'Courier New', monospace;
-    color: #4a5568;
+    color: var(--text-primary);
   }
 `;
 
@@ -406,7 +414,7 @@ const CardsContainer = styled.div`
 `;
 
 const CardItem = styled.div`
-  background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+  background: var(--card-bg, linear-gradient(135deg, #ffffff 0%, #f7fafc 100%));
   border-radius: 16px;
   padding: 20px;
   border: 2px solid ${props => props.$isChinese ? '#fc8181' : 'var(--border-color)'};
@@ -451,7 +459,7 @@ const CardField = styled.div`
 const CardFieldLabel = styled.label`
   font-size: 12px;
   font-weight: 600;
-  color: #718096;
+  color: var(--text-secondary);
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -481,6 +489,7 @@ const CardInput = styled.input`
   transition: all 0.2s ease;
   background: var(--bg-secondary);
   min-height: 60px;
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
@@ -489,7 +498,7 @@ const CardInput = styled.input`
   }
   
   &::placeholder {
-    color: #a0aec0;
+    color: var(--text-muted);
   }
 `;
 
@@ -518,11 +527,11 @@ const ChineseBadge = styled.span`
 
 const PinyinDisplay = styled.div`
   font-size: 14px;
-  color: #718096;
+  color: var(--text-secondary);
   font-style: italic;
   margin-top: 4px;
   padding: 4px 8px;
-  background: #f7fafc;
+  background: var(--bg-tertiary);
   border-radius: 6px;
   display: inline-block;
 `;
@@ -607,8 +616,8 @@ const DeleteButton = styled.button`
   height: 44px;
   border-radius: 12px;
   border: none;
-  background: #fed7d7;
-  color: #c53030;
+  background: var(--danger-bg);
+  color: var(--danger-color);
   font-size: 20px;
   cursor: pointer;
   display: flex;
@@ -618,7 +627,7 @@ const DeleteButton = styled.button`
   align-self: center;
   
   &:hover {
-    background: #fc8181;
+    background: var(--danger-hover-bg);
     color: white;
     transform: scale(1.1) rotate(90deg);
   }
@@ -633,10 +642,10 @@ const DeleteButton = styled.button`
 const AddCardButton = styled.button`
   width: 100%;
   padding: 20px;
-  border: 3px dashed #cbd5e0;
+  border: 3px dashed var(--border-color);
   border-radius: 16px;
   background: transparent;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -650,7 +659,7 @@ const AddCardButton = styled.button`
   &:hover {
     border-color: #63b3ed;
     color: #63b3ed;
-    background: rgba(99, 179, 237, 0.05);
+    background: rgba(99, 179, 237, 0.08);
     transform: translateY(-2px);
   }
   
@@ -687,8 +696,8 @@ const ToggleSection = styled.button`
   margin-bottom: ${props => props.$isOpen ? '16px' : '0'};
   
   &:hover {
-    background: #edf2f7;
-    border-color: #cbd5e0;
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
   }
   
   .arrow {
@@ -793,7 +802,7 @@ const ToggleLabel = styled.label`
 const EmptyCardsState = styled.div`
   text-align: center;
   padding: 40px;
-  color: #718096;
+  color: var(--text-secondary);
   
   .icon {
     font-size: 48px;
@@ -812,8 +821,8 @@ const TagInputContainer = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   padding: 8px 12px;
-  background: #2d3748;
-  border: 2px solid #4a5568;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   min-height: 48px;
   align-items: center;
@@ -867,7 +876,7 @@ const TagInputField = styled.input`
   min-width: 120px;
   background: transparent;
   border: none;
-  color: #e2e8f0;
+  color: var(--text-primary);
   font-size: 14px;
   padding: 4px;
   
@@ -876,7 +885,7 @@ const TagInputField = styled.input`
   }
   
   &::placeholder {
-    color: #718096;
+    color: var(--text-muted);
   }
 `;
 
@@ -887,22 +896,22 @@ const PopularTags = styled.div`
   margin-top: 10px;
   align-items: center;
   font-size: 13px;
-  color: #a0aec0;
+  color: var(--text-muted);
 `;
 
 const PopularTag = styled.button`
   padding: 3px 10px;
-  background: ${props => props.disabled ? '#4a5568' : '#2d3748'};
-  border: 1px solid ${props => props.disabled ? '#718096' : '#4a5568'};
-  color: ${props => props.disabled ? '#a0aec0' : '#e2e8f0'};
+  background: ${props => props.disabled ? 'var(--bg-tertiary)' : 'var(--bg-secondary)'};
+  border: 1px solid ${props => props.disabled ? 'var(--border-color)' : 'var(--border-light)'};
+  color: ${props => props.disabled ? 'var(--text-muted)' : 'var(--text-primary)'};
   border-radius: 15px;
   font-size: 12px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.2s;
   
   &:hover {
-    background: ${props => props.disabled ? '#4a5568' : '#4a5568'};
-    border-color: ${props => props.disabled ? '#718096' : '#63b3ed'};
+    background: ${props => props.disabled ? 'var(--bg-tertiary)' : 'var(--bg-tertiary)'};
+    border-color: ${props => props.disabled ? 'var(--border-color)' : '#63b3ed'};
   }
 `;
 
@@ -1504,7 +1513,7 @@ function SetBuilder() {
               />
               <span>🌍 Сделать набор публичным</span>
             </ToggleLabel>
-            <span style={{ fontSize: '13px', color: '#718096' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
               Публичные наборы видны всем пользователям
             </span>
           </PrivacyToggle>
@@ -1763,7 +1772,7 @@ function SetBuilder() {
                       {card.imageUrl && (
                         <CardField style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
                           <img 
-                            src={card.imageUrl} 
+                            src={resolveImageUrl(card.imageUrl)} 
                             alt="Preview" 
                             style={{ 
                               maxWidth: '100%', 
@@ -1782,14 +1791,14 @@ function SetBuilder() {
                       <CardRow>
                         <CardField>
                           <CardFieldLabel>
-                            Пиньинь <span style={{ fontSize: '11px', color: '#a0aec0' }}>(произношение)</span>
+                            Пиньинь <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(произношение)</span>
                           </CardFieldLabel>
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             <CardInput
                               placeholder="Пиньинь появится здесь..."
                               value={card.pinyin}
                               onChange={(e) => updateCard(card.id, 'pinyin', e.target.value)}
-                              style={{ fontStyle: 'italic', color: '#4a5568', flex: 1 }}
+                              style={{ fontStyle: 'italic', color: 'var(--text-secondary)', flex: 1 }}
                             />
                             <VoiceInput
                               onResult={(text) => updateCard(card.id, 'pinyin', text)}
@@ -1801,7 +1810,7 @@ function SetBuilder() {
                         
                         <CardField>
                           <CardFieldLabel>
-                            Перевод <span style={{ fontSize: '11px', color: '#a0aec0' }}>(автоматический)</span>
+                            Перевод <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(автоматический)</span>
                           </CardFieldLabel>
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             <CardInput

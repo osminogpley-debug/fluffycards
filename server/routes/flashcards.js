@@ -10,7 +10,18 @@ const router = express.Router();
 router.get('/public', async (req, res) => {
   try {
     console.log('[PUBLIC SETS] Request received');
-    const { search, category, sort = 'new', page = 1, limit = 12, userId } = req.query;
+    const {
+      search,
+      category,
+      sort = 'new',
+      page = 1,
+      limit = 12,
+      userId,
+      language,
+      level,
+      exam,
+      tags
+    } = req.query;
     
     // Базовый запрос - только публичные наборы
     let query = { isPublic: true };
@@ -21,6 +32,9 @@ router.get('/public', async (req, res) => {
     }
     
     console.log('[PUBLIC SETS] Query:', query);
+
+    const normalizeTag = (value) => value?.toString().trim().toLowerCase();
+    const tagFilters = [];
     
     // Поиск по названию/описанию
     if (search) {
@@ -33,7 +47,35 @@ router.get('/public', async (req, res) => {
     
     // Фильтр по категории
     if (category && category !== 'Все') {
-      query.tags = { $in: [category] };
+      const normalizedCategory = normalizeTag(category);
+      if (normalizedCategory) tagFilters.push(normalizedCategory);
+    }
+
+    if (language && language !== 'Все') {
+      const normalizedLanguage = normalizeTag(language);
+      if (normalizedLanguage) tagFilters.push(normalizedLanguage);
+    }
+
+    if (level && level !== 'Все') {
+      const normalizedLevel = normalizeTag(level);
+      if (normalizedLevel) tagFilters.push(normalizedLevel);
+    }
+
+    if (exam && exam !== 'Все') {
+      const normalizedExam = normalizeTag(exam);
+      if (normalizedExam) tagFilters.push(normalizedExam);
+    }
+
+    if (tags) {
+      const extraTags = tags
+        .split(',')
+        .map(normalizeTag)
+        .filter(Boolean);
+      tagFilters.push(...extraTags);
+    }
+
+    if (tagFilters.length > 0) {
+      query.tags = { $all: tagFilters };
     }
     
     // Опции сортировки

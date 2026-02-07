@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
@@ -483,6 +483,8 @@ function TestMode() {
   const [timeLeft, setTimeLeft] = useState(settings.timer);
   const [inputValue, setInputValue] = useState('');
   const [shakeOption, setShakeOption] = useState(false);
+  const sessionStartRef = useRef(Date.now());
+  const statsRecordedRef = useRef(false);
 
   // Fetch set data
   useEffect(() => {
@@ -507,6 +509,8 @@ function TestMode() {
       
       const setData = await response.json();
       setCurrentSet(setData);
+      sessionStartRef.current = Date.now();
+      statsRecordedRef.current = false;
       
       if (setData.flashcards && setData.flashcards.length > 0) {
         setFlashcards(setData.flashcards);
@@ -585,6 +589,26 @@ function TestMode() {
     }
   }, [currentQuestion]);
 
+  const recordStatsSession = async (correctCount, cardsCount) => {
+    if (statsRecordedRef.current) return;
+    statsRecordedRef.current = true;
+    try {
+      const timeSpent = Math.max(0, Math.round((Date.now() - sessionStartRef.current) / 1000));
+      await authFetch(API_ROUTES.DATA.STATS_SESSION, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'test',
+          cardsCount,
+          correctCount,
+          timeSpent
+        })
+      });
+    } catch (err) {
+      console.error('Error recording test stats:', err);
+    }
+  };
+
   const handleFinish = useCallback(() => {
     // Calculate results
     const results = questions.map(q => ({
@@ -594,6 +618,8 @@ function TestMode() {
         ? answers[q.id]?.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()
         : answers[q.id] === q.correctAnswer
     }));
+    const correctCount = results.filter(r => r.isCorrect).length;
+    recordStatsSession(correctCount, results.length);
     
     navigate('/test/results', { state: { results, setId, setTitle: currentSet?.title } });
   }, [answers, currentSet?.title, navigate, questions, setId]);
@@ -609,6 +635,13 @@ function TestMode() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getCorrectAnswerText = (q) => {
+    if (!q) return '';
+    if (q.type === 'multiple_choice') return q.options[q.correctAnswer];
+    if (q.type === 'true_false') return q.correctAnswer ? 'Верно' : 'Неверно';
+    return q.correctAnswer;
   };
 
   if (loading) {
@@ -773,7 +806,7 @@ function TestMode() {
             <FeedbackText isCorrect={isCorrect}>
               {isCorrect 
                 ? 'Отлично! Правильный ответ! 🌟' 
-                : `Не совсем. Правильный ответ: ${question.type === 'multiple_choice' ? question.options[question.correctAnswer] : question.correctAnswer}`}
+                : `Не совсем. Правильный ответ: ${getCorrectAnswerText(question)}`}
             </FeedbackText>
           </FeedbackMessage>
         )}

@@ -16,7 +16,8 @@ const getApiBaseUrl = () => {
   return `http://${hostname}:5001/api`;
 };
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
+export const FILE_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
 
 export const API_ROUTES = {
   AUTH: {
@@ -26,6 +27,7 @@ export const API_ROUTES = {
   },
   DATA: {
     STATS: `${API_BASE_URL}/stats/dashboard`,
+    STATS_SESSION: `${API_BASE_URL}/stats/session`,
     SETS: `${API_BASE_URL}/sets`,
     FOLDERS: `${API_BASE_URL}/folders`,
     HEALTH: `${API_BASE_URL}/health`

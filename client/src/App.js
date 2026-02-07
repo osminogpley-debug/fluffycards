@@ -402,6 +402,55 @@ function App() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    if (!authState.isAuthenticated) return;
+
+    let heartbeatTimer = null;
+
+    const sendHeartbeat = async () => {
+      try {
+        const apiUrl = `http://${window.location.hostname}:5001/api/auth/heartbeat`;
+        await authFetch(apiUrl, { method: 'POST' });
+      } catch (error) {
+        // Ignore heartbeat errors to avoid disrupting the session
+      }
+    };
+
+    const startHeartbeat = () => {
+      if (heartbeatTimer) return;
+      sendHeartbeat();
+      heartbeatTimer = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          sendHeartbeat();
+        }
+      }, 30000);
+    };
+
+    const stopHeartbeat = () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        sendHeartbeat();
+        startHeartbeat();
+      } else {
+        stopHeartbeat();
+      }
+    };
+
+    startHeartbeat();
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      stopHeartbeat();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [authState.isAuthenticated]);
+
   const logout = async () => {
     const apiUrl = `http://${window.location.hostname}:5001/api/auth/logout`;
     await fetch(apiUrl, {

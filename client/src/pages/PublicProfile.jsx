@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { API_ROUTES, authFetch } from '../constants/api';
+import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 
 const Container = styled.div`
   max-width: 900px;
@@ -35,6 +35,14 @@ const Avatar = styled.div`
   justify-content: center;
   font-size: 3rem;
   flex-shrink: 0;
+  overflow: hidden;
+`;
+
+const AvatarImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 `;
 
 const AvatarInfo = styled.div`flex: 1;`;
@@ -263,6 +271,12 @@ function PublicProfile() {
   const [savingSet, setSavingSet] = useState({});
   const [toast, setToast] = useState(null);
 
+  const resolveProfileImage = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+    return url;
+  };
+
   useEffect(() => { fetchUserProfile(); }, [userId]);
 
   const fetchUserProfile = async () => {
@@ -340,7 +354,13 @@ function PublicProfile() {
       
       <ProfileCard>
         <AvatarSection>
-          <Avatar>{user.username?.[0]?.toUpperCase() || '👤'}</Avatar>
+          <Avatar>
+            {user.profileImage ? (
+              <AvatarImage src={resolveProfileImage(user.profileImage)} alt="Avatar" />
+            ) : (
+              user.username?.[0]?.toUpperCase() || '👤'
+            )}
+          </Avatar>
           <AvatarInfo>
             <UserName>
               {user.username || 'Пользователь'}
