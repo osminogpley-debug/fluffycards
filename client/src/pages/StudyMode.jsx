@@ -485,7 +485,7 @@ function StudyMode() {
         setRound2Queue([]);
         setMasteredIds([]);
         setRound(1);
-        pickNextCard(ids, 1);
+        pickNextCard(ids, 1, cards);
       } else {
         setError('В этом наборе нет карточек');
       }
@@ -497,7 +497,7 @@ function StudyMode() {
     }
   };
 
-  const pickNextCard = (queue, currentRound) => {
+  const pickNextCard = (queue, currentRound, cardsSource = flashcards) => {
     if (queue.length === 0) return;
     const nextId = queue[0];
     setCurrentCardId(nextId);
@@ -510,11 +510,11 @@ function StudyMode() {
 
     if (currentRound === 1) {
       // Generate multiple choice options
-      const card = flashcards.find(c => c.id === nextId);
+      const card = cardsSource.find(c => c.id === nextId);
       if (!card) return;
       const showTerm = Math.random() > 0.5;
       setShowTermSide(showTerm);
-      const otherCards = flashcards.filter(c => c.id !== nextId);
+      const otherCards = cardsSource.filter(c => c.id !== nextId);
       const wrongOptions = shuffleArray(otherCards).slice(0, Math.min(3, otherCards.length));
       const allOptions = shuffleArray([...wrongOptions, card]);
       setOptions(allOptions);

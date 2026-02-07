@@ -30,6 +30,9 @@ import ContactsPage from './pages/ContactsPage';
 import ScrambleGame from './pages/ScrambleGame';
 import QuizBlitz from './pages/QuizBlitz';
 import logoImage from './assets/logo.png';
+import CreateClassPage from './pages/CreateClassPage';
+import TrueFalseGame from './pages/TrueFalseGame';
+import MemoryGame from './pages/MemoryGame';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -575,6 +578,16 @@ function App() {
                 }
               />
               <Route
+                path="/classes/create"
+                element={
+                  authState.isAuthenticated ? (
+                    <CreateClassPage />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
                 path="/learn"
                 element={
                   authState.isAuthenticated ? (
@@ -670,6 +683,26 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <QuizBlitz />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/true-false"
+                element={
+                  authState.isAuthenticated ? (
+                    <TrueFalseGame />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/memory"
+                element={
+                  authState.isAuthenticated ? (
+                    <MemoryGame />
                   ) : (
                     <Navigate to="/login" />
                   )

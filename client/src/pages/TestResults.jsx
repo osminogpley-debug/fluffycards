@@ -794,7 +794,7 @@ function TestResults() {
         </PrintSection>
 
         <div style={{ marginTop: '40px', textAlign: 'center', color: '#718096', fontSize: '12px' }}>
-          Сгенерировано в FluffyCards 🎀
+          Сгенерировано в FluffyCards
         </div>
       </PrintContent>
     </>

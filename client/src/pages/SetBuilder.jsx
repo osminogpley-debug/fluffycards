@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
+import { API_BASE_URL, API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import { pinyin } from 'pinyin-pro';
 
 import VoiceInput from '../components/VoiceInput';
@@ -1140,11 +1140,9 @@ function SetBuilder() {
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const token = localStorage.getItem('token');
-      const uploadUrl = `http://${window.location.hostname}:5001/api/upload`;
-      const res = await fetch(uploadUrl, {
+      const uploadUrl = `${API_BASE_URL}/upload`;
+      const res = await authFetch(uploadUrl, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       const data = await res.json();
@@ -1436,7 +1434,6 @@ function SetBuilder() {
     <PageContainer>
       <Header>
         <Logo onClick={() => navigate('/dashboard')}>
-          <span className="icon">🎀</span>
           <span className="text">FluffyCards</span>
         </Logo>
         
