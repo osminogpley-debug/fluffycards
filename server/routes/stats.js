@@ -1,6 +1,8 @@
 import express from 'express';
 import authMiddleware from '../middleware/auth.js';
 import UserStats from '../models/UserStats.js';
+import User from '../models/User.js';
+import { Friendship } from '../models/Social.js';
 
 const router = express.Router();
 
@@ -63,11 +65,13 @@ router.post('/session', authMiddleware, async (req, res) => {
 router.get('/dashboard', authMiddleware, async (req, res) => {
   try {
     console.log('[STATS] Getting dashboard stats for user:', req.user._id);
-    
+
+    const UserGamification = (await import('../models/UserGamification.js')).default;
+
     // Get both UserStats and Gamification data
     const [stats, gamification] = await Promise.all([
       UserStats.findOne({ userId: req.user._id }),
-      (await import('../models/UserGamification.js')).default.findOne({ userId: req.user._id })
+      UserGamification.findOne({ userId: req.user._id })
     ]);
 
     // Use gamification streak if available
@@ -76,6 +80,57 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
     // Use gamification cards studied if UserStats is empty
     const cardsMastered = stats?.cardsMastered || gamification?.stats?.cardsStudied || 0;
     
+    let students = [];
+    if (req.user.role === 'teacher') {
+      const friendships = await Friendship.find({ users: req.user._id })
+        .populate('users', 'username email role');
+
+      const studentUsers = friendships
+        .map(friendship => friendship.users.find(
+          user => user._id.toString() !== req.user._id.toString() && user.role === 'student'
+        ))
+        .filter(Boolean);
+
+      const uniqueStudentMap = new Map();
+      studentUsers.forEach((user) => {
+        uniqueStudentMap.set(user._id.toString(), user);
+      });
+
+      const studentIds = Array.from(uniqueStudentMap.keys());
+      if (studentIds.length > 0) {
+        const [studentStats, studentGamification] = await Promise.all([
+          UserStats.find({ userId: { $in: studentIds } }),
+          UserGamification.find({ userId: { $in: studentIds } })
+        ]);
+
+        const statsByUserId = new Map(
+          studentStats.map((stat) => [stat.userId.toString(), stat])
+        );
+        const gamByUserId = new Map(
+          studentGamification.map((gam) => [gam.userId.toString(), gam])
+        );
+
+        students = studentIds.map((id) => {
+          const user = uniqueStudentMap.get(id);
+          const studentStat = statsByUserId.get(id);
+          const studentGam = gamByUserId.get(id);
+          const cardsStudied = studentStat?.cardsMastered || studentGam?.stats?.cardsStudied || 0;
+          const accuracy = studentStat?.accuracy || 0;
+          const streak = studentGam?.streak?.current || studentStat?.streakDays || 0;
+
+          return {
+            id: user._id,
+            name: user.username,
+            email: user.email,
+            setsStudied: studentStat?.setsStudied || 0,
+            cardsMastered: cardsStudied,
+            accuracy: Math.round(accuracy),
+            streakDays: streak
+          };
+        });
+      }
+    }
+
     if (!stats) {
       console.log('[STATS] No stats found, returning gamification defaults');
       return res.json({
@@ -83,7 +138,8 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
         cardsMastered: cardsMastered,
         streakDays: streakDays,
         accuracy: 0,
-        sessionHistory: []
+        sessionHistory: [],
+        ...(req.user.role === 'teacher' ? { students } : {})
       });
     }
 
@@ -93,7 +149,8 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
       cardsMastered: cardsMastered,
       streakDays: streakDays,
       accuracy: Math.round(stats.accuracy || 0),
-      sessionHistory: stats.sessionHistory || []
+      sessionHistory: stats.sessionHistory || [],
+      ...(req.user.role === 'teacher' ? { students } : {})
     });
   } catch (error) {
     console.error('[STATS] Error:', error);
