@@ -895,9 +895,10 @@ const FOLDER_COLORS = [
 function Dashboard() {
   const navigate = useNavigate();
   const { authState } = useContext(AuthContext);
-  const { avatar } = useTheme();
+  const { avatar, themeData } = useTheme();
   const user = authState?.user;
   const userRole = user?.role || 'student';
+  const isDark = themeData?.name === 'Темная' || themeData?.name === 'Космическая';
   const [activeTab, setActiveTab] = useState('sets');
   const [stats, setStats] = useState(null);
   const [userSets, setUserSets] = useState([]);
@@ -1376,7 +1377,7 @@ function Dashboard() {
             value={newFolderDescription}
             onChange={(e) => setNewFolderDescription(e.target.value)}
           />
-          <div style={{ marginBottom: '8px', fontSize: '14px', color: '#6b7280' }}>
+          <div style={{ marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
             Выберите цвет:
           </div>
           <ColorPicker>
@@ -1469,7 +1470,7 @@ function Dashboard() {
             <div style={{ fontSize: '48px', fontWeight: '700', color: '#63b3ed' }}>
               {stats?.setsStudied || 0}
             </div>
-            <div style={{ color: '#6b7280', fontSize: '14px' }}>Наборов изучено</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Наборов изучено</div>
           </div>
         </SidebarCard>
 
@@ -1479,7 +1480,7 @@ function Dashboard() {
             <div style={{ fontSize: '48px', fontWeight: '700', color: '#22c55e' }}>
               {stats?.cardsMastered || 0}
             </div>
-            <div style={{ color: '#6b7280', fontSize: '14px' }}>Карточек освоено</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Карточек освоено</div>
           </div>
         </SidebarCard>
 
@@ -1489,7 +1490,7 @@ function Dashboard() {
             <div style={{ fontSize: '48px', fontWeight: '700', color: '#f59e0b' }}>
               {stats?.streakDays || 0}
             </div>
-            <div style={{ color: '#6b7280', fontSize: '14px' }}>Дней подряд</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Дней подряд</div>
           </div>
         </SidebarCard>
 
@@ -1499,7 +1500,7 @@ function Dashboard() {
             <div style={{ fontSize: '48px', fontWeight: '700', color: '#8b5cf6' }}>
               {stats?.accuracy || 0}%
             </div>
-            <div style={{ color: '#6b7280', fontSize: '14px' }}>Средняя точность</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Средняя точность</div>
           </div>
         </SidebarCard>
       </SetsGrid>
@@ -1513,7 +1514,7 @@ function Dashboard() {
                 display: 'flex', 
                 justifyContent: 'space-between',
                 padding: '12px',
-                background: '#f9fafb',
+                background: 'var(--bg-tertiary)',
                 borderRadius: '8px'
               }}>
                 <span>{new Date(session.date).toLocaleDateString()}</span>
@@ -1524,7 +1525,7 @@ function Dashboard() {
             ))}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
             Пока нет данных о сессиях
           </div>
         )}
@@ -1547,8 +1548,8 @@ function Dashboard() {
       <>
         <div style={{ marginBottom: '24px', textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏆</div>
-          <h2 style={{ margin: 0, color: '#1a1a1a' }}>Ваши достижения</h2>
-          <p style={{ color: '#6b7280', margin: '8px 0 0 0' }}>
+          <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>Ваши достижения</h2>
+          <p style={{ color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
             {achievements.filter(a => a.unlocked).length} из {achievements.length} разблокировано
           </p>
         </div>
@@ -1802,7 +1803,7 @@ function Dashboard() {
                 </div>
               </AchievementBadge>
             ) : (
-              <div style={{ color: '#6b7280', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
                 Создайте первый набор, чтобы получить достижение!
               </div>
             )}
@@ -1818,10 +1819,12 @@ function Dashboard() {
         isOpen={showAchievementsModal} 
         onClose={() => setShowAchievementsModal(false)}
         gamificationData={gamificationData}
+        isDark={isDark}
       />
       <LeaderboardModal 
         isOpen={showLeaderboardModal} 
         onClose={() => setShowLeaderboardModal(false)}
+        isDark={isDark}
       />
       {showChat && (
         <ChatModal 

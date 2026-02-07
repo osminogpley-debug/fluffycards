@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { API_ROUTES, authFetch } from '../constants/api';
 import LevelBadge from './LevelBadge';
+import { useTheme } from '../contexts/ThemeContext';
 
 const PanelContainer = styled.div`
   background: var(--card-bg);
@@ -191,6 +192,8 @@ const EmptyState = styled.div`
 `;
 
 function GamificationPanel() {
+  const { themeData } = useTheme();
+  const isDark = themeData?.name === 'Темная' || themeData?.name === 'Космическая';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

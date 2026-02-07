@@ -137,7 +137,7 @@ const getChineseData = async (chineseText) => {
 // ===== СТИЛИ (БЕЗ KEYFRAMES) =====
 const PageContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: var(--bg-primary);
   font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   padding-bottom: 60px;
 `;

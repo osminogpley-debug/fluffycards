@@ -188,7 +188,7 @@ const FormGroup = styled.div`
 
 const Label = styled.label`
   display: block;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-weight: 600;
   margin-bottom: 0.5rem;
 `;
@@ -199,6 +199,8 @@ const Input = styled.input`
   border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
@@ -213,6 +215,7 @@ const Select = styled.select`
   border-radius: 12px;
   font-size: 1rem;
   background: var(--bg-secondary);
+  color: var(--text-primary);
   
   &:focus {
     outline: none;
@@ -223,12 +226,14 @@ const Select = styled.select`
 const TextArea = styled.textarea`
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   
   &:focus {
     outline: none;

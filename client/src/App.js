@@ -93,6 +93,11 @@ const GlobalStyle = createGlobalStyle`
     }
   }
 
+  select option, select optgroup {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
   table th {
     background: var(--bg-tertiary);
     color: var(--text-primary);
