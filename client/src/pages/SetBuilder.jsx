@@ -460,28 +460,6 @@ const CardFieldLabel = styled.label`
   gap: 6px;
 `;
 
-const TranslateButton = styled.button`
-  margin-left: auto;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-primary);
-  cursor: pointer;
-  text-transform: none;
-
-  &:hover {
-    border-color: #63b3ed;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
 const TabSplitBadge = styled.span`
   font-size: 10px;
   font-weight: 700;
@@ -956,7 +934,7 @@ function SetBuilder() {
   
   // Состояние загрузки пиньиня для каждой карточки
   const [loadingPinyin, setLoadingPinyin] = useState({});
-  const [loadingTranslate, setLoadingTranslate] = useState({});
+  const [uploadingImage, setUploadingImage] = useState({});
   
   // Состояние для отслеживания изменений терминов (для китайских карточек)
   const [originalTerms, setOriginalTerms] = useState({});
@@ -1140,31 +1118,37 @@ function SetBuilder() {
     });
   };
 
-  const handleTranslate = async (cardId, text) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-
-    setLoadingTranslate(prev => ({ ...prev, [cardId]: true }));
+  // Загрузка изображения с компьютера
+  const handleImageUpload = async (cardId, file) => {
+    if (!file) return;
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('Файл слишком большой (макс. 5 МБ)');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    setUploadingImage(prev => ({ ...prev, [cardId]: true }));
     try {
-      const res = await authFetch('/api/translate', {
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: trimmed, source: 'auto', target: 'ru' })
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
       });
-
       const data = await res.json();
-      if (!res.ok || !data?.data?.translatedText) {
-        throw new Error(data?.message || 'Ошибка перевода');
+      if (!res.ok || !data?.data?.imageUrl) {
+        throw new Error(data?.message || 'Ошибка загрузки');
       }
-
-      updateCard(cardId, 'definition', data.data.translatedText);
-      setSuccess('Перевод добавлен ✅');
+      updateCard(cardId, 'imageUrl', data.data.imageUrl);
+      setSuccess('Изображение загружено ✅');
       setTimeout(() => setSuccess(null), 2000);
     } catch (err) {
-      setError(err.message || 'Ошибка перевода');
+      setError(err.message || 'Ошибка загрузки изображения');
       setTimeout(() => setError(null), 3000);
     } finally {
-      setLoadingTranslate(prev => ({ ...prev, [cardId]: false }));
+      setUploadingImage(prev => ({ ...prev, [cardId]: false }));
     }
   };
   
@@ -1289,8 +1273,8 @@ function SetBuilder() {
           }
         }
       } else {
-        // Обычные разделители (дефисы)
-        const separators = [' - ', ' – ', ' — ', ' -', '- ', '-'];
+        // Обычные разделители (дефисы, точка с запятой — Quizlet позволяет экспорт с ";")
+        const separators = [' - ', ' – ', ' — ', '; ', ' -', '- ', '-'];
         
         for (const separator of separators) {
           if (line.includes(separator)) {
@@ -1569,7 +1553,7 @@ function SetBuilder() {
             $isOpen={isImportOpen}
             onClick={() => setIsImportOpen(!isImportOpen)}
           >
-            <span>📥 Импорт из текста</span>
+            <span>📥 Импорт из текста / Quizlet</span>
             <span className="arrow">▼</span>
           </ToggleSection>
           
@@ -1579,21 +1563,22 @@ function SetBuilder() {
 Солнце - звезда в центре Солнечной системы
 Вода - химическое соединение H2O
 
-📊 Excel/Google Sheets формат (TAB):
-Солнце\tзвезда в центре Солнечной системы
-Вода\tхимическое соединение H2O
+📊 Из Quizlet / Excel / Google Sheets (TAB):
+Скопируйте карточки из Quizlet (Экспорт → Копировать)
+или из таблицы Excel и вставьте сюда!
 
 🇨🇳 Для китайских слов (TAB - 3 колонки):
 你好\tnǐ hǎo\tпривет
 中国\tzhōng guó\tКитай
 
-💡 Просто скопируйте из Excel и вставьте сюда!`}
+💡 Quizlet: откройте набор → ⋯ → Экспорт → Копировать`}
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
             />
             <ImportHint>
-              💡 <strong>Обычный:</strong> <code>термин - определение</code><br/>
-              <strong>Excel/Google Sheets (рекомендуется):</strong> скопируйте прямо из таблицы — TAB разделит автоматически<br/>
+              💡 <strong>Из Quizlet:</strong> откройте набор → <code>⋯</code> → <code>Экспорт</code> → скопируйте и вставьте сюда<br/>
+              <strong>Обычный:</strong> <code>термин - определение</code><br/>
+              <strong>Excel/Google Sheets:</strong> скопируйте прямо из таблицы — TAB разделит автоматически<br/>
               <strong>Китайский (TAB):</strong> <code>иероглиф[Tab]пиньинь[Tab]перевод</code>
             </ImportHint>
             <ImportButton onClick={handleImport} disabled={!importText.trim()}>
@@ -1631,7 +1616,7 @@ function SetBuilder() {
                       <CardField>
                         <CardFieldLabel>
                           Термин
-                          {isTeacher && card.tabSplit && (
+                          {card.tabSplit && (
                             <TabSplitBadge>TAB</TabSplitBadge>
                           )}
                           {cardIsChinese && (
@@ -1644,16 +1629,17 @@ function SetBuilder() {
                             value={card.term}
                             onChange={(e) => {
                               const value = e.target.value;
-                              if (isTeacher && value.includes('\t')) {
+                              if (value.includes('\t')) {
                                 applyTabSplit(card.id, value);
                                 return;
                               }
                               updateCard(card.id, 'term', value);
                             }}
                             onKeyDown={(e) => {
-                              if (isTeacher && e.key === 'Tab') {
+                              if (e.key === 'Tab' && card.term.trim()) {
                                 e.preventDefault();
-                                applyTabSplit(card.id, e.target.value);
+                                const defInput = document.querySelector(`[data-definition-input="${card.id}"]`);
+                                if (defInput) defInput.focus();
                               }
                             }}
                             style={{ ...cardIsChinese ? { borderColor: '#fc8181' } : {}, flex: 1 }}
@@ -1661,6 +1647,7 @@ function SetBuilder() {
                           <VoiceInput
                             onResult={(text) => updateCard(card.id, 'term', text)}
                             disabled={false}
+                            contextText={card.term}
                           />
                         </div>
                         
@@ -1706,14 +1693,6 @@ function SetBuilder() {
                       <CardField>
                         <CardFieldLabel>
                           Определение
-                          <TranslateButton
-                            type="button"
-                            disabled={!card.term.trim() || loadingTranslate[card.id]}
-                            onClick={() => handleTranslate(card.id, card.term)}
-                            title="Автоперевод термина"
-                          >
-                            {loadingTranslate[card.id] ? '...' : '🌐 Перевести'}
-                          </TranslateButton>
                         </CardFieldLabel>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <CardInput
@@ -1726,6 +1705,7 @@ function SetBuilder() {
                           <VoiceInput
                             onResult={(text) => updateCard(card.id, 'definition', text)}
                             disabled={false}
+                            contextText={card.definition}
                           />
                         </div>
                       </CardField>
@@ -1742,13 +1722,43 @@ function SetBuilder() {
                     <CardRow>
                       <CardField style={{ flex: 2 }}>
                         <CardFieldLabel>
-                          🖼️ Изображение <span style={{ fontSize: '11px', color: '#a0aec0' }}>(URL)</span>
+                          🖼️ Изображение
                         </CardFieldLabel>
-                        <CardInput
-                          placeholder="https://example.com/image.jpg"
-                          value={card.imageUrl || ''}
-                          onChange={(e) => updateCard(card.id, 'imageUrl', e.target.value)}
-                        />
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <CardInput
+                            placeholder="https://example.com/image.jpg"
+                            value={card.imageUrl || ''}
+                            onChange={(e) => updateCard(card.id, 'imageUrl', e.target.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <label style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '10px 16px',
+                            background: 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)',
+                            color: 'white',
+                            borderRadius: '12px',
+                            cursor: uploadingImage[card.id] ? 'wait' : 'pointer',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            opacity: uploadingImage[card.id] ? 0.6 : 1
+                          }}>
+                            {uploadingImage[card.id] ? '⏳' : '📁'} Загрузить
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(card.id, file);
+                                e.target.value = '';
+                              }}
+                              disabled={uploadingImage[card.id]}
+                            />
+                          </label>
+                        </div>
                       </CardField>
                       {card.imageUrl && (
                         <CardField style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
@@ -1784,6 +1794,7 @@ function SetBuilder() {
                             <VoiceInput
                               onResult={(text) => updateCard(card.id, 'pinyin', text)}
                               disabled={false}
+                              contextText={card.term}
                             />
                           </div>
                         </CardField>
@@ -1802,6 +1813,7 @@ function SetBuilder() {
                             <VoiceInput
                               onResult={(text) => updateCard(card.id, 'translation', text)}
                               disabled={false}
+                              contextText={card.translation}
                             />
                           </div>
                         </CardField>

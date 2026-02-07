@@ -46,19 +46,49 @@ const translateWithYandex = async (text, source, target, apiKey, folderId) => {
   return translated;
 };
 
+const detectSourceLang = (text) => {
+  if (/[\u4e00-\u9fff\u3400-\u4dbf]/.test(text)) return 'zh';
+  if (/[\uac00-\ud7af]/.test(text)) return 'ko';
+  if (/[\u3040-\u309f\u30a0-\u30ff]/.test(text)) return 'ja';
+  if (/[\u0400-\u04ff]/.test(text)) return 'ru';
+  if (/[a-zA-Z]/.test(text)) return 'en';
+  return null;
+};
+
 const translateWithMyMemory = async (text, source, target) => {
-  const langpair = `${source || 'auto'}|${target}`;
+  // MyMemory requires explicit language codes, 'auto' is not supported
+  const srcLang = (source === 'auto' || !source) ? (detectSourceLang(text) || 'en') : source;
+  const langpair = `${srcLang}|${target}`;
   const response = await axios.get('https://api.mymemory.translated.net/get', {
     params: {
       q: text,
-      langpair
+      langpair,
+      de: 'fluffycards@mail.ru'
     }
   });
 
   const translated = response.data?.responseData?.translatedText;
-  if (!translated) {
+  const match = response.data?.responseData?.match;
+  
+  // MyMemory returns the original text when translation fails
+  if (!translated || (match !== undefined && match < 0.3 && translated.toLowerCase() === text.toLowerCase())) {
     throw new Error('MyMemory translate failed');
   }
+  return translated;
+};
+
+// Libre Translate (free fallback option 2)
+const translateWithLibre = async (text, source, target) => {
+  const srcLang = (source === 'auto' || !source) ? (detectSourceLang(text) || 'en') : source;
+  const response = await axios.post('https://libretranslate.de/translate', {
+    q: text,
+    source: srcLang,
+    target,
+    format: 'text'
+  }, { timeout: 8000 });
+  
+  const translated = response.data?.translatedText;
+  if (!translated) throw new Error('LibreTranslate failed');
   return translated;
 };
 
@@ -79,17 +109,27 @@ router.post('/', authMiddleware, async (req, res) => {
     const yandexFolderId = process.env.YANDEX_FOLDER_ID;
 
     let translated = '';
-    let provider = 'mymemory';
+    let provider = '';
 
-    if (googleKey) {
-      translated = await translateWithGoogle(trimmed, source, target, googleKey);
-      provider = 'google';
-    } else if (yandexKey && yandexFolderId) {
-      translated = await translateWithYandex(trimmed, source, target, yandexKey, yandexFolderId);
-      provider = 'yandex';
-    } else {
-      translated = await translateWithMyMemory(trimmed, source, target);
-      provider = 'mymemory';
+    // Try providers in order: Google > Yandex > MyMemory > LibreTranslate
+    const providers = [];
+    if (googleKey) providers.push({ name: 'google', fn: () => translateWithGoogle(trimmed, source, target, googleKey) });
+    if (yandexKey && yandexFolderId) providers.push({ name: 'yandex', fn: () => translateWithYandex(trimmed, source, target, yandexKey, yandexFolderId) });
+    providers.push({ name: 'mymemory', fn: () => translateWithMyMemory(trimmed, source, target) });
+    providers.push({ name: 'libre', fn: () => translateWithLibre(trimmed, source, target) });
+
+    for (const p of providers) {
+      try {
+        translated = await p.fn();
+        provider = p.name;
+        break;
+      } catch (e) {
+        console.warn(`[Translate] ${p.name} failed:`, e.message);
+      }
+    }
+
+    if (!translated) {
+      return res.status(500).json({ success: false, message: 'All translation providers failed' });
     }
 
     res.json({

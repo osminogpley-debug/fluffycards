@@ -27,7 +27,7 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: #718096;
+  color: var(--text-secondary, #718096);
   font-size: 1rem;
 `;
 
@@ -96,7 +96,7 @@ const WaveBar = styled.div`
 `;
 
 const Hint = styled.p`
-  color: #4a5568;
+  color: var(--text-secondary, #4a5568);
   font-size: 1rem;
   margin-top: 1.5rem;
   position: relative;
@@ -104,15 +104,16 @@ const Hint = styled.p`
 `;
 
 const InputContainer = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   border-radius: 20px;
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px var(--shadow-color, rgba(0, 0, 0, 0.08));
   margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const InputLabel = styled.div`
-  color: #718096;
+  color: var(--text-secondary, #718096);
   font-size: 0.9rem;
   margin-bottom: 1rem;
   text-align: center;
@@ -167,7 +168,7 @@ const FeedbackText = styled.div`
 `;
 
 const CorrectAnswer = styled.div`
-  color: #4a5568;
+  color: var(--text-secondary, #4a5568);
   font-size: 1.1rem;
 `;
 
@@ -192,25 +193,26 @@ const ProgressItem = styled.div`
 const ProgressValue = styled.div`
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary, #2d3748);
 `;
 
 const ProgressLabel = styled.div`
   font-size: 0.85rem;
-  color: #718096;
+  color: var(--text-secondary, #718096);
 `;
 
 const CompletionCard = styled.div`
-  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  background: var(--card-bg, linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%));
   border-radius: 24px;
   padding: 3rem 2rem;
   text-align: center;
-  box-shadow: 0 10px 40px rgba(72, 187, 120, 0.3);
+  box-shadow: 0 10px 40px var(--shadow-color, rgba(72, 187, 120, 0.3));
   transition: transform 0.2s ease;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const CompletionTitle = styled.h2`
-  color: #22543d;
+  color: var(--text-primary, #22543d);
   font-size: 2.5rem;
   margin-bottom: 1rem;
 `;
@@ -229,10 +231,11 @@ const StatsRow = styled.div`
 `;
 
 const StatBox = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   padding: 1.5rem 2rem;
   border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px var(--shadow-color, rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const StatNumber = styled.div`
@@ -242,7 +245,7 @@ const StatNumber = styled.div`
 `;
 
 const StatText = styled.div`
-  color: #4a5568;
+  color: var(--text-secondary, #4a5568);
   font-size: 0.9rem;
 `;
 
@@ -265,28 +268,30 @@ const LoadingSpinner = styled.div`
 const ErrorMessage = styled.div`
   text-align: center;
   padding: 3rem;
-  background: #fee2e2;
+  background: var(--card-bg, #fee2e2);
   border-radius: 16px;
-  color: #991b1b;
+  color: var(--text-primary, #991b1b);
+  border: 1px solid var(--border-color, #fca5a5);
   margin: 2rem 0;
 `;
 
 const SetInfo = styled.div`
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: var(--card-bg, linear-gradient(135deg, #fef3c7 0%, #fde68a 100%));
   padding: 1rem 1.5rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
   text-align: center;
+  border: 1px solid var(--border-color, transparent);
   
   h3 {
     margin: 0 0 0.25rem 0;
-    color: #92400e;
+    color: var(--text-primary, #92400e);
     font-size: 1.1rem;
   }
   
   p {
     margin: 0;
-    color: #b45309;
+    color: var(--text-secondary, #b45309);
     font-size: 0.9rem;
   }
 `;

@@ -944,11 +944,12 @@ function Dashboard() {
   });
 
   // Загрузка данных
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isInitial = false) => {
     const cache = cacheRef.current;
     try {
       setError(null);
-      setLoading(true);
+      // Only show loading spinner on initial load, not on background polls
+      if (isInitial) setLoading(true);
       
       // Кэш на 5 минут
       const now = Date.now();
@@ -956,7 +957,7 @@ function Dashboard() {
         setStats(cache.stats);
         setUserSets(cache.sets);
         setFolders(cache.folders || []);
-        setLoading(false);
+        if (isInitial) setLoading(false);
         return;
       }
 
@@ -1024,13 +1025,13 @@ function Dashboard() {
       console.error('Error loading dashboard:', error);
       setError(error.message);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-    const intervalId = setInterval(fetchData, 30000);
+    fetchData(true); // initial load with loading spinner
+    const intervalId = setInterval(() => fetchData(false), 60000); // poll every 60s without loading
     return () => clearInterval(intervalId);
   }, [fetchData]);
 
@@ -1041,7 +1042,7 @@ function Dashboard() {
       setNotificationCount(data);
     };
     fetchNotifications();
-    const notifInterval = setInterval(fetchNotifications, 15000);
+    const notifInterval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(notifInterval);
   }, []);
 

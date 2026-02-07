@@ -32,6 +32,13 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
+
+    // Update lastSeen (throttle: at most once per minute)
+    const now = new Date();
+    if (!user.lastSeen || (now - user.lastSeen) > 60000) {
+      User.updateOne({ _id: user._id }, { lastSeen: now }).catch(() => {});
+    }
+
     next();
   } catch (error) {
     // Clear invalid token

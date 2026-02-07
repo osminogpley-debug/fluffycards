@@ -31,7 +31,7 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 1.1rem;
 `;
 
@@ -44,11 +44,12 @@ const StatsBar = styled.div`
 `;
 
 const StatItem = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   padding: 1rem 2rem;
   border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px var(--shadow-color, rgba(0, 0, 0, 0.1));
   text-align: center;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const StatValue = styled.div`
@@ -58,15 +59,16 @@ const StatValue = styled.div`
 `;
 
 const StatLabel = styled.div`
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 0.9rem;
 `;
 
 const GameContainer = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px var(--shadow-color, rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const CardsGrid = styled.div`
@@ -82,15 +84,15 @@ const Card = styled.div`
   align-items: center;
   justify-content: center;
   background: ${({ flipped, matched }) => 
-    matched ? '#dcfce7' : flipped ? 'white' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'};
+    matched ? '#dcfce7' : flipped ? 'var(--card-bg, white)' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'};
   border: 3px solid ${({ flipped, matched }) => 
-    matched ? '#22c55e' : flipped ? '#e5e7eb' : '#f59e0b'};
+    matched ? '#22c55e' : flipped ? 'var(--border-color, #e5e7eb)' : '#f59e0b'};
   border-radius: 16px;
   cursor: ${({ matched }) => matched ? 'default' : 'pointer'};
   font-size: ${({ type }) => type === 'term' ? '1.1rem' : '0.95rem'};
   font-weight: 600;
   color: ${({ flipped, matched }) => 
-    matched ? '#166534' : flipped ? '#1f2937' : 'white'};
+    matched ? '#166534' : flipped ? 'var(--text-primary, #1f2937)' : 'white'};
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   transition: transform 0.4s ease;
@@ -106,19 +108,20 @@ const Card = styled.div`
 const WinMessage = styled.div`
   text-align: center;
   padding: 3rem;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: var(--card-bg, linear-gradient(135deg, #fef3c7 0%, #fde68a 100%));
   border-radius: 24px;
   transition: transform 0.2s ease;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const WinTitle = styled.h2`
-  color: #92400e;
+  color: var(--text-primary, #92400e);
   font-size: 2.5rem;
   margin-bottom: 1rem;
 `;
 
 const WinText = styled.p`
-  color: #a16207;
+  color: var(--text-secondary, #a16207);
   font-size: 1.2rem;
   margin-bottom: 2rem;
 `;
@@ -176,28 +179,30 @@ const LoadingSpinner = styled.div`
 const ErrorMessage = styled.div`
   text-align: center;
   padding: 3rem;
-  background: #fee2e2;
+  background: var(--card-bg, #fee2e2);
   border-radius: 24px;
-  color: #991b1b;
+  color: var(--text-primary, #991b1b);
+  border: 1px solid var(--border-color, #fca5a5);
   margin: 2rem 0;
 `;
 
 const SetInfo = styled.div`
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: var(--card-bg, linear-gradient(135deg, #fef3c7 0%, #fde68a 100%));
   padding: 1rem 1.5rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
   text-align: center;
+  border: 1px solid var(--border-color, transparent);
   
   h3 {
     margin: 0 0 0.25rem 0;
-    color: #92400e;
+    color: var(--text-primary, #92400e);
     font-size: 1.1rem;
   }
   
   p {
     margin: 0;
-    color: #a16207;
+    color: var(--text-secondary, #a16207);
     font-size: 0.9rem;
   }
 `;

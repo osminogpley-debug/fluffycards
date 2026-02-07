@@ -57,45 +57,11 @@ const VoiceButton = styled.button`
   }
 `;
 
-const LanguageSelect = styled.select`
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  background: var(--bg-secondary);
-  color: #4a5568;
-  cursor: pointer;
-  
-  &:hover {
-    border-color: #63b3ed;
-  }
-  
-  &:focus {
-    outline: none;
-    border-color: #4299e1;
-  }
-`;
-
 const StatusText = styled.span`
   font-size: 0.75rem;
   color: ${props => props.$isListening ? '#e53e3e' : '#718096'};
   font-style: italic;
 `;
-
-// Доступные языки
-const LANGUAGES = [
-  { code: 'ru-RU', name: '🇷🇺 Русский', flag: '🇷🇺' },
-  { code: 'en-US', name: '🇺🇸 English', flag: '🇺🇸' },
-  { code: 'zh-CN', name: '🇨🇳 中文 (简体)', flag: '🇨🇳' },
-  { code: 'zh-HK', name: '🇭🇰 中文 (繁體)', flag: '🇭🇰' },
-  { code: 'ko-KR', name: '🇰🇷 한국어', flag: '🇰🇷' },
-  { code: 'ja-JP', name: '🇯🇵 日本語', flag: '🇯🇵' },
-  { code: 'de-DE', name: '🇩🇪 Deutsch', flag: '🇩🇪' },
-  { code: 'fr-FR', name: '🇫🇷 Français', flag: '🇫🇷' },
-  { code: 'es-ES', name: '🇪🇸 Español', flag: '🇪🇸' },
-  { code: 'it-IT', name: '🇮🇹 Italiano', flag: '🇮🇹' },
-  { code: 'pt-BR', name: '🇧🇷 Português', flag: '🇧🇷' },
-];
 
 // Проверка поддержки Speech API
 const isSpeechSupported = () => {
@@ -116,13 +82,15 @@ const detectLanguage = (text) => {
   return 'en-US';
 };
 
-const VoiceInput = ({ onResult, disabled = false, autoDetect = true }) => {
+const VoiceInput = ({ onResult, disabled = false, contextText = '' }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [language, setLanguage] = useState('ru-RU');
   const recognitionRef = useRef(null);
   const transcriptRef = useRef('');
   const onResultRef = useRef(onResult);
+  
+  // Auto-detect language from context text, default to Russian
+  const language = contextText ? detectLanguage(contextText) : 'ru-RU';
   
   // Keep refs in sync with latest values
   useEffect(() => {
@@ -234,22 +202,9 @@ const VoiceInput = ({ onResult, disabled = false, autoDetect = true }) => {
         recognitionRef.current.start();
       } catch (error) {
         console.error('Error starting recognition:', error);
-        
-        if (language !== 'en-US') {
-          console.log('Trying fallback to English...');
-          setLanguage('en-US');
-          // setupRecognition will be called by the useEffect
-        } else {
-          alert('Не удалось запустить распознавание речи. Проверьте настройки микрофона.');
-        }
+        alert('Не удалось запустить распознавание речи. Проверьте настройки микрофона.');
       }
     }
-  };
-  
-  const handleLanguageChange = (e) => {
-    const newLang = e.target.value;
-    setLanguage(newLang);
-    // Recognition will be recreated by useEffect[language]
   };
   
   if (!isSpeechSupported()) {
@@ -258,36 +213,18 @@ const VoiceInput = ({ onResult, disabled = false, autoDetect = true }) => {
   
   return (
     <VoiceContainer>
-      <LanguageSelect 
-        value={language} 
-        onChange={handleLanguageChange}
-        title="Выберите язык распознавания"
-      >
-        {LANGUAGES.map(lang => (
-          <option key={lang.code} value={lang.code}>
-            {lang.flag} {lang.name.split(' ')[1]}
-          </option>
-        ))}
-      </LanguageSelect>
-      
       <VoiceButton
         $isListening={isListening}
         onClick={toggleListening}
         disabled={disabled}
-        title={isListening ? 'Остановить запись' : language.startsWith('zh') ? 'Китайский: используйте Chrome на Android/Windows или Safari на iOS' : 'Голосовой ввод'}
+        title={isListening ? 'Остановить запись' : 'Голосовой ввод (авто)'}
       >
         {isListening ? '⏹️' : '🎤'}
       </VoiceButton>
       
       {isListening && (
         <StatusText $isListening={isListening}>
-          {language.startsWith('zh') ? '请讲中文...' : 'Слушаю...'}
-        </StatusText>
-      )}
-      
-      {!isListening && language.startsWith('zh') && (
-        <StatusText $isListening={false} style={{ fontSize: '0.7rem', maxWidth: '150px' }}>
-          Chrome/Android/Win
+          Слушаю...
         </StatusText>
       )}
     </VoiceContainer>

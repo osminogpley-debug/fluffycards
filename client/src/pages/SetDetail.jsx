@@ -398,11 +398,11 @@ const ChineseBadge = styled.span`
 // Отображение пиньиня
 const PinyinDisplay = styled.div`
   font-size: 14px;
-  color: #718096;
+  color: var(--text-secondary, #718096);
   font-style: italic;
   margin-top: 4px;
   padding: 4px 8px;
-  background: #f7fafc;
+  background: var(--bg-secondary, #f7fafc);
   border-radius: 6px;
   display: inline-block;
 `;
@@ -410,10 +410,10 @@ const PinyinDisplay = styled.div`
 // Перевод для китайских карточек
 const TranslationDisplay = styled.div`
   font-size: 13px;
-  color: #4a5568;
+  color: var(--text-secondary, #4a5568);
   margin-top: 4px;
   padding: 4px 8px;
-  background: #fef3c7;
+  background: var(--bg-tertiary, #fef3c7);
   border-radius: 6px;
   display: inline-block;
 `;

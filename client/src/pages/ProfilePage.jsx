@@ -171,9 +171,21 @@ const ButtonGroup = styled.div`
 `;
 
 const Message = styled.div`
-  padding: 1rem;
+  padding: 0.5rem 1rem;
   border-radius: 12px;
-  margin-bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  animation: fadeInOut 3s ease forwards;
+  
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(5px); }
+    15% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
   
   ${props => props.$type === 'success' && `
     background: #d1fae5;
@@ -419,12 +431,6 @@ function ProfilePage() {
         <Title>👤 Профиль</Title>
       </Header>
 
-      {message && (
-        <Message $type={message.type}>
-          {message.text}
-        </Message>
-      )}
-
       <ProfileCard>
         <AvatarSection>
           <Avatar style={{fontSize: '3rem'}}>
@@ -523,6 +529,11 @@ function ProfilePage() {
           <SecondaryButton onClick={() => navigate('/dashboard')}>
             ← Назад
           </SecondaryButton>
+          {message && (
+            <Message $type={message.type}>
+              {message.text}
+            </Message>
+          )}
         </ButtonGroup>
       </ProfileCard>
 
@@ -585,6 +596,11 @@ function ProfilePage() {
           }}>
             💾 Сохранить все настройки
           </PrimaryButton>
+          {message && (
+            <Message $type={message.type}>
+              {message.text}
+            </Message>
+          )}
         </ButtonGroup>
       </ProfileCard>
     </Container>

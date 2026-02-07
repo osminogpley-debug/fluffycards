@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  lastSeen: {
+    type: Date,
+    default: Date.now
+  },
   flashcardsSets: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'FlashcardSet'

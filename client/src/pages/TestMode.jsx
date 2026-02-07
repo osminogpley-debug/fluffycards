@@ -30,16 +30,17 @@ const TestTitle = styled.h1`
 `;
 
 const SetInfo = styled.div`
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  background: var(--card-bg, linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%));
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   margin-bottom: 1rem;
   text-align: center;
   display: inline-block;
+  border: 1px solid var(--border-color, transparent);
   
   h3 {
     margin: 0;
-    color: #0369a1;
+    color: var(--text-primary, #0369a1);
     font-size: 1rem;
   }
 `;
@@ -49,7 +50,7 @@ const ProgressSection = styled.div`
 `;
 
 const ProgressBarContainer = styled.div`
-  background: #e2e8f0;
+  background: var(--bg-tertiary, #e2e8f0);
   border-radius: 20px;
   height: 20px;
   overflow: hidden;
@@ -77,7 +78,7 @@ const ProgressInfo = styled.div`
   display: flex;
   justify-content: space-between;
   margin-top: 0.5rem;
-  color: #718096;
+  color: var(--text-secondary, #718096);
   font-size: 0.9rem;
 `;
 
@@ -88,7 +89,7 @@ const TimerContainer = styled.div`
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: ${({ isLow }) => isLow ? '#fed7d7' : '#e6fffa'};
+  background: var(--card-bg, ${({ isLow }) => isLow ? '#fed7d7' : '#e6fffa'});
   border-radius: 16px;
   border: 2px solid ${({ isLow }) => isLow ? '#fc8181' : '#81e6d9'};
 
@@ -101,20 +102,21 @@ const TimerIcon = styled.span`
 const TimerText = styled.span`
   font-size: 1.5rem;
   font-weight: 700;
-  color: ${({ isLow }) => isLow ? '#c53030' : '#2d3748'};
+  color: ${({ isLow }) => isLow ? '#c53030' : 'var(--text-primary, #2d3748)'};
 `;
 
 const QuestionCard = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   border-radius: 24px;
   padding: 2.5rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px var(--shadow-color, rgba(0, 0, 0, 0.1));
   margin-bottom: 2rem;
   transition: opacity 0.3s ease;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const QuestionNumber = styled.div`
-  color: #a0aec0;
+  color: var(--text-secondary, #a0aec0);
   font-size: 0.9rem;
   margin-bottom: 1rem;
   text-transform: uppercase;
@@ -122,7 +124,7 @@ const QuestionNumber = styled.div`
 `;
 
 const QuestionText = styled.h2`
-  color: #2d3748;
+  color: var(--text-primary, #2d3748);
   font-size: 1.5rem;
   margin-bottom: 2rem;
   line-height: 1.4;
@@ -136,16 +138,16 @@ const OptionsContainer = styled.div`
 
 const OptionButton = styled.button`
   background: ${({ selected, correct, showResult }) => {
-    if (!showResult) return selected ? '#bee3f8' : '#f7fafc';
+    if (!showResult) return selected ? '#bee3f8' : 'var(--bg-secondary, #f7fafc)';
     if (correct) return '#c6f6d5';
     if (selected && !correct) return '#fed7d7';
-    return '#f7fafc';
+    return 'var(--bg-secondary, #f7fafc)';
   }};
   border: 3px solid ${({ selected, correct, showResult }) => {
-    if (!showResult) return selected ? '#4299e1' : '#e2e8f0';
+    if (!showResult) return selected ? '#4299e1' : 'var(--border-color, #e2e8f0)';
     if (correct) return '#48bb78';
     if (selected && !correct) return '#f56565';
-    return '#e2e8f0';
+    return 'var(--border-color, #e2e8f0)';
   }};
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
@@ -186,7 +188,7 @@ const OptionLetter = styled.span`
 
 const OptionText = styled.span`
   flex: 1;
-  color: #2d3748;
+  color: var(--text-primary, #2d3748);
 `;
 
 const ResultIcon = styled.span`
@@ -203,16 +205,16 @@ const TrueFalseButton = styled.button`
   flex: 1;
   max-width: 200px;
   background: ${({ selected, isTrue, showResult, correct }) => {
-    if (!showResult) return selected ? '#bee3f8' : '#f7fafc';
+    if (!showResult) return selected ? '#bee3f8' : 'var(--bg-secondary, #f7fafc)';
     if (selected && correct) return '#c6f6d5';
     if (selected && !correct) return '#fed7d7';
-    return '#f7fafc';
+    return 'var(--bg-secondary, #f7fafc)';
   }};
   border: 3px solid ${({ selected, showResult, correct }) => {
-    if (!showResult) return selected ? '#4299e1' : '#e2e8f0';
+    if (!showResult) return selected ? '#4299e1' : 'var(--border-color, #e2e8f0)';
     if (selected && correct) return '#48bb78';
     if (selected && !correct) return '#f56565';
-    return '#e2e8f0';
+    return 'var(--border-color, #e2e8f0)';
   }};
   border-radius: 16px;
   padding: 2rem;
@@ -355,9 +357,10 @@ const LoadingSpinner = styled.div`
 const ErrorContainer = styled.div`
   text-align: center;
   padding: 3rem;
-  background: #fee2e2;
+  background: var(--card-bg, #fee2e2);
   border-radius: 16px;
-  color: #991b1b;
+  color: var(--text-primary, #991b1b);
+  border: 1px solid var(--border-color, #fca5a5);
   transition: opacity 0.3s ease;
 `;
 

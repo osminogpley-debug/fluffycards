@@ -102,7 +102,87 @@ const GlobalStyle = createGlobalStyle`
     color: var(--text-primary);
     border-bottom-color: var(--border-color);
   }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  
+  @keyframes float-star {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+    100% { transform: translateY(0) rotate(360deg); }
+  }
+  
+  @keyframes shoot {
+    0% { transform: translateX(0) translateY(0); opacity: 1; }
+    100% { transform: translateX(-200px) translateY(200px); opacity: 0; }
+  }
 `;
+
+const CosmicStarsOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+`;
+
+const Star = styled.div`
+  position: absolute;
+  width: ${props => props.$size || 2}px;
+  height: ${props => props.$size || 2}px;
+  background: ${props => props.$color || '#e9d8fd'};
+  border-radius: 50%;
+  box-shadow: 0 0 ${props => (props.$size || 2) * 2}px ${props => props.$color || '#e9d8fd'};
+  top: ${props => props.$top}%;
+  left: ${props => props.$left}%;
+  animation: twinkle ${props => props.$duration || 3}s ease-in-out infinite;
+  animation-delay: ${props => props.$delay || 0}s;
+`;
+
+const ShootingStar = styled.div`
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.6);
+  top: ${props => props.$top}%;
+  left: ${props => props.$left}%;
+  animation: shoot ${props => props.$duration || 2}s linear infinite;
+  animation-delay: ${props => props.$delay || 0}s;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, rgba(255,255,255,0.6), transparent);
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+  }
+`;
+
+const cosmicStars = Array.from({ length: 50 }, (_, i) => ({
+  id: i,
+  top: Math.random() * 100,
+  left: Math.random() * 100,
+  size: Math.random() * 3 + 1,
+  duration: Math.random() * 4 + 2,
+  delay: Math.random() * 5,
+  color: ['#e9d8fd', '#b794f6', '#9f7aea', '#d6bcfa', '#fff'][Math.floor(Math.random() * 5)]
+}));
+
+const shootingStars = [
+  { id: 1, top: 15, left: 80, duration: 3, delay: 2 },
+  { id: 2, top: 35, left: 90, duration: 2.5, delay: 7 },
+  { id: 3, top: 8, left: 60, duration: 2, delay: 12 },
+];
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -348,6 +428,30 @@ function App() {
             $cardBg={themeData?.cardBg}
           />
           <AppContainer $theme={themeData}>
+            {themeData?.name === 'Космическая' && (
+              <CosmicStarsOverlay>
+                {cosmicStars.map(star => (
+                  <Star
+                    key={star.id}
+                    $top={star.top}
+                    $left={star.left}
+                    $size={star.size}
+                    $duration={star.duration}
+                    $delay={star.delay}
+                    $color={star.color}
+                  />
+                ))}
+                {shootingStars.map(s => (
+                  <ShootingStar
+                    key={`shoot-${s.id}`}
+                    $top={s.top}
+                    $left={s.left}
+                    $duration={s.duration}
+                    $delay={s.delay}
+                  />
+                ))}
+              </CosmicStarsOverlay>
+            )}
             <HeaderComponent authState={authState} logout={logout} />
             
             <MainContent>

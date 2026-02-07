@@ -106,12 +106,13 @@ const CardBadge = styled.div`
 `;
 
 const QuestionCard = styled.div`
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: var(--card-bg, linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%));
   border-radius: 20px;
   padding: 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 8px 30px rgba(99, 179, 237, 0.2);
+  box-shadow: 0 8px 30px var(--shadow-color, rgba(99, 179, 237, 0.2));
   transition: opacity 0.3s ease;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const QuestionText = styled.h2`
@@ -222,16 +223,17 @@ const ActionButtons = styled.div`
 `;
 
 const CompletionCard = styled.div`
-  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  background: var(--card-bg, linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%));
   border-radius: 20px;
   padding: 3rem;
   text-align: center;
-  box-shadow: 0 8px 30px rgba(72, 187, 120, 0.3);
+  box-shadow: 0 8px 30px var(--shadow-color, rgba(72, 187, 120, 0.3));
   transition: transform 0.2s ease;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const CompletionTitle = styled.h2`
-  color: #22543d;
+  color: var(--text-primary, #22543d);
   font-size: 2.5rem;
   margin-bottom: 1rem;
 `;
@@ -290,11 +292,12 @@ const ErrorMessage = styled.div`
 `;
 
 const SetInfo = styled.div`
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  background: var(--card-bg, linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%));
   padding: 1rem 1.5rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
   text-align: center;
+  border: 1px solid var(--border-color, transparent);
   
   h3 {
     margin: 0 0 0.25rem 0;

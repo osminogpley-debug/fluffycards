@@ -370,15 +370,27 @@ userGamificationSchema.methods.checkAchievements = async function() {
 
 // Method to generate daily quests
 userGamificationSchema.methods.generateDailyQuests = function() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Use Moscow time (UTC+3) for daily reset at 00:00 MSK
+  const getMSKDate = () => {
+    const now = new Date();
+    const mskOffset = 3 * 60; // UTC+3 in minutes
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    const mskMs = utcMs + mskOffset * 60000;
+    const msk = new Date(mskMs);
+    msk.setHours(0, 0, 0, 0);
+    return msk;
+  };
   
-  // Check if we already have quests for today
+  const todayMSK = getMSKDate();
+  
+  // Check if we already have quests for today (MSK)
   const hasTodayQuests = this.dailyQuests && this.dailyQuests.length > 0 && 
     this.dailyQuests.some(quest => {
       const questDate = new Date(quest.date);
-      questDate.setHours(0, 0, 0, 0);
-      return questDate.getTime() === today.getTime();
+      // Compare using the same MSK logic
+      const questMSK = new Date(questDate.getTime() + questDate.getTimezoneOffset() * 60000 + 3 * 60 * 60000);
+      questMSK.setHours(0, 0, 0, 0);
+      return questMSK.getTime() === todayMSK.getTime();
     });
   
   // If we already have today's quests, keep them
@@ -386,8 +398,9 @@ userGamificationSchema.methods.generateDailyQuests = function() {
     // Remove any old quests that are not from today
     this.dailyQuests = this.dailyQuests.filter(quest => {
       const questDate = new Date(quest.date);
-      questDate.setHours(0, 0, 0, 0);
-      return questDate.getTime() === today.getTime();
+      const questMSK = new Date(questDate.getTime() + questDate.getTimezoneOffset() * 60000 + 3 * 60 * 60000);
+      questMSK.setHours(0, 0, 0, 0);
+      return questMSK.getTime() === todayMSK.getTime();
     });
     return this.dailyQuests;
   }
@@ -419,11 +432,27 @@ userGamificationSchema.methods.generateDailyQuests = function() {
       type: 'study_cards'
     },
     {
+      questId: 'study_5',
+      name: '📖 Изучить 5 карточек',
+      description: 'Изучите 5 карточек сегодня',
+      target: 5,
+      reward: 15,
+      type: 'study_cards'
+    },
+    {
       questId: 'pass_test',
       name: '📝 Пройти тест',
       description: 'Успешно пройдите тест',
       target: 1,
       reward: 100,
+      type: 'pass_test'
+    },
+    {
+      questId: 'pass_2_tests',
+      name: '📝 Пройти 2 теста',
+      description: 'Пройдите 2 теста сегодня',
+      target: 2,
+      reward: 180,
       type: 'pass_test'
     },
     {
@@ -435,12 +464,36 @@ userGamificationSchema.methods.generateDailyQuests = function() {
       type: 'win_game'
     },
     {
+      questId: 'win_2_games',
+      name: '🎮 Выиграть 2 игры',
+      description: 'Победите дважды в любых играх',
+      target: 2,
+      reward: 130,
+      type: 'win_game'
+    },
+    {
       questId: 'perfect_score',
       name: '💎 Идеальный результат',
       description: 'Наберите 90% или выше на тесте',
       target: 1,
       reward: 150,
       type: 'perfect_score'
+    },
+    {
+      questId: 'create_set',
+      name: '✨ Создать набор',
+      description: 'Создайте новый набор карточек',
+      target: 1,
+      reward: 60,
+      type: 'create_set'
+    },
+    {
+      questId: 'study_3_sets',
+      name: '📚 Изучить 3 набора',
+      description: 'Позанимайтесь с 3 разными наборами',
+      target: 3,
+      reward: 120,
+      type: 'study_sets'
     }
   ];
 
@@ -449,7 +502,7 @@ userGamificationSchema.methods.generateDailyQuests = function() {
     ...q,
     current: 0,
     completed: false,
-    date: today
+    date: new Date() // Current time, MSK check is done on comparison
   }));
   
   return this.dailyQuests;

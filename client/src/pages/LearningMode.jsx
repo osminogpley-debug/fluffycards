@@ -30,7 +30,7 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: #718096;
+  color: var(--text-secondary, #718096);
   font-size: 1rem;
 `;
 
@@ -65,24 +65,26 @@ const CardSide = styled.div`
 `;
 
 const TermSide = styled(CardSide)`
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: var(--card-bg, linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%));
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const DefinitionSide = styled(CardSide)`
-  background: linear-gradient(135deg, #f0fff4 0%, #dcfce7 100%);
+  background: var(--card-bg, linear-gradient(135deg, #f0fff4 0%, #dcfce7 100%));
+  border: 1px solid var(--border-color, transparent);
   transform: rotateY(180deg);
 `;
 
 const TermText = styled.h2`
   font-size: 2.5rem;
-  color: #1e40af;
+  color: var(--text-primary, #1e40af);
   margin-bottom: 1rem;
   text-align: center;
 `;
 
 const DefinitionText = styled.p`
   font-size: 1.5rem;
-  color: #166534;
+  color: var(--text-primary, #166534);
   text-align: center;
   line-height: 1.6;
 `;
@@ -113,7 +115,7 @@ const AudioButton = styled.button`
 const CardCounter = styled.div`
   text-align: center;
   margin-top: 1.5rem;
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 1rem;
 `;
 
@@ -126,9 +128,9 @@ const ButtonGroup = styled.div`
 `;
 
 const NavigationButton = styled.button`
-  background: ${({ disabled }) => disabled ? '#e5e7eb' : 'white'};
-  color: ${({ disabled }) => disabled ? '#9ca3af' : '#4b5563'};
-  border: 2px solid ${({ disabled }) => disabled ? '#e5e7eb' : '#d1d5db'};
+  background: ${({ disabled }) => disabled ? 'var(--bg-tertiary, #e5e7eb)' : 'var(--card-bg, white)'};
+  color: ${({ disabled }) => disabled ? 'var(--text-secondary, #9ca3af)' : 'var(--text-primary, #4b5563)'};
+  border: 2px solid ${({ disabled }) => disabled ? 'var(--border-color, #e5e7eb)' : 'var(--border-color, #d1d5db)'};
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   font-size: 1rem;
@@ -146,7 +148,7 @@ const NavigationButton = styled.button`
 const FlipHint = styled.div`
   text-align: center;
   margin-top: 1rem;
-  color: #9ca3af;
+  color: var(--text-secondary, #9ca3af);
   font-size: 0.9rem;
   transition: transform 0.2s ease;
 `;
@@ -154,7 +156,7 @@ const FlipHint = styled.div`
 const ProgressBar = styled.div`
   width: 100%;
   height: 8px;
-  background: #e5e7eb;
+  background: var(--bg-tertiary, #e5e7eb);
   border-radius: 4px;
   margin-bottom: 2rem;
   overflow: hidden;
@@ -169,16 +171,17 @@ const ProgressFill = styled.div`
 `;
 
 const CompletionCard = styled.div`
-  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  background: var(--card-bg, linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%));
   border-radius: 24px;
   padding: 3rem;
   text-align: center;
-  box-shadow: 0 10px 40px rgba(72, 187, 120, 0.3);
+  box-shadow: 0 10px 40px var(--shadow-color, rgba(72, 187, 120, 0.3));
   transition: opacity 0.3s ease;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const CompletionTitle = styled.h2`
-  color: #22543d;
+  color: var(--text-primary, #22543d);
   font-size: 2.5rem;
   margin-bottom: 1rem;
 `;
@@ -207,28 +210,30 @@ const LoadingSpinner = styled.div`
 const ErrorMessage = styled.div`
   text-align: center;
   padding: 3rem;
-  background: #fee2e2;
+  background: var(--card-bg, #fee2e2);
   border-radius: 16px;
-  color: #991b1b;
+  color: var(--text-primary, #991b1b);
+  border: 1px solid var(--border-color, #fca5a5);
   margin: 2rem 0;
 `;
 
 const SetInfo = styled.div`
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  background: var(--card-bg, linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%));
   padding: 1rem 1.5rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
   text-align: center;
+  border: 1px solid var(--border-color, transparent);
   
   h3 {
     margin: 0 0 0.25rem 0;
-    color: #0369a1;
+    color: var(--text-primary, #0369a1);
     font-size: 1.1rem;
   }
   
   p {
     margin: 0;
-    color: #0ea5e9;
+    color: var(--text-secondary, #0ea5e9);
     font-size: 0.9rem;
   }
 `;
@@ -367,15 +372,16 @@ const ShuffleButton = styled.button`
 `;
 
 const UnknownCardsSection = styled.div`
-  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+  background: var(--card-bg, linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%));
   border-radius: 16px;
   padding: 1.5rem;
   margin-top: 2rem;
   text-align: left;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const UnknownCardsTitle = styled.h3`
-  color: #742a2a;
+  color: var(--text-primary, #742a2a);
   margin: 0 0 1rem 0;
   font-size: 1.3rem;
   display: flex;
@@ -384,20 +390,21 @@ const UnknownCardsTitle = styled.h3`
 `;
 
 const UnknownCardItem = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--border-color, transparent);
   
   .term {
     font-weight: 600;
-    color: #1a202c;
+    color: var(--text-primary, #1a202c);
     margin-bottom: 0.25rem;
   }
   
   .definition {
-    color: #4a5568;
+    color: var(--text-secondary, #4a5568);
     font-size: 0.9rem;
   }
 `;

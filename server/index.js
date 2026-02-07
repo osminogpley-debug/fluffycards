@@ -17,7 +17,13 @@ import adminRoutes from './routes/admin.js';
 import supportRoutes from './routes/support.js';
 import chatRoutes from './routes/chat.js';
 import translateRoutes from './routes/translate.js';
+import uploadRoutes from './routes/upload.js';
 import authMiddleware from './middleware/auth.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
@@ -60,6 +66,10 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/translate', translateRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/health', (req, res) => {

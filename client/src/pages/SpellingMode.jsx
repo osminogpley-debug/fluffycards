@@ -11,7 +11,7 @@ const SpellingContainer = styled.div`
 
 const TermText = styled.h2`
   font-size: 2rem;
-  color: #2d3748;
+  color: var(--text-primary, #2d3748);
   margin-bottom: 2rem;
 `;
 

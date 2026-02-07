@@ -125,6 +125,19 @@ const Avatar = styled.div`
   font-size: 1.2rem;
   color: white;
   font-weight: 600;
+  position: relative;
+  flex-shrink: 0;
+`;
+
+const OnlineDot = styled.span`
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: ${p => p.$online ? '#48bb78' : '#a0aec0'};
+  border: 2px solid var(--bg-secondary, #fff);
 `;
 
 const UserDetails = styled.div``;
@@ -186,6 +199,11 @@ function FriendsList({ user }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  const isOnline = (lastSeen) => {
+    if (!lastSeen) return false;
+    return (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000; // 5 min
+  };
   
   const handleUserClick = (userId) => {
     navigate(`/users/${userId}`);
@@ -307,11 +325,15 @@ function FriendsList({ user }) {
             friends.map(friend => (
               <UserCard key={friend._id}>
                 <UserInfo onClick={() => handleUserClick(friend._id || friend.userId)}>
-                  <Avatar>{friend.username[0]}</Avatar>
+                  <Avatar>
+                    {friend.username[0]}
+                    <OnlineDot $online={isOnline(friend.lastSeen)} title={isOnline(friend.lastSeen) ? 'Онлайн' : 'Офлайн'} />
+                  </Avatar>
                   <UserDetails>
                     <UserName>{friend.username}</UserName>
                     <UserMeta>
                       Уровень {friend.level} • {friend.totalXp} XP
+                      {isOnline(friend.lastSeen) && <span style={{ color: '#48bb78', marginLeft: '6px' }}>● онлайн</span>}
                     </UserMeta>
                   </UserDetails>
                 </UserInfo>

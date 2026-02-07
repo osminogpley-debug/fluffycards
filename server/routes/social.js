@@ -21,7 +21,7 @@ router.get('/friends', authMiddleware, async (req, res) => {
   try {
     const friendships = await Friendship.find({
       users: req.user._id
-    }).populate('users', 'username profileImage level totalXp');
+    }).populate('users', 'username profileImage level totalXp lastSeen');
     
     const friends = friendships.map(f => {
       const friend = f.users.find(u => u._id.toString() !== req.user._id.toString());
@@ -87,6 +87,33 @@ router.get('/users/:userId/stats', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error fetching user stats:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch stats' });
+  }
+});
+
+// Get user gamification data (public)
+router.get('/users/:userId/gamification', authMiddleware, async (req, res) => {
+  try {
+    const UserGamification = (await import('../models/UserGamification.js')).default;
+    const gam = await UserGamification.findOne({ userId: req.params.userId });
+    
+    if (!gam) {
+      return res.json({ success: true, data: { level: 1, xp: 0, totalXp: 0, xpForNextLevel: 100, achievements: [], streak: { current: 0 } } });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        level: gam.level,
+        xp: gam.xp,
+        totalXp: gam.totalXp,
+        xpForNextLevel: UserGamification.getXpForLevel(gam.level),
+        achievements: gam.achievements || [],
+        streak: gam.streak || { current: 0 }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user gamification:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch gamification' });
   }
 });
 

@@ -30,17 +30,17 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 1.1rem;
 `;
 
 const GameArea = styled.div`
   position: relative;
   height: 60vh;
-  background: linear-gradient(to bottom, #dbeafe 0%, #eff6ff 50%, #f8fafc 100%);
+  background: var(--bg-secondary, linear-gradient(to bottom, #dbeafe 0%, #eff6ff 50%, #f8fafc 100%));
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px var(--shadow-color, rgba(0, 0, 0, 0.1));
   border: 3px solid #3b82f6;
 `;
 
@@ -80,10 +80,11 @@ const InputContainer = styled.div`
   display: flex;
   gap: 1rem;
   z-index: 20;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg, rgba(255, 255, 255, 0.95));
   padding: 1rem 2rem;
   border-radius: 50px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const Input = styled.input`
@@ -109,11 +110,12 @@ const ScorePanel = styled.div`
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg, rgba(255, 255, 255, 0.95));
   padding: 1rem 1.5rem;
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   text-align: center;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const ScoreValue = styled.div`
@@ -123,7 +125,7 @@ const ScoreValue = styled.div`
 `;
 
 const ScoreLabel = styled.div`
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 0.9rem;
 `;
 
@@ -131,10 +133,11 @@ const LevelIndicator = styled.div`
   position: absolute;
   top: 20px;
   left: 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg, rgba(255, 255, 255, 0.95));
   padding: 1rem 1.5rem;
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const LevelValue = styled.div`
@@ -144,7 +147,7 @@ const LevelValue = styled.div`
 `;
 
 const LevelLabel = styled.div`
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 0.8rem;
 `;
 
@@ -153,11 +156,12 @@ const QuestionCounter = styled.div`
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg, rgba(255, 255, 255, 0.95));
   padding: 1rem 1.5rem;
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   text-align: center;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const QuestionValue = styled.div`
@@ -167,7 +171,7 @@ const QuestionValue = styled.div`
 `;
 
 const QuestionLabel = styled.div`
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 0.8rem;
 `;
 
@@ -186,12 +190,13 @@ const GameOverOverlay = styled.div`
 `;
 
 const GameOverCard = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   padding: 3rem;
   border-radius: 24px;
   text-align: center;
   max-width: 400px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const GameOverTitle = styled.h2`
@@ -205,7 +210,7 @@ const GameOverTitle = styled.h2`
 `;
 
 const GameOverText = styled.p`
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   margin-bottom: 2rem;
   font-size: 1.1rem;
 `;
@@ -225,16 +230,17 @@ const WinOverlay = styled.div`
 `;
 
 const WinCard = styled.div`
-  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  background: var(--card-bg, linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%));
   padding: 3rem;
   border-radius: 24px;
   text-align: center;
   max-width: 400px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const WinTitle = styled.h2`
-  color: #166534;
+  color: var(--text-primary, #166534);
   font-size: 2rem;
   margin-bottom: 1rem;
   
@@ -244,7 +250,7 @@ const WinTitle = styled.h2`
 `;
 
 const WinText = styled.p`
-  color: #15803d;
+  color: var(--text-secondary, #15803d);
   margin-bottom: 2rem;
   font-size: 1.1rem;
   line-height: 1.6;
@@ -283,7 +289,8 @@ const StartOverlay = styled(GameOverOverlay)`
 `;
 
 const StartCard = styled(GameOverCard)`
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  background: var(--card-bg, linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%));
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const StartTitle = styled.h2`
@@ -294,7 +301,7 @@ const StartTitle = styled.h2`
 
 const Instructions = styled.ul`
   text-align: left;
-  color: #4b5563;
+  color: var(--text-primary, #4b5563);
   margin: 1.5rem 0;
   padding-left: 1.5rem;
   line-height: 1.8;

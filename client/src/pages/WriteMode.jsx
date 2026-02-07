@@ -27,14 +27,15 @@ const Title = styled.h1`
 `;
 
 const ProgressContainer = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 15px var(--shadow-color, rgba(0, 0, 0, 0.08));
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const ProgressMascot = styled.div`
@@ -49,7 +50,7 @@ const ProgressInfo = styled.div`
 const ProgressBar = styled.div`
   width: 100%;
   height: 16px;
-  background: #e2e8f0;
+  background: var(--bg-tertiary, #e2e8f0);
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -64,7 +65,7 @@ const ProgressFill = styled.div`
 `;
 
 const ProgressText = styled.div`
-  color: #4a5568;
+  color: var(--text-secondary, #4a5568);
   font-size: 0.9rem;
 `;
 
@@ -79,13 +80,14 @@ const AccuracyBadge = styled.div`
 `;
 
 const CardContainer = styled.div`
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: var(--card-bg, linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%));
   border-radius: 24px;
   padding: 3rem 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 10px 40px rgba(99, 179, 237, 0.2);
+  box-shadow: 0 10px 40px var(--shadow-color, rgba(99, 179, 237, 0.2));
   text-align: center;
   transition: opacity 0.3s ease;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const PromptLabel = styled.div`
@@ -98,7 +100,7 @@ const PromptLabel = styled.div`
 `;
 
 const PromptText = styled.h2`
-  color: #2d3748;
+  color: var(--text-primary, #2d3748);
   font-size: 2rem;
   margin-bottom: 2rem;
   min-height: 60px;
@@ -115,8 +117,8 @@ const DirectionToggle = styled.div`
 `;
 
 const DirectionButton = styled.button`
-  background: ${({ active }) => active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'white'};
-  color: ${({ active }) => active ? 'white' : '#4a5568'};
+  background: ${({ active }) => active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'var(--card-bg, white)'};
+  color: ${({ active }) => active ? 'white' : 'var(--text-secondary, #4a5568)'};
   border: 2px solid #63b3ed;
   padding: 0.5rem 1rem;
   border-radius: 20px;
@@ -175,7 +177,7 @@ const FeedbackText = styled.div`
 `;
 
 const CorrectAnswer = styled.div`
-  color: #4a5568;
+  color: var(--text-secondary, #4a5568);
   font-size: 1rem;
 `;
 
@@ -194,11 +196,12 @@ const StatsGrid = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: white;
+  background: var(--card-bg, white);
   border-radius: 12px;
   padding: 1rem;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 15px var(--shadow-color, rgba(0, 0, 0, 0.08));
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const StatIcon = styled.div`
@@ -209,25 +212,26 @@ const StatIcon = styled.div`
 const StatValue = styled.div`
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary, #2d3748);
 `;
 
 const StatLabel = styled.div`
   font-size: 0.8rem;
-  color: #718096;
+  color: var(--text-secondary, #718096);
 `;
 
 const CompletionCard = styled.div`
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: var(--card-bg, linear-gradient(135deg, #fef3c7 0%, #fde68a 100%));
   border-radius: 24px;
   padding: 3rem 2rem;
   text-align: center;
-  box-shadow: 0 10px 40px rgba(251, 191, 36, 0.3);
+  box-shadow: 0 10px 40px var(--shadow-color, rgba(251, 191, 36, 0.3));
   transition: transform 0.2s ease;
+  border: 1px solid var(--border-color, transparent);
 `;
 
 const CompletionTitle = styled.h2`
-  color: #92400e;
+  color: var(--text-primary, #92400e);
   font-size: 2.5rem;
   margin-bottom: 1rem;
 `;
@@ -257,28 +261,30 @@ const LoadingSpinner = styled.div`
 const ErrorMessage = styled.div`
   text-align: center;
   padding: 3rem;
-  background: #fee2e2;
+  background: var(--card-bg, #fee2e2);
   border-radius: 16px;
-  color: #991b1b;
+  color: var(--text-primary, #991b1b);
+  border: 1px solid var(--border-color, #fca5a5);
   margin: 2rem 0;
 `;
 
 const SetInfo = styled.div`
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  background: var(--card-bg, linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%));
   padding: 1rem 1.5rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
   text-align: center;
+  border: 1px solid var(--border-color, transparent);
   
   h3 {
     margin: 0 0 0.25rem 0;
-    color: #0369a1;
+    color: var(--text-primary, #0369a1);
     font-size: 1.1rem;
   }
   
   p {
     margin: 0;
-    color: #0ea5e9;
+    color: var(--text-secondary, #0ea5e9);
     font-size: 0.9rem;
   }
 `;
