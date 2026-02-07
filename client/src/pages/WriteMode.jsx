@@ -2,8 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
-import { API_ROUTES, authFetch } from '../constants/api';
+import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import SetSelector from '../components/SetSelector';
+
+const resolveImageUrl = (url) => {
+  if (!url) return url;
+  if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+  return url;
+};
 
 
 
@@ -639,6 +645,13 @@ function WriteMode() {
           {isTermToDef ? 'Напишите определение для термина:' : 'Напишите термин для определения:'}
         </PromptLabel>
         <PromptText>{prompt}</PromptText>
+        {currentCard?.imageUrl && (
+          <img 
+            src={resolveImageUrl(currentCard.imageUrl)} 
+            alt="Card illustration" 
+            style={{ maxWidth: '200px', maxHeight: '150px', marginTop: '0.5rem', borderRadius: '12px', objectFit: 'cover' }} 
+          />
+        )}
 
         <InputContainer>
           <InputField

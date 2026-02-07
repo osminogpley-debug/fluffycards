@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import { API_ROUTES, authFetch } from '../constants/api';
+import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import SocialFeatures from '../components/SocialFeatures';
 
 // ===== ПРОВЕРКА КИТАЙСКОГО ТЕКСТА =====
 const isChinese = (text) => {
   if (!text) return false;
   return /[\u4e00-\u9fff]/.test(text);
+};
+
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+  return url;
 };
 
 
@@ -670,8 +676,8 @@ function SetDetail() {
   }
 
   const flashcards = setData.flashcards || setData.cards || [];
-  const authorName = setData.author?.username || setData.author?.name || 'Неизвестный автор';
-  const authorAvatar = setData.author?.avatar || '👤';
+  const authorName = setData.owner?.username || setData.author?.username || setData.author?.name || 'Неизвестный автор';
+  const authorAvatar = setData.owner?.username?.[0]?.toUpperCase() || setData.author?.avatar || '👤';
 
   return (
     <PageContainer>
@@ -754,6 +760,23 @@ function SetDetail() {
                         </TranslationDisplay>
                       )}
                     </div>
+                    
+                    {/* Изображение карточки */}
+                    {card.imageUrl && (
+                      <div style={{ margin: '8px 0' }}>
+                        <img 
+                          src={resolveImageUrl(card.imageUrl)} 
+                          alt="" 
+                          style={{ 
+                            maxWidth: '100%', 
+                            maxHeight: '150px', 
+                            borderRadius: '8px', 
+                            objectFit: 'cover' 
+                          }}
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                    )}
                     
                     <CardDefinition>{card.definition}</CardDefinition>
                   </FlashcardItem>

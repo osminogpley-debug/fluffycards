@@ -1141,7 +1141,8 @@ function SetBuilder() {
       const formData = new FormData();
       formData.append('image', file);
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/upload', {
+      const uploadUrl = `http://${window.location.hostname}:5001/api/upload`;
+      const res = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
@@ -1212,11 +1213,16 @@ function SetBuilder() {
   
   // Удаление пиньиня и перевода
   const handleDeletePinyin = (cardId) => {
-    setCards(prevCards => prevCards.map(card => 
-      card.id === cardId 
-        ? { ...card, pinyin: '', translation: '' }
-        : card
-    ));
+    setCards(prevCards => prevCards.map(card => {
+      if (card.id !== cardId) return card;
+      // Также убираем из definition автодобавленную часть "pinyin - translation"
+      let cleanedDef = card.definition || '';
+      if (card.pinyin && card.translation) {
+        const autoText = `${card.pinyin} - ${card.translation}`;
+        cleanedDef = cleanedDef.replace(autoText, '').trim();
+      }
+      return { ...card, pinyin: '', translation: '', definition: cleanedDef };
+    }));
     
     setSuccess('Пиньинь и перевод удалены 🗑️');
     setTimeout(() => setSuccess(null), 2000);

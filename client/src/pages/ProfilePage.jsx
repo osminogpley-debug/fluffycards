@@ -444,7 +444,8 @@ function ProfilePage() {
       const formDataUpload = new FormData();
       formDataUpload.append('image', file);
       const token = localStorage.getItem('token');
-      const uploadRes = await fetch('/api/upload', {
+      const uploadUrl = `http://${window.location.hostname}:5001/api/upload`;
+      const uploadRes = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formDataUpload
@@ -483,6 +484,29 @@ function ProfilePage() {
       setMessage({ type: 'error', text: error.message || 'Ошибка загрузки' });
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  const handleRevertToEmoji = async () => {
+    try {
+      const apiUrl = `http://${window.location.hostname}:5001/api/auth/profile`;
+      const res = await authFetch(apiUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          isProfilePublic: formData.isProfilePublic,
+          profileImage: ''
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Ошибка');
+      setUser(data.user);
+      setAuthState(prev => ({ ...prev, user: data.user }));
+      setMessage({ type: 'success', text: 'Аватарка сброшена на смайлик ✅' });
+      setTimeout(() => setMessage(null), 2000);
+    } catch (error) {
+      setMessage({ type: 'error', text: error.message || 'Ошибка сброса аватарки' });
     }
   };
 
@@ -541,6 +565,11 @@ function ProfilePage() {
                 disabled={uploadingAvatar}
               />
             </AvatarUploadButton>
+            {isCustomProfileImage(user?.profileImage) && (
+              <AvatarUploadButton as="button" onClick={handleRevertToEmoji} style={{ background: 'var(--danger-bg)', borderColor: 'var(--danger-color)', color: 'var(--danger-color)' }}>
+                🔄 Вернуть смайлик
+              </AvatarUploadButton>
+            )}
             <AvatarHint>JPG/PNG/WebP, до 5 МБ</AvatarHint>
           </AvatarUploadGroup>
         </AvatarSection>

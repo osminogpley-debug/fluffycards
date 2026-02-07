@@ -3,10 +3,15 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import TextToSpeech from '../components/TextToSpeech';
-import { API_ROUTES, authFetch } from '../constants/api';
+import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import { trackCardsStudied } from '../services/gamificationService';
 import SetSelector from '../components/SetSelector';
 
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+  return url;
+};
 
 
 const Container = styled.div`
@@ -772,7 +777,7 @@ function LearningMode() {
             <DefinitionText>{currentCard.definition}</DefinitionText>
             {currentCard.imageUrl && (
               <img 
-                src={currentCard.imageUrl} 
+                src={resolveImageUrl(currentCard.imageUrl)} 
                 alt="Term illustration" 
                 style={{ maxWidth: '200px', maxHeight: '150px', marginTop: '1rem', borderRadius: '12px' }} 
               />

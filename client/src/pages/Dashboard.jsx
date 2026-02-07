@@ -1508,21 +1508,44 @@ function Dashboard() {
       <SidebarCard>
         <h3>📈 История сессий</h3>
         {stats?.sessionHistory?.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {stats.sessionHistory.slice(0, 10).map((session, index) => (
-              <div key={index} style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                padding: '12px',
-                background: 'var(--bg-tertiary)',
-                borderRadius: '8px'
-              }}>
-                <span>{new Date(session.date).toLocaleDateString()}</span>
-                <span style={{ color: '#22c55e', fontWeight: '600' }}>
-                  {Math.round((session.correctAnswers / session.cardsAttempted) * 100)}%
-                </span>
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {[...stats.sessionHistory].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).map((session, index) => {
+              const accuracy = session.cardsAttempted > 0
+                ? Math.round((session.correctAnswers / session.cardsAttempted) * 100)
+                : 0;
+              const modeLabels = { flashcards: '🃏 Карточки', study: '📖 Заучивание', write: '✍️ Письмо', spell: '🔤 Правописание', test: '📝 Тест', match: '🎮 Матч', gravity: '🚀 Гравитация' };
+              const modeLabel = modeLabels[session.mode] || session.mode || '📖 Учёба';
+              const timeMin = session.timeSpent ? `${Math.round(session.timeSpent / 60)} мин` : '';
+              return (
+                <div key={index} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px 12px',
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: '10px',
+                  fontSize: '0.9rem'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{modeLabel}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {new Date(session.date).toLocaleDateString('ru-RU')} {timeMin && `• ${timeMin}`}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{session.correctAnswers}/{session.cardsAttempted}</span>
+                    <span style={{ 
+                      color: accuracy >= 80 ? '#22c55e' : accuracy >= 50 ? '#f59e0b' : '#ef4444', 
+                      fontWeight: '700',
+                      minWidth: '40px',
+                      textAlign: 'right'
+                    }}>
+                      {accuracy}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>

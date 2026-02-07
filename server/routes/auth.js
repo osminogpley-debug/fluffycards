@@ -295,8 +295,9 @@ router.put('/profile', authMiddleware, async (req, res) => {
     if (typeof isProfilePublic === 'boolean') {
       updateData.isProfilePublic = isProfilePublic;
     }
-    if (typeof profileImage === 'string' && profileImage.trim()) {
-      updateData.profileImage = profileImage.trim();
+    if (typeof profileImage === 'string') {
+      // Allow empty string to revert to default avatar
+      updateData.profileImage = profileImage.trim() || 'https://fluffycards.com/default-avatar.png';
     }
 
     const user = await User.findByIdAndUpdate(

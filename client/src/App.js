@@ -27,6 +27,8 @@ import PublicProfile from './pages/PublicProfile';
 import AdminPage from './pages/AdminPage';
 import HelpPage from './pages/HelpPage';
 import ContactsPage from './pages/ContactsPage';
+import ScrambleGame from './pages/ScrambleGame';
+import QuizBlitz from './pages/QuizBlitz';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -204,20 +206,23 @@ const Header = styled.header`
 `;
 
 const Logo = styled.h1`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
   font-size: 1.8rem;
   font-weight: 700;
   color: #63b3ed;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   margin: 0;
-  
-  &::before {
-    content: "🎀 ";
-  }
-  
-  &::after {
-    content: " 🎀";
-  }
+`;
+
+const LogoImage = styled.img`
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 12px;
+  flex: 0 0 auto;
 `;
 
 const Tagline = styled.p`
@@ -350,7 +355,13 @@ function HeaderComponent({ authState, logout }) {
   
   return (
     <Header $isDark={themeData?.name === 'Темная' || themeData?.name === 'Космическая'}>
-      <Logo onClick={() => navigate('/')}>FluffyCards</Logo>
+      <Logo onClick={() => navigate('/')}
+        aria-label="FluffyCards — на главную"
+        title="FluffyCards"
+      >
+        <LogoImage src={`${process.env.PUBLIC_URL}/logo192.png`} alt="Логотип FluffyCards" />
+        FluffyCards
+      </Logo>
       <Tagline>Learning made fun and friendly! 🎓</Tagline>
       
       <HeaderActions>
@@ -638,6 +649,26 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <GravityGamePage />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/scramble"
+                element={
+                  authState.isAuthenticated ? (
+                    <ScrambleGame />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/quiz-blitz"
+                element={
+                  authState.isAuthenticated ? (
+                    <QuizBlitz />
                   ) : (
                     <Navigate to="/login" />
                   )
