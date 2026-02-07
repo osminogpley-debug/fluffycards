@@ -30,8 +30,40 @@ cd fluffycards
 # Backend
 cd server
 npm install
+```
 
-# Frontend
-cd ../client
-npm install
+### Деплой на production
 
+1. Создать папку uploads:
+   ```bash
+   sudo mkdir -p /var/www/fluffycards/uploads
+   sudo chown -R www-data:www-data /var/www/fluffycards/uploads
+   sudo chmod -R 755 /var/www/fluffycards/uploads
+   ```
+
+2. Установить зависимости сервера:
+   ```bash
+   cd server && npm install && cd ..
+   ```
+
+3. Собрать клиент:
+   ```bash
+   cd client && npm run build && cd ..
+   ```
+
+4. Копировать билд:
+   ```bash
+   sudo rm -rf /var/www/fluffycards/*
+   sudo cp -r client/build/* /var/www/fluffycards/
+   sudo chown -R www-data:www-data /var/www/fluffycards
+   ```
+
+5. Настроить nginx (см. конфиг в nginx/fluffycards.conf) и перезагрузить:
+   ```bash
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+6. Запустить API сервер:
+   ```bash
+   sudo systemctl restart fluffycards-api
+   ```
