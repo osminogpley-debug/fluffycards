@@ -59,15 +59,40 @@ const TextToSpeech = {
     return chineseRegex.test(text);
   },
 
+  detectLanguageHints: (text) => {
+    if (!text) return [];
+    if (TextToSpeech.isChineseText(text)) return ['zh-CN', 'zh'];
+    if (/[\u3040-\u30ff]/.test(text)) return ['ja-JP', 'ja'];
+    if (/[\uac00-\ud7af]/.test(text)) return ['ko-KR', 'ko'];
+    if (/[\u0400-\u04ff]/.test(text)) return ['ru-RU', 'ru'];
+    if (/[\u0600-\u06ff]/.test(text)) return ['ar-SA', 'ar'];
+    if (/[\u0590-\u05ff]/.test(text)) return ['he-IL', 'he'];
+    if (/[\u0900-\u097f]/.test(text)) return ['hi-IN', 'hi'];
+    if (/[\u0e00-\u0e7f]/.test(text)) return ['th-TH', 'th'];
+    return [];
+  },
+
+  pickBestVoice: (preferredLangs) => {
+    if (!TextToSpeech.voices.length) return null;
+    const uniqueLangs = Array.from(new Set(preferredLangs.filter(Boolean)));
+    for (const lang of uniqueLangs) {
+      const exact = TextToSpeech.voices.find(voice => voice.lang === lang);
+      if (exact) return exact;
+      const partial = TextToSpeech.voices.find(voice => voice.lang.startsWith(lang));
+      if (partial) return partial;
+    }
+    return TextToSpeech.voices.find(voice => voice.default) || TextToSpeech.voices[0] || null;
+  },
+
   speak: async (text) => {
     if (!text) {
       console.warn('TextToSpeech: No text provided to speak');
-      return;
+      return Promise.resolve();
     }
 
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       console.warn('Text-to-speech not supported in this browser');
-      return;
+      return Promise.resolve();
     }
 
     try {
@@ -82,57 +107,42 @@ const TextToSpeech = {
       synth.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Detect language of text
-      const isChinese = TextToSpeech.isChineseText(text);
-      
-      let selectedVoice = null;
-      
-      if (isChinese) {
-        // Try to find a Chinese voice (prioritize zh-CN)
-        selectedVoice = TextToSpeech.voices.find(
-          voice => voice.lang === 'zh-CN' || voice.lang === 'zh-CN'
-        ) || TextToSpeech.voices.find(
-          voice => voice.lang.startsWith('zh')
-        );
-        
-        if (selectedVoice) {
-          console.log('TextToSpeech: Using Chinese voice:', selectedVoice.name, selectedVoice.lang);
-        } else {
-          console.log('TextToSpeech: Chinese voice not found, using default');
-        }
-      } else {
-        // Try to find a Russian voice for non-Chinese text
-        selectedVoice = TextToSpeech.voices.find(
-          voice => voice.lang.startsWith('ru')
-        );
-        
-        if (selectedVoice) {
-          console.log('TextToSpeech: Using Russian voice:', selectedVoice.name, selectedVoice.lang);
-        } else {
-          console.log('TextToSpeech: Russian voice not found, using default');
-        }
-      }
-      
+
+      const preferredLangs = [
+        ...TextToSpeech.detectLanguageHints(text),
+        typeof navigator !== 'undefined' ? navigator.language : null,
+        typeof navigator !== 'undefined' ? navigator.language?.split('-')[0] : null,
+        'en-US',
+        'en'
+      ].filter(Boolean);
+
+      const selectedVoice = TextToSpeech.pickBestVoice(preferredLangs);
+
       if (selectedVoice) {
         utterance.voice = selectedVoice;
         utterance.lang = selectedVoice.lang;
+      } else if (preferredLangs.length > 0) {
+        utterance.lang = preferredLangs[0];
       }
       
       utterance.rate = 0.8;
       utterance.pitch = 1;
-      
-      utterance.onerror = (event) => {
-        console.error('TextToSpeech: Speech synthesis error:', event.error);
-      };
-      
-      utterance.onend = () => {
-        console.log('TextToSpeech: Speech finished');
-      };
-      
-      synth.speak(utterance);
+
+      return new Promise((resolve) => {
+        utterance.onerror = (event) => {
+          console.error('TextToSpeech: Speech synthesis error:', event.error);
+          resolve();
+        };
+
+        utterance.onend = () => {
+          resolve();
+        };
+
+        synth.speak(utterance);
+      });
     } catch (error) {
       console.error('TextToSpeech: Error during speak:', error);
+      return Promise.resolve();
     }
   },
 

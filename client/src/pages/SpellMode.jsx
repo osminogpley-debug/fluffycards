@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { API_ROUTES, authFetch } from '../constants/api';
+import TextToSpeech from '../components/TextToSpeech';
 import SetSelector from '../components/SetSelector';
 
 
@@ -393,30 +394,10 @@ function SpellMode() {
 
   const speak = useCallback(() => {
     if (!currentTerm?.term) return;
-    
-    if (!window.speechSynthesis) {
-      alert('Ваш браузер не поддерживает Web Speech API');
-      return;
-    }
-
     setIsPlaying(true);
-    
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(currentTerm.term);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.8;
-    utterance.pitch = 1;
-    
-    utterance.onend = () => {
+    TextToSpeech.speak(currentTerm.term).finally(() => {
       setIsPlaying(false);
-    };
-    
-    utterance.onerror = () => {
-      setIsPlaying(false);
-    };
-    
-    window.speechSynthesis.speak(utterance);
+    });
   }, [currentTerm]);
 
   // Auto-play on first load of each term

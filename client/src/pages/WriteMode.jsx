@@ -115,6 +115,18 @@ const PromptText = styled.h2`
   justify-content: center;
 `;
 
+const CardImage = styled.img`
+  width: 220px;
+  height: 160px;
+  max-width: 100%;
+  margin-top: 0.5rem;
+  border-radius: 12px;
+  object-fit: contain;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 6px;
+`;
+
 const DirectionToggle = styled.div`
   display: flex;
   justify-content: center;
@@ -646,10 +658,9 @@ function WriteMode() {
         </PromptLabel>
         <PromptText>{prompt}</PromptText>
         {currentCard?.imageUrl && (
-          <img 
-            src={resolveImageUrl(currentCard.imageUrl)} 
-            alt="Card illustration" 
-            style={{ maxWidth: '200px', maxHeight: '150px', marginTop: '0.5rem', borderRadius: '12px', objectFit: 'cover' }} 
+          <CardImage
+            src={resolveImageUrl(currentCard.imageUrl)}
+            alt="Card illustration"
           />
         )}
 

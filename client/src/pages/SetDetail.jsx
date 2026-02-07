@@ -123,6 +123,17 @@ const VisibilityBadge = styled.span`
   font-weight: 500;
 `;
 
+const CardImage = styled.img`
+  width: 220px;
+  height: 160px;
+  max-width: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 6px;
+`;
+
 // Основной контент
 const MainContent = styled.div`
   max-width: 1200px;
@@ -764,15 +775,9 @@ function SetDetail() {
                     {/* Изображение карточки */}
                     {card.imageUrl && (
                       <div style={{ margin: '8px 0' }}>
-                        <img 
+                        <CardImage
                           src={resolveImageUrl(card.imageUrl)} 
                           alt="" 
-                          style={{ 
-                            maxWidth: '100%', 
-                            maxHeight: '150px', 
-                            borderRadius: '8px', 
-                            objectFit: 'cover' 
-                          }}
                           onError={(e) => { e.target.style.display = 'none'; }}
                         />
                       </div>

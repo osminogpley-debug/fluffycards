@@ -94,6 +94,18 @@ const DefinitionText = styled.p`
   line-height: 1.6;
 `;
 
+const CardImage = styled.img`
+  width: 220px;
+  height: 160px;
+  max-width: 100%;
+  margin-top: 1rem;
+  border-radius: 12px;
+  object-fit: contain;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 6px;
+`;
+
 const AudioButton = styled.button`
   background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
   color: white;
@@ -776,10 +788,9 @@ function LearningMode() {
           <DefinitionSide>
             <DefinitionText>{currentCard.definition}</DefinitionText>
             {currentCard.imageUrl && (
-              <img 
-                src={resolveImageUrl(currentCard.imageUrl)} 
-                alt="Term illustration" 
-                style={{ maxWidth: '200px', maxHeight: '150px', marginTop: '1rem', borderRadius: '12px' }} 
+              <CardImage
+                src={resolveImageUrl(currentCard.imageUrl)}
+                alt="Term illustration"
               />
             )}
           </DefinitionSide>

@@ -1461,100 +1461,148 @@ function Dashboard() {
   };
 
   // Вкладка "Статистика"
-  const renderStatsTab = () => (
-    <>
-      <SetsGrid>
+  const renderStatsTab = () => {
+    if (userRole === 'teacher') {
+      const studentStats = Array.isArray(stats?.students) ? stats.students : [];
+      if (studentStats.length === 0) {
+        return (
+          <EmptyState>
+            <div className="icon">📈</div>
+            <h3>Аналитика учеников</h3>
+            <p>Пока нет учеников. Создайте класс и пригласите учеников, чтобы видеть их прогресс.</p>
+            <CreateButton onClick={() => navigate('/classes/create')}>
+              ➕ Создать класс
+            </CreateButton>
+          </EmptyState>
+        );
+      }
+
+      return (
         <SidebarCard>
-          <h3>📚 Прогресс изучения</h3>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <div style={{ fontSize: '48px', fontWeight: '700', color: '#63b3ed' }}>
-              {stats?.setsStudied || 0}
-            </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Наборов изучено</div>
+          <h3>📊 Аналитика учеников</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <th style={{ padding: '10px 8px' }}>Ученик</th>
+                  <th style={{ padding: '10px 8px' }}>Наборы</th>
+                  <th style={{ padding: '10px 8px' }}>Карточки</th>
+                  <th style={{ padding: '10px 8px' }}>Точность</th>
+                  <th style={{ padding: '10px 8px' }}>Серия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {studentStats.map((student) => (
+                  <tr key={student.id || student._id} style={{ borderTop: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '10px 8px', fontWeight: 600 }}>{student.name || student.email || 'Ученик'}</td>
+                    <td style={{ padding: '10px 8px' }}>{student.setsStudied || 0}</td>
+                    <td style={{ padding: '10px 8px' }}>{student.cardsMastered || 0}</td>
+                    <td style={{ padding: '10px 8px' }}>{student.accuracy || 0}%</td>
+                    <td style={{ padding: '10px 8px' }}>{student.streakDays || 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </SidebarCard>
+      );
+    }
+
+    return (
+      <>
+        <SetsGrid>
+          <SidebarCard>
+            <h3>📚 Прогресс изучения</h3>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '48px', fontWeight: '700', color: '#63b3ed' }}>
+                {stats?.setsStudied || 0}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Наборов изучено</div>
+            </div>
+          </SidebarCard>
+
+          <SidebarCard>
+            <h3>✅ Правильных ответов</h3>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '48px', fontWeight: '700', color: '#22c55e' }}>
+                {stats?.cardsMastered || 0}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Карточек освоено</div>
+            </div>
+          </SidebarCard>
+
+          <SidebarCard>
+            <h3>🔥 Серия</h3>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '48px', fontWeight: '700', color: '#f59e0b' }}>
+                {stats?.streakDays || 0}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Дней подряд</div>
+            </div>
+          </SidebarCard>
+
+          <SidebarCard>
+            <h3>🎯 Точность</h3>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '48px', fontWeight: '700', color: '#8b5cf6' }}>
+                {stats?.accuracy || 0}%
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Средняя точность</div>
+            </div>
+          </SidebarCard>
+        </SetsGrid>
 
         <SidebarCard>
-          <h3>✅ Правильных ответов</h3>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <div style={{ fontSize: '48px', fontWeight: '700', color: '#22c55e' }}>
-              {stats?.cardsMastered || 0}
-            </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Карточек освоено</div>
-          </div>
-        </SidebarCard>
-
-        <SidebarCard>
-          <h3>🔥 Серия</h3>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <div style={{ fontSize: '48px', fontWeight: '700', color: '#f59e0b' }}>
-              {stats?.streakDays || 0}
-            </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Дней подряд</div>
-          </div>
-        </SidebarCard>
-
-        <SidebarCard>
-          <h3>🎯 Точность</h3>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <div style={{ fontSize: '48px', fontWeight: '700', color: '#8b5cf6' }}>
-              {stats?.accuracy || 0}%
-            </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Средняя точность</div>
-          </div>
-        </SidebarCard>
-      </SetsGrid>
-
-      <SidebarCard>
-        <h3>📈 История сессий</h3>
-        {stats?.sessionHistory?.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {[...stats.sessionHistory].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).map((session, index) => {
-              const accuracy = session.cardsAttempted > 0
-                ? Math.round((session.correctAnswers / session.cardsAttempted) * 100)
-                : 0;
-              const modeLabels = { flashcards: '🃏 Карточки', study: '📖 Заучивание', write: '✍️ Письмо', spell: '🔤 Правописание', test: '📝 Тест', match: '🎮 Матч', gravity: '🚀 Гравитация' };
-              const modeLabel = modeLabels[session.mode] || session.mode || '📖 Учёба';
-              const timeMin = session.timeSpent ? `${Math.round(session.timeSpent / 60)} мин` : '';
-              return (
-                <div key={index} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  background: 'var(--bg-tertiary)',
-                  borderRadius: '10px',
-                  fontSize: '0.9rem'
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{modeLabel}</span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {new Date(session.date).toLocaleDateString('ru-RU')} {timeMin && `• ${timeMin}`}
-                    </span>
+          <h3>📈 История сессий</h3>
+          {stats?.sessionHistory?.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[...stats.sessionHistory].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).map((session, index) => {
+                const accuracy = session.cardsAttempted > 0
+                  ? Math.round((session.correctAnswers / session.cardsAttempted) * 100)
+                  : 0;
+                const modeLabels = { flashcards: '🃏 Карточки', study: '📖 Заучивание', write: '✍️ Письмо', spell: '🔤 Правописание', test: '📝 Тест', match: '🎮 Матч', gravity: '🚀 Гравитация' };
+                const modeLabel = modeLabels[session.mode] || session.mode || '📖 Учёба';
+                const timeMin = session.timeSpent ? `${Math.round(session.timeSpent / 60)} мин` : '';
+                return (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 12px',
+                    background: 'var(--bg-tertiary)',
+                    borderRadius: '10px',
+                    fontSize: '0.9rem'
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{modeLabel}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {new Date(session.date).toLocaleDateString('ru-RU')} {timeMin && `• ${timeMin}`}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{session.correctAnswers}/{session.cardsAttempted}</span>
+                      <span style={{ 
+                        color: accuracy >= 80 ? '#22c55e' : accuracy >= 50 ? '#f59e0b' : '#ef4444', 
+                        fontWeight: '700',
+                        minWidth: '40px',
+                        textAlign: 'right'
+                      }}>
+                        {accuracy}%
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{session.correctAnswers}/{session.cardsAttempted}</span>
-                    <span style={{ 
-                      color: accuracy >= 80 ? '#22c55e' : accuracy >= 50 ? '#f59e0b' : '#ef4444', 
-                      fontWeight: '700',
-                      minWidth: '40px',
-                      textAlign: 'right'
-                    }}>
-                      {accuracy}%
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-            Пока нет данных о сессиях
-          </div>
-        )}
-      </SidebarCard>
-    </>
-  );
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+              Пока нет данных о сессиях
+            </div>
+          )}
+        </SidebarCard>
+      </>
+    );
+  };
 
   // Вкладка "Достижения"
   const renderAchievementsTab = () => {
@@ -1806,7 +1854,7 @@ function Dashboard() {
                     <span className="icon">👥</span>
                     Мои классы
                   </SidebarItem>
-                  <SidebarItem onClick={() => navigate('/analytics')}>
+                  <SidebarItem onClick={() => setActiveTab('stats')}>
                     <span className="icon">📈</span>
                     Аналитика учеников
                   </SidebarItem>

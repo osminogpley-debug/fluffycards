@@ -162,11 +162,15 @@ const PinyinHint = styled.div`
 
 const CardImage = styled.img`
   display: block;
-  max-width: 200px;
-  max-height: 150px;
+  width: 220px;
+  height: 160px;
+  max-width: 100%;
   margin: 0.5rem auto 1rem;
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 6px;
 `;
 
 const OptionsGrid = styled.div`

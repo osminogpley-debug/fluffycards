@@ -512,6 +512,17 @@ const CardRow = styled.div`
   }
 `;
 
+const CardPreviewImage = styled.img`
+  width: 220px;
+  height: 160px;
+  max-width: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 6px;
+`;
+
 const ChineseBadge = styled.span`
   display: inline-flex;
   align-items: center;
@@ -1774,15 +1785,9 @@ function SetBuilder() {
                       </CardField>
                       {card.imageUrl && (
                         <CardField style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                          <img 
+                          <CardPreviewImage
                             src={resolveImageUrl(card.imageUrl)} 
                             alt="Preview" 
-                            style={{ 
-                              maxWidth: '100%', 
-                              maxHeight: '60px', 
-                              borderRadius: '8px',
-                              objectFit: 'cover'
-                            }}
                             onError={(e) => { e.target.style.display = 'none'; }}
                           />
                         </CardField>
