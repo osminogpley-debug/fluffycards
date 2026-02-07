@@ -253,7 +253,7 @@ function MetrikaRouteTracker() {
     if (typeof window === 'undefined') return;
     if (typeof window.ym !== 'function') return;
 
-    const url = `${window.location.origin}${location.pathname}${location.search}${location.hash}`;
+    const url = `https://fluffycards.ru${location.pathname}${location.search}${location.hash}`;
     window.ym(YANDEX_METRIKA_COUNTER_ID, 'hit', url, {
       referer: document.referrer,
       title: document.title,

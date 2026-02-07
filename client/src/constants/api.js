@@ -1,19 +1,5 @@
-// Centralized API configuration
-// Automatically detects the server address for LAN play
 const getApiBaseUrl = () => {
-  // Use environment variable if available
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
-  }
-  
-  // In production, use relative URL
-  if (process.env.NODE_ENV === 'production') {
-    return '/api';
-  }
-  
-  // In development, use the same hostname as the current page
-  const hostname = window.location.hostname;
-  return `http://${hostname}:5001/api`;
+  return '/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

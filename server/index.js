@@ -69,7 +69,7 @@ app.use('/api/translate', translateRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static('/var/www/fluffycards/uploads'));
 
 // Health check
 app.get('/api/health', (req, res) => {

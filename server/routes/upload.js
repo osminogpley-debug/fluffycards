@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 const router = express.Router();
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '..', 'uploads');
+const uploadsDir = '/var/www/fluffycards/uploads';
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
