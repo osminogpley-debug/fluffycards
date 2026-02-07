@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 
 import { authFetch } from './constants/api';
@@ -234,6 +234,25 @@ const MainContent = styled.main`
 `;
 
 export const AuthContext = createContext(null);
+
+const YANDEX_METRIKA_COUNTER_ID = 106706105;
+
+function MetrikaRouteTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (typeof window.ym !== 'function') return;
+
+    const url = `${window.location.origin}${location.pathname}${location.search}${location.hash}`;
+    window.ym(YANDEX_METRIKA_COUNTER_ID, 'hit', url, {
+      referer: document.referrer,
+      title: document.title,
+    });
+  }, [location]);
+
+  return null;
+}
 
 const HeaderActions = styled.div`
   position: absolute;
@@ -481,6 +500,7 @@ function App() {
             $themePrimary={themeData?.primary}
             $cardBg={themeData?.cardBg}
           />
+          <MetrikaRouteTracker />
           <AppContainer $theme={themeData}>
             {themeData?.name === 'Космическая' && (
               <CosmicStarsOverlay>
