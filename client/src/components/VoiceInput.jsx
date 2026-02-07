@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 
 const VoiceContainer = styled.div`
@@ -8,8 +8,8 @@ const VoiceContainer = styled.div`
 `;
 
 const VoiceButton = styled.button`
-  background: ${props => props.$isListening 
-    ? 'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)' 
+  background: ${props => props.$isListening
+    ? 'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)'
     : 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)'};
   color: white;
   border: none;
@@ -23,19 +23,19 @@ const VoiceButton = styled.button`
   font-size: 1rem;
   transition: all 0.3s ease;
   flex-shrink: 0;
-  
+
   &:hover {
     transform: scale(1.1);
     box-shadow: 0 4px 12px rgba(99, 179, 237, 0.4);
   }
-  
+
   &:active {
     transform: scale(0.95);
   }
-  
+
   ${props => props.$isListening && `
     animation: pulse 1.5s infinite;
-    
+
     @keyframes pulse {
       0% {
         box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7);
@@ -48,7 +48,7 @@ const VoiceButton = styled.button`
       }
     }
   `}
-  
+
   &:disabled {
     background: #cbd5e0;
     cursor: not-allowed;
@@ -63,23 +63,21 @@ const StatusText = styled.span`
   font-style: italic;
 `;
 
-// Проверка поддержки Speech API
 const isSpeechSupported = () => {
   return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
 };
 
-// Определение языка по тексту (простая эвристика)
 const detectLanguage = (text) => {
-  // Китайские иероглифы
-  if (/[\u4e00-\u9fff]/.test(text)) return 'zh-CN';
-  // Корейские символы
-  if (/[\uac00-\ud7af]/.test(text)) return 'ko-KR';
-  // Японские символы (хирагана/катакана)
-  if (/[\u3040-\u309f\u30a0-\u30ff]/.test(text)) return 'ja-JP';
-  // Русские буквы
-  if (/[\u0400-\u04ff]/.test(text)) return 'ru-RU';
-  // По умолчанию английский
-  return 'en-US';
+  if (/\p{Script=Han}/u.test(text)) return 'zh-CN';
+  if (/\p{Script=Hangul}/u.test(text)) return 'ko-KR';
+  if (/\p{Script=Hiragana}|\p{Script=Katakana}/u.test(text)) return 'ja-JP';
+  if (/\p{Script=Cyrillic}/u.test(text)) return 'ru-RU';
+  if (/\p{Script=Arabic}/u.test(text)) return 'ar-SA';
+  if (/\p{Script=Hebrew}/u.test(text)) return 'he-IL';
+  if (/\p{Script=Devanagari}/u.test(text)) return 'hi-IN';
+  if (/\p{Script=Thai}/u.test(text)) return 'th-TH';
+  if (/\p{Script=Greek}/u.test(text)) return 'el-GR';
+  return (navigator?.languages && navigator.languages[0]) || navigator?.language || 'en-US';
 };
 
 const VoiceInput = ({ onResult, disabled = false, contextText = '' }) => {
@@ -88,44 +86,34 @@ const VoiceInput = ({ onResult, disabled = false, contextText = '' }) => {
   const recognitionRef = useRef(null);
   const transcriptRef = useRef('');
   const onResultRef = useRef(onResult);
-  
-  // Auto-detect language from context text, default to Russian
-  const language = contextText ? detectLanguage(contextText) : 'ru-RU';
-  
-  // Keep refs in sync with latest values
+
+  const language = contextText
+    ? detectLanguage(contextText)
+    : ((navigator?.languages && navigator.languages[0]) || navigator?.language || 'en-US');
+
   useEffect(() => {
     onResultRef.current = onResult;
   }, [onResult]);
-  const detectLanguage = (text) => {
-    if (/[^\u4e00-\u9fff]/.test('') && /[\u4e00-\u9fff]/.test(text)) return 'zh-CN';
-    if (/[^\uac00-\ud7af]/.test('') && /[\uac00-\ud7af]/.test(text)) return 'ko-KR';
-    if (/[^\u3040-\u309f\u30a0-\u30ff]/.test('') && /[\u3040-\u309f\u30a0-\u30ff]/.test(text)) return 'ja-JP';
-    if (/[^\u0400-\u04ff]/.test('') && /[\u0400-\u04ff]/.test(text)) return 'ru-RU';
-    if (/[^\u0600-\u06ff]/.test('') && /[\u0600-\u06ff]/.test(text)) return 'ar-SA';
-    if (/[^\u0590-\u05ff]/.test('') && /[\u0590-\u05ff]/.test(text)) return 'he-IL';
-    if (/[^\u0900-\u097f]/.test('') && /[\u0900-\u097f]/.test(text)) return 'hi-IN';
-    if (/[^\u0e00-\u0e7f]/.test('') && /[\u0e00-\u0e7f]/.test(text)) return 'th-TH';
-    if (/[^\u0370-\u03ff]/.test('') && /[\u0370-\u03ff]/.test(text)) return 'el-GR';
-    return (navigator?.languages && navigator.languages[0]) || navigator?.language || 'en-US';
-    }
-    
+
+  const setupRecognition = useCallback((lang) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
     const recognition = new SpeechRecognition();
-    
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = lang;
-    
+
     recognition.onstart = () => {
-    const language = contextText ? detectLanguage(contextText) : ((navigator?.languages && navigator.languages[0]) || navigator?.language || 'en-US');
+      setIsListening(true);
       setTranscript('');
       transcriptRef.current = '';
     };
-    
+
     recognition.onresult = (event) => {
       let finalTranscript = '';
-      
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i];
         if (result && result[0] && result[0].transcript) {
           if (result.isFinal) {
@@ -133,24 +121,23 @@ const VoiceInput = ({ onResult, disabled = false, contextText = '' }) => {
           }
         }
       }
-      
+
       if (finalTranscript) {
-        setTranscript(prev => {
+        setTranscript((prev) => {
           const updated = prev + finalTranscript;
           transcriptRef.current = updated;
           return updated;
         });
       }
     };
-    
+
     recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error, 'Language:', lang);
       setIsListening(false);
-      
+
       switch (event.error) {
         case 'language-not-supported':
-          console.warn(`Language ${lang} is not supported, falling back to English`);
-          setLanguage('en-US');
+          console.warn(`Language ${lang} is not supported`);
           break;
         case 'no-speech':
           break;
@@ -164,7 +151,7 @@ const VoiceInput = ({ onResult, disabled = false, contextText = '' }) => {
           console.error('Unknown speech recognition error:', event.error);
       }
     };
-    
+
     recognition.onend = () => {
       setIsListening(false);
       const finalText = transcriptRef.current.trim();
@@ -174,26 +161,26 @@ const VoiceInput = ({ onResult, disabled = false, contextText = '' }) => {
         transcriptRef.current = '';
       }
     };
-    
+
     recognitionRef.current = recognition;
-  };
-  
+  }, []);
+
   useEffect(() => {
     setupRecognition(language);
-    
+
     return () => {
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch(e) {}
+        try { recognitionRef.current.stop(); } catch (e) {}
       }
     };
-  }, [language]);
-  
+  }, [language, setupRecognition]);
+
   const toggleListening = () => {
     if (!recognitionRef.current) {
       alert('Голосовой ввод не поддерживается в вашем браузере. Используйте Chrome или Edge.');
       return;
     }
-    
+
     if (isListening) {
       recognitionRef.current.stop();
     } else {
@@ -206,11 +193,11 @@ const VoiceInput = ({ onResult, disabled = false, contextText = '' }) => {
       }
     }
   };
-  
+
   if (!isSpeechSupported()) {
     return null;
   }
-  
+
   return (
     <VoiceContainer>
       <VoiceButton
@@ -221,7 +208,7 @@ const VoiceInput = ({ onResult, disabled = false, contextText = '' }) => {
       >
         {isListening ? '⏹️' : '🎤'}
       </VoiceButton>
-      
+
       {isListening && (
         <StatusText $isListening={isListening}>
           Слушаю...
