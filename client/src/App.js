@@ -29,6 +29,7 @@ import HelpPage from './pages/HelpPage';
 import ContactsPage from './pages/ContactsPage';
 import ScrambleGame from './pages/ScrambleGame';
 import QuizBlitz from './pages/QuizBlitz';
+import logoImage from './assets/logo.png';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -359,7 +360,7 @@ function HeaderComponent({ authState, logout }) {
         aria-label="FluffyCards — на главную"
         title="FluffyCards"
       >
-        <LogoImage src={`${process.env.PUBLIC_URL}/logo192.png`} alt="Логотип FluffyCards" />
+        <LogoImage src={logoImage} alt="Логотип FluffyCards" />
         FluffyCards
       </Logo>
       <Tagline>Learning made fun and friendly! 🎓</Tagline>
