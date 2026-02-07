@@ -342,8 +342,15 @@ function ProfilePage() {
     fetchUserData();
   }, []);
 
+  const DEFAULT_PROFILE_IMAGE = 'https://fluffycards.com/default-avatar.png';
+
+  const isCustomProfileImage = (url) => {
+    if (!url) return false;
+    return !url.includes('default-avatar.png') && url !== DEFAULT_PROFILE_IMAGE;
+  };
+
   const resolveProfileImage = (url) => {
-    if (!url) return '';
+    if (!isCustomProfileImage(url)) return '';
     if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
     return url;
   };
@@ -496,7 +503,7 @@ function ProfilePage() {
       <ProfileCard>
         <AvatarSection>
           <Avatar style={{fontSize: '3rem'}}>
-            {user?.profileImage ? (
+            {isCustomProfileImage(user?.profileImage) ? (
               <AvatarImage src={resolveProfileImage(user.profileImage)} alt="Avatar" />
             ) : (
               avatars.find(a => a.id === avatar)?.emoji || '👤'
