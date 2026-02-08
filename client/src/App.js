@@ -42,6 +42,7 @@ import WordTrain from './pages/WordTrain';
 import HoneycombGame from './pages/HoneycombGame';
 import FolderDetail from './pages/FolderDetail';
 import AttendancePage from './pages/AttendancePage';
+import SharedSetPage from './pages/SharedSetPage';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -830,6 +831,10 @@ function App() {
                     <Navigate to="/login" />
                   )
                 }
+              />
+              <Route
+                path="/share/:id"
+                element={<SharedSetPage />}
               />
               <Route
                 path="/sets/:id"

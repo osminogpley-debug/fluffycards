@@ -246,6 +246,24 @@ router.post('/:id/copy', authMiddleware, async (req, res) => {
   }
 });
 
+// Public share link — no auth required
+router.get('/share/:id', async (req, res) => {
+  try {
+    const set = await FlashcardSet.findOne({
+      _id: req.params.id,
+      isPublic: true
+    }).populate('owner', 'username profileImage');
+
+    if (!set) {
+      return res.status(404).json({ message: 'Набор не найден или он приватный' });
+    }
+
+    res.json(set);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // Получение одного набора с карточками
 router.get('/:id', authMiddleware, async (req, res) => {
   try {

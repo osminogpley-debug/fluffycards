@@ -552,6 +552,48 @@ const ModalButtons = styled.div`
   gap: 12px;
 `;
 
+const ShareButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #63b3ed;
+    color: #63b3ed;
+    background: var(--bg-tertiary);
+  }
+`;
+
+const ShareToast = styled.div`
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22c55e;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
+  z-index: 9999;
+  animation: fadeInUp 0.3s ease;
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+`;
+
 const ModalButton = styled.button`
   flex: 1;
   padding: 12px 24px;
@@ -580,6 +622,25 @@ function SetDetail() {
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showShareToast, setShowShareToast] = useState(false);
+
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${id}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 2500);
+    }).catch(() => {
+      // Fallback for older browsers
+      const input = document.createElement('input');
+      input.value = shareUrl;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 2500);
+    });
+  };
 
   // Загрузка данных набора
   useEffect(() => {
@@ -756,7 +817,13 @@ function SetDetail() {
               {setData.isPublic !== false ? '🌍 Публичный' : '🔒 Приватный'}
               {isAuthor && ' (кликните для изменения)'}
             </VisibilityBadge>
+            {setData.isPublic !== false && (
+              <ShareButton onClick={handleShare} title="Скопировать ссылку для друзей">
+                🔗 Поделиться
+              </ShareButton>
+            )}
           </SetMeta>
+          {showShareToast && <ShareToast>✅ Ссылка скопирована!</ShareToast>}
         </HeaderContent>
       </Header>
 
