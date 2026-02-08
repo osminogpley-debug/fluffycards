@@ -39,6 +39,17 @@ router.post('/students', authMiddleware, async (req, res) => {
   }
 });
 
+// Get all students
+router.get('/students', authMiddleware, async (req, res) => {
+  try {
+    const sheet = await Attendance.findOne({ teacherId: req.user.id });
+    const students = sheet ? sheet.students : [];
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Remove student
 router.delete('/students/:studentId', authMiddleware, async (req, res) => {
   try {

@@ -265,13 +265,13 @@ router.get('/share/:id', async (req, res) => {
 });
 
 // Получение одного набора с карточками
-router.get('/:id', authMiddleware, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     // Try to find set owned by user OR public set
     let set = await FlashcardSet.findOne({
       _id: req.params.id,
       $or: [
-        { owner: req.user._id },
+        { owner: req.user?._id },
         { isPublic: true }
       ]
     }).populate('owner', 'username profileImage');

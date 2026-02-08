@@ -298,11 +298,7 @@ export default function SharedSetPage() {
   };
 
   const handleStudy = () => {
-    if (authState.isAuthenticated) {
-      navigate(`/sets/${id}`);
-    } else {
-      navigate('/login');
-    }
+    navigate(`/sets/${id}`);
   };
 
   if (loading) {
@@ -327,10 +323,10 @@ export default function SharedSetPage() {
     );
   }
 
-  const cards = setData.cards || [];
-  const ownerName = setData.owner?.username || 'Пользователь';
-  const ownerAvatar = setData.owner?.profileImage
-    ? resolveImageUrl(setData.owner.profileImage)
+  const cards = setData?.flashcards || [];
+  const ownerName = setData?.owner?.username || 'Пользователь';
+  const ownerAvatar = setData?.owner?.profileImage
+    ? resolveImageUrl(setData?.owner?.profileImage)
     : null;
 
   return (
@@ -343,14 +339,14 @@ export default function SharedSetPage() {
           <ShareLabel>🔗 Вам поделились набором</ShareLabel>
         </Header>
 
-        {setData.coverImage && (
+        {setData?.coverImage && (
           <CoverImage
-            src={resolveImageUrl(setData.coverImage)}
-            alt={setData.title}
+            src={resolveImageUrl(setData?.coverImage)}
+            alt={setData?.title}
           />
         )}
 
-        <SetTitle>{setData.title}</SetTitle>
+        <SetTitle>{setData?.title}</SetTitle>
 
         <SetMeta>
           <AuthorChip>
@@ -358,7 +354,7 @@ export default function SharedSetPage() {
             {ownerName}
           </AuthorChip>
           <CardCount>📚 {cards.length} карт</CardCount>
-          {setData.description && <span>{setData.description}</span>}
+          {setData?.description && <span>{setData?.description}</span>}
         </SetMeta>
 
         <ButtonRow>
