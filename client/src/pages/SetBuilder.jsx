@@ -152,6 +152,13 @@ const Header = styled.header`
   position: sticky;
   top: 0;
   z-index: 100;
+  gap: 12px;
+
+  @media (max-width: 720px) {
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const Logo = styled.div`
@@ -177,12 +184,31 @@ const Logo = styled.div`
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  @media (max-width: 720px) {
+    justify-content: center;
+
+    .text {
+      font-size: 20px;
+    }
+    .icon {
+      font-size: 28px;
+    }
+  }
 `;
 
 const HeaderActions = styled.div`
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+
+  @media (max-width: 720px) {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const CardCounter = styled.div`
@@ -205,6 +231,13 @@ const CardCounter = styled.div`
     font-size: 18px;
     font-weight: 700;
   }
+
+  @media (max-width: 720px) {
+    justify-content: center;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 `;
 
 const Button = styled.button`
@@ -218,6 +251,11 @@ const Button = styled.button`
   align-items: center;
   gap: 8px;
   border: none;
+
+  @media (max-width: 720px) {
+    width: 100%;
+    justify-content: center;
+  }
   
   &:disabled {
     opacity: 0.6;
@@ -269,6 +307,10 @@ const MainContent = styled.main`
   padding: 32px;
   opacity: 1;
   transition: opacity 0.3s ease;
+
+  @media (max-width: 720px) {
+    padding: 16px;
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -283,12 +325,26 @@ const PageTitle = styled.h1`
   .emoji {
     font-size: 36px;
   }
+
+  @media (max-width: 720px) {
+    font-size: 24px;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    .emoji {
+      font-size: 28px;
+    }
+  }
 `;
 
 const PageSubtitle = styled.p`
   font-size: 16px;
   color: var(--text-secondary);
   margin: 0 0 32px 0;
+
+  @media (max-width: 720px) {
+    margin-bottom: 20px;
+  }
 `;
 
 const FormSection = styled.div`
@@ -298,6 +354,11 @@ const FormSection = styled.div`
   margin-bottom: 24px;
   box-shadow: 0 4px 20px var(--shadow-color);
   border: 1px solid var(--border-color);
+
+  @media (max-width: 720px) {
+    padding: 20px;
+    margin-bottom: 18px;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -311,6 +372,11 @@ const SectionTitle = styled.h2`
   
   .icon {
     font-size: 22px;
+  }
+
+  @media (max-width: 720px) {
+    font-size: 16px;
+    margin-bottom: 14px;
   }
 `;
 
@@ -448,6 +514,18 @@ const CardItem = styled.div`
     font-weight: 700;
     box-shadow: 0 2px 8px ${props => props.$isChinese ? 'rgba(245, 101, 101, 0.3)' : 'rgba(99, 179, 237, 0.3)'};
   }
+
+  @media (max-width: 720px) {
+    padding: 16px;
+
+    &::before {
+      left: 12px;
+      top: -8px;
+      width: 24px;
+      height: 24px;
+      font-size: 11px;
+    }
+  }
 `;
 
 const CardField = styled.div`
@@ -521,6 +599,11 @@ const CardPreviewImage = styled.img`
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   padding: 6px;
+
+  @media (max-width: 600px) {
+    width: 100%;
+    height: 140px;
+  }
 `;
 
 const ChineseBadge = styled.span`
@@ -648,6 +731,12 @@ const DeleteButton = styled.button`
     cursor: not-allowed;
     transform: none;
   }
+
+  @media (max-width: 768px) {
+    align-self: flex-end;
+    width: 40px;
+    height: 40px;
+  }
 `;
 
 const AddCardButton = styled.button`
@@ -681,6 +770,11 @@ const AddCardButton = styled.button`
   
   &:hover .plus {
     transform: rotate(90deg);
+  }
+
+  @media (max-width: 600px) {
+    padding: 16px;
+    font-size: 15px;
   }
 `;
 
@@ -731,6 +825,11 @@ const FooterActions = styled.div`
   margin-top: 32px;
   padding-top: 24px;
   border-top: 2px solid var(--border-color);
+
+  @media (max-width: 720px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const LoadingOverlay = styled.div`
@@ -791,6 +890,12 @@ const PrivacyToggle = styled.div`
   background: var(--bg-tertiary);
   border-radius: 12px;
   border: 2px solid var(--border-color);
+
+  @media (max-width: 720px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 `;
 
 const ToggleLabel = styled.label`
@@ -938,6 +1043,7 @@ function SetBuilder() {
   // Состояние формы
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [coverImage, setCoverImage] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [tags, setTags] = useState([]);
   const [cards, setCards] = useState([{ id: Date.now(), term: '', definition: '', pinyin: '', translation: '', imageUrl: '', tabSplit: false }]);
@@ -955,6 +1061,7 @@ function SetBuilder() {
   // Состояние загрузки пиньиня для каждой карточки
   const [loadingPinyin, setLoadingPinyin] = useState({});
   const [uploadingImage, setUploadingImage] = useState({});
+  const [uploadingCover, setUploadingCover] = useState(false);
   
   // Состояние для отслеживания изменений терминов (для китайских карточек)
   const [originalTerms, setOriginalTerms] = useState({});
@@ -1011,6 +1118,7 @@ function SetBuilder() {
       
       setTitle(data.title || '');
       setDescription(data.description || '');
+      setCoverImage(data.coverImage || '');
       setIsPublic(data.isPublic || false);
       setTags(data.tags || []);
       
@@ -1168,6 +1276,38 @@ function SetBuilder() {
       setTimeout(() => setError(null), 3000);
     } finally {
       setUploadingImage(prev => ({ ...prev, [cardId]: false }));
+    }
+  };
+
+  const handleCoverUpload = async (file) => {
+    if (!file) return;
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('Файл слишком большой (макс. 5 МБ)');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const uploadUrl = `${API_BASE_URL}/upload`;
+      const res = await authFetch(uploadUrl, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.data?.imageUrl) {
+        throw new Error(data?.message || 'Ошибка загрузки');
+      }
+      setCoverImage(data.data.imageUrl);
+      setSuccess('Превью набора обновлено ✅');
+      setTimeout(() => setSuccess(null), 2000);
+    } catch (err) {
+      setError(err.message || 'Ошибка загрузки изображения');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setUploadingCover(false);
     }
   };
   
@@ -1383,6 +1523,7 @@ function SetBuilder() {
     const setData = {
       title: title.trim(),
       description: description.trim(),
+      coverImage: coverImage || '',
       isPublic,
       tags: tags.filter(tag => tag.trim()),
       flashcards: validCards.map(card => ({
@@ -1517,6 +1658,55 @@ function SetBuilder() {
               maxLength={500}
             />
           </FormGroup>
+
+          <FormGroup>
+            <Label>🖼️ Превью набора</Label>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <Input
+                type="text"
+                placeholder="https://example.com/cover.jpg"
+                value={coverImage}
+                onChange={(e) => setCoverImage(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <label style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '10px 16px',
+                background: 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)',
+                color: 'white',
+                borderRadius: '12px',
+                cursor: uploadingCover ? 'wait' : 'pointer',
+                fontSize: '13px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                opacity: uploadingCover ? 0.6 : 1
+              }}>
+                {uploadingCover ? '⏳' : '📁'} Загрузить
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleCoverUpload(file);
+                    e.target.value = '';
+                  }}
+                  disabled={uploadingCover}
+                />
+              </label>
+            </div>
+            {coverImage && (
+              <div style={{ marginTop: '10px' }}>
+                <CardPreviewImage
+                  src={resolveImageUrl(coverImage)}
+                  alt="Cover preview"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+            )}
+          </FormGroup>
           
           <PrivacyToggle>
             <ToggleLabel>
@@ -1646,7 +1836,7 @@ function SetBuilder() {
                             <ChineseBadge>🇨🇳 Китайский</ChineseBadge>
                           )}
                         </CardFieldLabel>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <CardInput
                             placeholder="Введите термин..."
                             value={card.term}
@@ -1717,7 +1907,7 @@ function SetBuilder() {
                         <CardFieldLabel>
                           Определение
                         </CardFieldLabel>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <CardInput
                             placeholder="Введите определение..."
                             value={card.definition}
@@ -1747,7 +1937,7 @@ function SetBuilder() {
                         <CardFieldLabel>
                           🖼️ Изображение
                         </CardFieldLabel>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <CardInput
                             placeholder="https://example.com/image.jpg"
                             value={card.imageUrl || ''}
@@ -1801,7 +1991,7 @@ function SetBuilder() {
                           <CardFieldLabel>
                             Пиньинь <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(произношение)</span>
                           </CardFieldLabel>
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <CardInput
                               placeholder="Пиньинь появится здесь..."
                               value={card.pinyin}
@@ -1820,7 +2010,7 @@ function SetBuilder() {
                           <CardFieldLabel>
                             Перевод <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(автоматический)</span>
                           </CardFieldLabel>
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <CardInput
                               placeholder="Перевод появится здесь..."
                               value={card.translation}

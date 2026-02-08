@@ -54,6 +54,10 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: 'Segoe UI', sans-serif;
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const Header = styled.div`
@@ -65,6 +69,10 @@ const Title = styled.h1`
   color: #dc2626;
   font-size: 2.4rem;
   margin-bottom: 0.25rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -123,6 +131,11 @@ const LaunchPad = styled.div`
     animation: ${stars} 8s linear infinite;
     opacity: 0.6;
   }
+
+  @media (max-width: 600px) {
+    min-height: 320px;
+    padding: 1.5rem 0.75rem 0.75rem;
+  }
 `;
 
 const RocketWrapper = styled.div`
@@ -139,6 +152,10 @@ const RocketBody = styled.div`
   align-items: center;
   font-size: 4rem;
   filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.5));
+
+  @media (max-width: 600px) {
+    font-size: 3rem;
+  }
 `;
 
 const Flame = styled.div`
@@ -146,6 +163,10 @@ const Flame = styled.div`
   animation: ${flame} 0.3s ease infinite;
   opacity: ${p => p.$active ? 1 : 0.2};
   transition: opacity 0.3s;
+
+  @media (max-width: 600px) {
+    font-size: 1.6rem;
+  }
 `;
 
 const AltitudeLabel = styled.div`
@@ -158,6 +179,12 @@ const AltitudeLabel = styled.div`
   z-index: 10;
   text-shadow: 0 2px 8px rgba(0,0,0,0.5);
   span { font-size: 0.8rem; font-weight: 400; color: #94a3b8; }
+
+  @media (max-width: 600px) {
+    top: 10px;
+    left: 10px;
+    font-size: 1rem;
+  }
 `;
 
 const FuelBar = styled.div`
@@ -166,6 +193,11 @@ const FuelBar = styled.div`
   right: 16px;
   z-index: 10;
   text-align: right;
+
+  @media (max-width: 600px) {
+    top: 10px;
+    right: 10px;
+  }
 `;
 
 const FuelLabel = styled.div`
@@ -180,6 +212,11 @@ const FuelTrack = styled.div`
   background: rgba(255,255,255,0.15);
   border-radius: 7px;
   overflow: hidden;
+
+  @media (max-width: 600px) {
+    width: 96px;
+    height: 12px;
+  }
 `;
 
 const FuelFill = styled.div`

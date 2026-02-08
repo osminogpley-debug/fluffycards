@@ -13,6 +13,7 @@ const flashcardSchema = new mongoose.Schema({
 const flashcardSetSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
+  coverImage: { type: String },
   flashcards: [flashcardSchema],
   isPublic: { type: Boolean, default: false },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },  

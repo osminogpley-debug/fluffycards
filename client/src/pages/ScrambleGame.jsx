@@ -28,6 +28,10 @@ const Container = styled.div`
   margin: 2rem auto;
   padding: 0 1rem;
   font-family: 'Comic Neue', sans-serif;
+
+  @media (max-width: 600px) {
+    margin: 1rem auto;
+  }
 `;
 
 const Header = styled.div`
@@ -40,6 +44,10 @@ const Title = styled.h1`
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -83,6 +91,11 @@ const GameCard = styled.div`
   box-shadow: 0 8px 30px var(--shadow-color, rgba(237, 137, 54, 0.2));
   border: 1px solid var(--border-color, transparent);
   animation: ${pop} 0.4s ease;
+
+  @media (max-width: 600px) {
+    padding: 1.5rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const HintText = styled.div`
@@ -99,6 +112,11 @@ const DefinitionText = styled.div`
   margin-bottom: 2rem;
   font-weight: 600;
   line-height: 1.5;
+
+  @media (max-width: 600px) {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const LetterTilesArea = styled.div`
@@ -128,6 +146,12 @@ const LetterTile = styled.button`
   &:hover:not(:disabled) {
     transform: ${({ used }) => used ? 'none' : 'translateY(-4px) scale(1.05)'};
     box-shadow: ${({ used }) => used ? 'none' : '0 6px 20px rgba(237, 137, 54, 0.3)'};
+  }
+
+  @media (max-width: 600px) {
+    width: 42px;
+    height: 42px;
+    font-size: 1.1rem;
   }
 `;
 
@@ -168,6 +192,12 @@ const AnswerTile = styled.button`
     transform: translateY(-2px);
     background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 100%);
   }
+
+  @media (max-width: 600px) {
+    width: 42px;
+    height: 42px;
+    font-size: 1.1rem;
+  }
 `;
 
 const ButtonRow = styled.div`
@@ -175,6 +205,11 @@ const ButtonRow = styled.div`
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const Feedback = styled.div`
@@ -204,6 +239,10 @@ const CompletionCard = styled.div`
   text-align: center;
   box-shadow: 0 8px 30px var(--shadow-color, rgba(72, 187, 120, 0.3));
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 2rem 1.25rem;
+  }
 `;
 
 const CompletionTitle = styled.h2`

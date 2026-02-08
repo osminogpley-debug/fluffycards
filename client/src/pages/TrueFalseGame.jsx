@@ -15,6 +15,10 @@ const Container = styled.div`
   margin: 2rem auto;
   padding: 0 1rem;
   font-family: 'Comic Neue', sans-serif;
+
+  @media (max-width: 600px) {
+    margin: 1rem auto;
+  }
 `;
 
 const Header = styled.div`
@@ -26,6 +30,10 @@ const Title = styled.h1`
   color: #2b6cb0;
   font-size: 2.3rem;
   margin-bottom: 0.5rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const GameCard = styled.div`
@@ -35,6 +43,10 @@ const GameCard = styled.div`
   box-shadow: 0 8px 30px var(--shadow-color, rgba(0, 0, 0, 0.1));
   border: 1px solid var(--border-color, transparent);
   animation: ${pop} 0.25s ease;
+
+  @media (max-width: 600px) {
+    padding: 1.4rem 1.2rem;
+  }
 `;
 
 const Prompt = styled.div`
@@ -59,6 +71,11 @@ const Statement = styled.div`
   padding: 1rem 1.25rem;
   border-radius: 14px;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 600px) {
+    font-size: 1.05rem;
+    padding: 0.85rem 1rem;
+  }
 `;
 
 const ButtonRow = styled.div`
@@ -66,6 +83,11 @@ const ButtonRow = styled.div`
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const TrueButton = styled.button`
@@ -80,6 +102,10 @@ const TrueButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(56, 161, 105, 0.3); }
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
 `;
 
 const FalseButton = styled.button`
@@ -94,6 +120,10 @@ const FalseButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(229, 62, 62, 0.3); }
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
 `;
 
 const Feedback = styled.div`

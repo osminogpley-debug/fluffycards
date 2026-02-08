@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import { authFetch } from '../constants/api';
 
+const isSameData = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
 const ChatOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -313,7 +315,7 @@ function ChatModal({ onClose, userId }) {
       const res = await authFetch(`${baseUrl}/conversations`);
       if (res.ok) {
         const data = await res.json();
-        setConversations(data);
+        setConversations(prev => (isSameData(prev, data) ? prev : data));
       }
     } catch (err) {
       console.error('Error fetching conversations:', err);
@@ -325,7 +327,7 @@ function ChatModal({ onClose, userId }) {
       const res = await authFetch(`${baseUrl}/${friendId}`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data);
+        setMessages(prev => (isSameData(prev, data) ? prev : data));
       }
     } catch (err) {
       console.error('Error fetching messages:', err);

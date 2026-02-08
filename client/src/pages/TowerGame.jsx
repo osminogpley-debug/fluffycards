@@ -67,6 +67,10 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: 'Segoe UI', sans-serif;
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const Header = styled.div`
@@ -78,6 +82,10 @@ const Title = styled.h1`
   color: #0891b2;
   font-size: 2.4rem;
   margin-bottom: 0.25rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -92,6 +100,10 @@ const TopBar = styled.div`
   gap: 1.2rem;
   flex-wrap: wrap;
   margin-bottom: 1rem;
+
+  @media (max-width: 600px) {
+    gap: 0.9rem;
+  }
 `;
 
 const Stat = styled.div`
@@ -122,6 +134,11 @@ const TowerArea = styled.div`
   position: relative;
   overflow: hidden;
   animation: ${p => p.$shaking ? css`${shake} 0.5s ease` : 'none'};
+
+  @media (max-width: 600px) {
+    min-height: 280px;
+    padding: 1rem 0.75rem 0.75rem;
+  }
 `;
 
 const TowerLabel = styled.div`
@@ -195,6 +212,11 @@ const TowerBlock = styled.div`
     inset 0 1px 0 rgba(255,255,255,0.2);
   
   margin-top: -2px;
+
+  @media (max-width: 600px) {
+    min-height: 40px;
+    font-size: 0.75rem;
+  }
 `;
 
 const Foundation = styled.div`

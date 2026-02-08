@@ -47,6 +47,10 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: 'Segoe UI', sans-serif;
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const Header = styled.div`
@@ -58,6 +62,10 @@ const Title = styled.h1`
   color: #7c3aed;
   font-size: 2.4rem;
   margin-bottom: 0.25rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -72,6 +80,11 @@ const TopBar = styled.div`
   gap: 1.2rem;
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 600px) {
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const Stat = styled.div`
@@ -96,6 +109,11 @@ const ChainContainer = styled.div`
   box-shadow: 0 4px 20px var(--shadow-color, rgba(0,0,0,0.08));
   border: 1px solid var(--border-color, transparent);
   overflow: hidden;
+
+  @media (max-width: 600px) {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const ChainLabel = styled.div`
@@ -139,6 +157,12 @@ const ChainLink = styled.div`
     return colors[p.$index % colors.length];
   }};
   box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);
+
+  @media (max-width: 600px) {
+    width: 34px;
+    height: 34px;
+    font-size: 0.85rem;
+  }
 `;
 
 const ChainConnector = styled.div`
@@ -149,6 +173,10 @@ const ChainConnector = styled.div`
   animation: ${linkGrow} 0.2s ease;
   transform-origin: left;
   flex-shrink: 0;
+
+  @media (max-width: 600px) {
+    width: 14px;
+  }
 `;
 
 const ChainBreak = styled.div`
@@ -207,6 +235,10 @@ const QuestionCard = styled.div`
     'var(--border-color, transparent)'};
   animation: ${slideUp} 0.3s ease;
   transition: border-color 0.3s ease;
+
+  @media (max-width: 600px) {
+    padding: 1.4rem 1.2rem;
+  }
 `;
 
 const QuestionLabel = styled.div`

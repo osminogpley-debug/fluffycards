@@ -58,6 +58,10 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: 'Segoe UI', sans-serif;
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const Header = styled.div`
@@ -69,6 +73,10 @@ const Title = styled.h1`
   color: #b45309;
   font-size: 2.4rem;
   margin-bottom: 0.25rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -101,6 +109,11 @@ const TrainWrapper = styled.div`
   min-height: 220px;
   position:relative;
   overflow: hidden;
+
+  @media (max-width: 600px) {
+    padding: 1.25rem 1rem;
+    min-height: 180px;
+  }
 `;
 
 const TrackLine = styled.div`
@@ -129,6 +142,11 @@ const TrainScroller = styled.div`
   scroll-behavior: smooth;
   &::-webkit-scrollbar { height: 4px; }
   &::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
+
+  @media (max-width: 600px) {
+    padding-bottom: 44px;
+    min-height: 120px;
+  }
 `;
 
 const Locomotive = styled.div`
@@ -153,6 +171,12 @@ const Locomotive = styled.div`
     height: 12px;
     background: #333;
     border-radius: 6px;
+  }
+
+  @media (max-width: 600px) {
+    width: 84px;
+    height: 76px;
+    font-size: 2rem;
   }
 `;
 
@@ -201,6 +225,12 @@ const Wagon = styled.div`
     background: #555;
     border-radius: 5px;
   }
+
+  @media (max-width: 600px) {
+    width: 60px;
+    height: 46px;
+    font-size: 1.4rem;
+  }
 `;
 
 const WagonNumber = styled.div`
@@ -220,6 +250,10 @@ const QuestionArea = styled.div`
   border: 1px solid var(--border-color, transparent);
   animation: ${slideUp} 0.3s ease;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 600px) {
+    padding: 1.4rem 1.2rem;
+  }
 `;
 
 const RoundLabel = styled.div`

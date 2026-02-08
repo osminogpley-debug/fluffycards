@@ -40,6 +40,7 @@ import RocketDock from './pages/RocketDock';
 import WordMaze from './pages/WordMaze';
 import WordTrain from './pages/WordTrain';
 import HoneycombGame from './pages/HoneycombGame';
+import FolderDetail from './pages/FolderDetail';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -792,6 +793,16 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <ProfilePage />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/folders/:id"
+                element={
+                  authState.isAuthenticated ? (
+                    <FolderDetail />
                   ) : (
                     <Navigate to="/login" />
                   )

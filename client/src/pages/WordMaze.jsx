@@ -47,6 +47,10 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: 'Segoe UI', sans-serif;
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const Header = styled.div`
@@ -58,6 +62,10 @@ const Title = styled.h1`
   color: #059669;
   font-size: 2.4rem;
   margin-bottom: 0.25rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -87,6 +95,10 @@ const MazeWrapper = styled.div`
   margin-bottom: 1.5rem;
   box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.08));
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 1rem;
+  }
 `;
 
 const MazeLabel = styled.div`
@@ -99,6 +111,10 @@ const MazeGrid = styled.div`
   gap: 4px;
   max-width: 500px;
   margin: 0 auto;
+
+  @media (max-width: 600px) {
+    max-width: 360px;
+  }
 `;
 
 const MazeCell = styled.div`
@@ -148,6 +164,10 @@ const MazeCell = styled.div`
       box-shadow: 0 0 12px rgba(5, 150, 105, 0.3);
     `}
   }
+
+  @media (max-width: 600px) {
+    font-size: ${p => p.$size ? '1.1rem' : '0.75rem'};
+  }
 `;
 
 const DirectionBtns = styled.div`
@@ -179,6 +199,12 @@ const DirBtn = styled.button`
     transform: scale(1.08);
   }
   &:active { transform: scale(0.95); }
+
+  @media (max-width: 600px) {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
+  }
 `;
 
 /* --- question overlay --- */

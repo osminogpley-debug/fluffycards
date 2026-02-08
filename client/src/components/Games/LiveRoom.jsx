@@ -258,6 +258,8 @@ const LiveRoom = ({
   const chatEndRef = useRef(null);
   
   const { pin, status, participants = [], teams = [] } = roomData;
+
+  const areMessagesEqual = (next, current) => JSON.stringify(next) === JSON.stringify(current);
   
   // Polling для синхронизации чата
   useEffect(() => {
@@ -274,7 +276,8 @@ const LiveRoom = ({
         
         // Фильтруем дубликаты системных сообщений
         const userMessages = messages.filter(m => m.author !== 'Система');
-        setChatMessages([...systemMessages, ...userMessages]);
+        const nextMessages = [...systemMessages, ...userMessages];
+        setChatMessages(prev => (areMessagesEqual(nextMessages, prev) ? prev : nextMessages));
       }
     };
     

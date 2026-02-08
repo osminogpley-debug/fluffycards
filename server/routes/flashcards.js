@@ -225,6 +225,7 @@ router.post('/:id/copy', authMiddleware, async (req, res) => {
     const newSet = new FlashcardSet({
       title: originalSet.title + ' (копия)',
       description: originalSet.description,
+      coverImage: originalSet.coverImage,
       flashcards: originalSet.flashcards,
       isPublic: false, // Копия по умолчанию приватная
       owner: req.user._id,
@@ -270,7 +271,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // Создание нового набора с карточками
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { title, description, flashcards = [], isPublic, tags = [] } = req.body;
+    const { title, description, coverImage, flashcards = [], isPublic, tags = [] } = req.body;
     
     console.log('[Create Set] isPublic value:', isPublic, 'type:', typeof isPublic);
     
@@ -284,6 +285,7 @@ router.post('/', authMiddleware, async (req, res) => {
     const set = new FlashcardSet({
       title,
       description,
+      coverImage,
       flashcards,
       isPublic: Boolean(isPublic),
       owner: req.user._id,
@@ -302,7 +304,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // Обновление набора (название, описание, карточки, теги)
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { title, description, flashcards, isPublic, tags } = req.body;
+    const { title, description, coverImage, flashcards, isPublic, tags } = req.body;
     
     console.log('[Update Set] isPublic value:', isPublic, 'type:', typeof isPublic);
     
@@ -317,6 +319,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     
     if (title !== undefined) set.title = title;
     if (description !== undefined) set.description = description;
+    if (coverImage !== undefined) set.coverImage = coverImage;
     if (flashcards !== undefined) set.flashcards = flashcards;
     if (isPublic !== undefined) set.isPublic = Boolean(isPublic);
     if (tags !== undefined) {

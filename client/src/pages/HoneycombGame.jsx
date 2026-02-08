@@ -54,10 +54,22 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: 'Segoe UI', sans-serif;
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const Header = styled.div`text-align: center; margin-bottom: 1rem;`;
-const Title = styled.h1`color: #b45309; font-size: 2.4rem; margin-bottom: 0.25rem;`;
+const Title = styled.h1`
+  color: #b45309;
+  font-size: 2.4rem;
+  margin-bottom: 0.25rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
+`;
 const Subtitle = styled.p`color: var(--text-secondary, #6b7280); font-size: 1rem;`;
 
 const TopBar = styled.div`
@@ -81,6 +93,10 @@ const HoneycombWrapper = styled.div`
   margin-bottom: 1.5rem;
   box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.08));
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 1.25rem 1rem;
+  }
 `;
 
 const HoneycombLabel = styled.div`
@@ -91,6 +107,10 @@ const HexGrid = styled.div`
   max-width: 500px;
   margin: 0 auto;
   position: relative;
+
+  @media (max-width: 600px) {
+    max-width: 360px;
+  }
 `;
 
 const HexRow = styled.div`
@@ -98,6 +118,10 @@ const HexRow = styled.div`
   justify-content: center;
   margin-top: -12px;
   &:first-child { margin-top: 0; }
+
+  @media (max-width: 600px) {
+    margin-top: -10px;
+  }
 `;
 
 const HexCell = styled.div`
@@ -145,6 +169,17 @@ const HexCell = styled.div`
     }
     &:hover { transform: scale(1.08); }
   `}
+
+  @media (max-width: 600px) {
+    width: 60px;
+    height: 66px;
+    margin: 0 3px;
+
+    &::before {
+      width: 56px;
+      height: 64px;
+    }
+  }
 `;
 
 const HexContent = styled.div`
@@ -159,6 +194,10 @@ const HexContent = styled.div`
   pointer-events: none;
   color: ${p => p.$filled ? 'white' : 'var(--text-primary, #92400e)'};
   text-shadow: ${p => p.$filled ? '0 1px 3px rgba(0,0,0,0.2)' : 'none'};
+
+  @media (max-width: 600px) {
+    font-size: ${p => p.$filled ? '1.3rem' : '1.1rem'};
+  }
 `;
 
 const ProgressBar = styled.div`

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { API_ROUTES, authFetch } from '../constants/api';
 import LevelBadge from './LevelBadge';
@@ -191,12 +191,15 @@ const EmptyState = styled.div`
   font-size: 14px;
 `;
 
+const isSameData = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
 function GamificationPanel() {
   const { themeData } = useTheme();
   const isDark = themeData?.name === 'Темная' || themeData?.name === 'Космическая';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     fetchData();
@@ -208,7 +211,9 @@ function GamificationPanel() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+      if (isInitialLoad.current) {
+        setLoading(true);
+      }
       setError(null);
       
       const res = await authFetch(API_ROUTES.GAMIFICATION);
@@ -220,10 +225,10 @@ function GamificationPanel() {
       const result = await res.json();
       
       if (result.success && result.data) {
-        setData(result.data);
+        setData(prev => (isSameData(prev, result.data) ? prev : result.data));
       } else {
         // If no data from server, show zeros (not demo data)
-        setData({
+        const emptyData = {
           level: 1,
           xp: 0,
           totalXp: 0,
@@ -234,13 +239,14 @@ function GamificationPanel() {
           weeklyExam: null,
           streak: { current: 0, longest: 0 },
           stats: { cardsStudied: 0, testsPassed: 0, gamesWon: 0, perfectScores: 0 }
-        });
+        };
+        setData(prev => (isSameData(prev, emptyData) ? prev : emptyData));
       }
     } catch (error) {
       console.error('Error loading gamification:', error);
       setError(error.message);
       // Show empty state on error
-      setData({
+      const emptyData = {
         level: 1,
         xp: 0,
         totalXp: 0,
@@ -251,9 +257,13 @@ function GamificationPanel() {
         weeklyExam: null,
         streak: { current: 0, longest: 0 },
         stats: { cardsStudied: 0, testsPassed: 0, gamesWon: 0, perfectScores: 0 }
-      });
+      };
+      setData(prev => (isSameData(prev, emptyData) ? prev : emptyData));
     } finally {
-      setLoading(false);
+      if (isInitialLoad.current) {
+        setLoading(false);
+        isInitialLoad.current = false;
+      }
     }
   };
 

@@ -152,6 +152,7 @@ router.post('/login', async (req, res) => {
 
 // Heartbeat to keep lastSeen fresh while user is on the site
 router.post('/heartbeat', authMiddleware, async (req, res) => {
+  await User.findByIdAndUpdate(req.user._id, { lastSeen: new Date() });
   res.json({ success: true });
 });
 

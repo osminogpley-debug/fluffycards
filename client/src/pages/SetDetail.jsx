@@ -72,6 +72,17 @@ const SetDescription = styled.p`
   line-height: 1.5;
 `;
 
+const CoverImage = styled.img`
+  width: 100%;
+  max-width: 720px;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin: 12px 0 16px 0;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+`;
+
 const SetMeta = styled.div`
   display: flex;
   align-items: center;
@@ -701,6 +712,13 @@ function SetDetail() {
           <SetTitle>{setData.title}</SetTitle>
           {setData.description && (
             <SetDescription>{setData.description}</SetDescription>
+          )}
+          {setData.coverImage && (
+            <CoverImage
+              src={resolveImageUrl(setData.coverImage)}
+              alt="cover"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
           )}
           <SetMeta>
             <AuthorInfo>

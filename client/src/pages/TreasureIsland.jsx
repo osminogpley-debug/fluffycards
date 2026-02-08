@@ -49,6 +49,10 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: 'Segoe UI', sans-serif;
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const Header = styled.div`
@@ -60,6 +64,10 @@ const Title = styled.h1`
   color: #b45309;
   font-size: 2.4rem;
   margin-bottom: 0.25rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -74,6 +82,11 @@ const TopBar = styled.div`
   gap: 1.5rem;
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 600px) {
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const Stat = styled.div`
@@ -99,6 +112,11 @@ const MapWrapper = styled.div`
   min-height: 200px;
   box-shadow: 0 10px 40px rgba(14, 165, 233, 0.25);
   overflow: hidden;
+
+  @media (max-width: 600px) {
+    padding: 1.25rem 0.75rem;
+    min-height: 160px;
+  }
 `;
 
 const MapPath = styled.div`
@@ -138,6 +156,12 @@ const IslandNode = styled.div`
   &:hover {
     transform: ${p => p.$active ? 'scale(1.15)' : 'none'};
   }
+
+  @media (max-width: 600px) {
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
+  }
 `;
 
 const NodeLabel = styled.div`
@@ -148,6 +172,11 @@ const NodeLabel = styled.div`
   color: white;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   white-space: nowrap;
+
+  @media (max-width: 600px) {
+    font-size: 0.6rem;
+    bottom: -16px;
+  }
 `;
 
 const TreasureNode = styled(IslandNode)`
@@ -158,6 +187,12 @@ const TreasureNode = styled(IslandNode)`
     ? 'linear-gradient(135deg, #fbbf24, #f59e0b)'
     : 'linear-gradient(135deg, #a78bfa, #7c3aed)'};
   animation: ${p => p.$active ? css`${glow} 1.2s ease infinite` : css`${float} 3s ease-in-out infinite`};
+
+  @media (max-width: 600px) {
+    width: 62px;
+    height: 62px;
+    font-size: 1.6rem;
+  }
 `;
 
 /* --- карточка вопроса --- */

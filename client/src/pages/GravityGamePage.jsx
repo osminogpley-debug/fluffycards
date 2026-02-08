@@ -12,6 +12,10 @@ const Container = styled.div`
   max-width: 1000px;
   margin: 0 auto;
   padding: 1rem;
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const Header = styled.div`
@@ -26,6 +30,10 @@ const Title = styled.h1`
   
   &::before {
     content: "🚀 ";
+  }
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
   }
 `;
 
@@ -42,6 +50,11 @@ const GameArea = styled.div`
   overflow: hidden;
   box-shadow: 0 10px 40px var(--shadow-color, rgba(0, 0, 0, 0.1));
   border: 3px solid #3b82f6;
+
+  @media (max-width: 600px) {
+    height: 55vh;
+    border-width: 2px;
+  }
 `;
 
 const Planet = styled.div`
@@ -85,6 +98,14 @@ const InputContainer = styled.div`
   border-radius: 50px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    width: calc(100% - 24px);
+    bottom: 12px;
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 `;
 
 const Input = styled.input`
@@ -104,6 +125,12 @@ const Input = styled.input`
   &::placeholder {
     color: #9ca3af;
   }
+
+  @media (max-width: 600px) {
+    width: 100%;
+    font-size: 1rem;
+    padding: 10px 16px;
+  }
 `;
 
 const ScorePanel = styled.div`
@@ -116,12 +143,22 @@ const ScorePanel = styled.div`
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   text-align: center;
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 0.6rem 0.9rem;
+    top: 10px;
+    right: 10px;
+  }
 `;
 
 const ScoreValue = styled.div`
   font-size: 2rem;
   font-weight: bold;
   color: #3b82f6;
+
+  @media (max-width: 600px) {
+    font-size: 1.4rem;
+  }
 `;
 
 const ScoreLabel = styled.div`
@@ -138,12 +175,22 @@ const LevelIndicator = styled.div`
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 0.6rem 0.9rem;
+    top: 10px;
+    left: 10px;
+  }
 `;
 
 const LevelValue = styled.div`
   font-size: 1.5rem;
   font-weight: bold;
   color: #8b5cf6;
+
+  @media (max-width: 600px) {
+    font-size: 1.1rem;
+  }
 `;
 
 const LevelLabel = styled.div`
@@ -162,12 +209,21 @@ const QuestionCounter = styled.div`
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   text-align: center;
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 0.6rem 0.9rem;
+    top: 10px;
+  }
 `;
 
 const QuestionValue = styled.div`
   font-size: 1.5rem;
   font-weight: bold;
   color: #10b981;
+
+  @media (max-width: 600px) {
+    font-size: 1.1rem;
+  }
 `;
 
 const QuestionLabel = styled.div`

@@ -26,6 +26,10 @@ const Container = styled.div`
   margin: 2rem auto;
   padding: 0 1rem;
   font-family: 'Comic Neue', sans-serif;
+
+  @media (max-width: 600px) {
+    margin: 1rem auto;
+  }
 `;
 
 const Header = styled.div`
@@ -38,6 +42,10 @@ const Title = styled.h1`
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const TimerBar = styled.div`
@@ -68,6 +76,10 @@ const TimerText = styled.div`
   margin-bottom: 1rem;
   color: ${({ seconds }) => seconds <= 5 ? '#e53e3e' : 'var(--text-primary)'};
   animation: ${({ seconds }) => seconds <= 5 ? css`${pulse} 0.5s ease infinite` : 'none'};
+
+  @media (max-width: 600px) {
+    font-size: 1.2rem;
+  }
 `;
 
 const StatsRow = styled.div`
@@ -106,6 +118,10 @@ const QuestionCard = styled.div`
   box-shadow: 0 8px 30px var(--shadow-color, rgba(0, 0, 0, 0.1));
   border: 1px solid var(--border-color, transparent);
   animation: ${slideIn} 0.25s ease;
+
+  @media (max-width: 600px) {
+    padding: 1.4rem 1.2rem;
+  }
 `;
 
 const QuestionLabel = styled.div`
@@ -127,6 +143,10 @@ const OptionsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const OptionButton = styled.button`
@@ -192,6 +212,12 @@ const DurationButton = styled.button`
     transform: translateY(-3px);
     border-color: #e53e3e;
   }
+
+  @media (max-width: 600px) {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.85rem 1.25rem;
+  }
 `;
 
 const CompletionCard = styled.div`
@@ -202,6 +228,10 @@ const CompletionCard = styled.div`
   box-shadow: 0 8px 30px var(--shadow-color, rgba(229, 62, 62, 0.2));
   border: 1px solid var(--border-color, transparent);
   animation: ${pop} 0.4s ease;
+
+  @media (max-width: 600px) {
+    padding: 2rem 1.25rem;
+  }
 `;
 
 const CompletionTitle = styled.h2`

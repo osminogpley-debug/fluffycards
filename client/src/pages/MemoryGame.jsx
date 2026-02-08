@@ -15,6 +15,10 @@ const Container = styled.div`
   margin: 2rem auto;
   padding: 0 1rem;
   font-family: 'Comic Neue', sans-serif;
+
+  @media (max-width: 600px) {
+    margin: 1rem auto;
+  }
 `;
 
 const Header = styled.div`
@@ -26,12 +30,25 @@ const Title = styled.h1`
   color: #805ad5;
   font-size: 2.3rem;
   margin-bottom: 0.4rem;
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Card = styled.button`
@@ -54,6 +71,12 @@ const Card = styled.button`
     transform: ${({ matched }) => matched ? 'none' : 'translateY(-2px)'};
     box-shadow: ${({ matched }) => matched ? 'none' : '0 6px 18px rgba(128, 90, 213, 0.2)'};
   }
+
+  @media (max-width: 600px) {
+    min-height: 90px;
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
 `;
 
 const StatRow = styled.div`
@@ -62,6 +85,10 @@ const StatRow = styled.div`
   gap: 1rem;
   margin: 1rem 0 1.5rem;
   flex-wrap: wrap;
+
+  @media (max-width: 600px) {
+    gap: 0.75rem;
+  }
 `;
 
 const Stat = styled.div`
@@ -82,6 +109,10 @@ const CompletionCard = styled.div`
   text-align: center;
   box-shadow: 0 8px 30px var(--shadow-color, rgba(72, 187, 120, 0.3));
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 2rem 1.25rem;
+  }
 `;
 
 function shuffleArray(arr) {

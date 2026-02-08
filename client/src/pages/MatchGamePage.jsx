@@ -13,6 +13,10 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 2rem;
   transition: opacity 0.3s ease;
+
+  @media (max-width: 600px) {
+    padding: 1rem;
+  }
 `;
 
 const Header = styled.div`
@@ -28,6 +32,10 @@ const Title = styled.h1`
   &::before {
     content: "🎯 ";
   }
+
+  @media (max-width: 600px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -41,6 +49,11 @@ const StatsBar = styled.div`
   gap: 2rem;
   margin-bottom: 2rem;
   flex-wrap: wrap;
+
+  @media (max-width: 600px) {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const StatItem = styled.div`
@@ -50,6 +63,10 @@ const StatItem = styled.div`
   box-shadow: 0 4px 15px var(--shadow-color, rgba(0, 0, 0, 0.1));
   text-align: center;
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 0.75rem 1.2rem;
+  }
 `;
 
 const StatValue = styled.div`
@@ -69,6 +86,10 @@ const GameContainer = styled.div`
   padding: 2rem;
   box-shadow: 0 10px 40px var(--shadow-color, rgba(0, 0, 0, 0.1));
   border: 1px solid var(--border-color, transparent);
+
+  @media (max-width: 600px) {
+    padding: 1.25rem;
+  }
 `;
 
 const CardsGrid = styled.div`
@@ -76,6 +97,16 @@ const CardsGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1rem;
   margin: 2rem 0;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+  }
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Card = styled.div`
@@ -98,6 +129,12 @@ const Card = styled.div`
   transition: transform 0.4s ease;
   text-align: center;
   padding: 1rem;
+
+  @media (max-width: 600px) {
+    height: 100px;
+    font-size: ${({ type }) => type === 'term' ? '1rem' : '0.9rem'};
+    padding: 0.75rem;
+  }
   
   &:hover {
     transform: ${({ matched }) => matched ? 'none' : 'translateY(-5px) scale(1.02)'};
@@ -131,6 +168,11 @@ const ButtonGroup = styled.div`
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const Button = styled.button`
@@ -148,6 +190,11 @@ const Button = styled.button`
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+  }
+
+  @media (max-width: 600px) {
+    width: 100%;
+    font-size: 1rem;
   }
 `;
 

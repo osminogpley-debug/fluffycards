@@ -190,6 +190,36 @@ const EmptyState = styled.div`
   color: #a0aec0;
 `;
 
+const areFriendsEqual = (next, current) => {
+  if (!Array.isArray(next) || !Array.isArray(current)) return false;
+  if (next.length !== current.length) return false;
+  for (let i = 0; i < next.length; i += 1) {
+    const a = next[i];
+    const b = current[i];
+    if (!a || !b) return false;
+    if ((a._id || a.userId) !== (b._id || b.userId)) return false;
+    if (a.username !== b.username) return false;
+    if (a.level !== b.level) return false;
+    if (a.totalXp !== b.totalXp) return false;
+    if (String(a.lastSeen || '') !== String(b.lastSeen || '')) return false;
+  }
+  return true;
+};
+
+const areRequestsEqual = (next, current) => {
+  if (!Array.isArray(next) || !Array.isArray(current)) return false;
+  if (next.length !== current.length) return false;
+  for (let i = 0; i < next.length; i += 1) {
+    const a = next[i];
+    const b = current[i];
+    if (!a || !b) return false;
+    if (a._id !== b._id) return false;
+    if (String(a?.from?._id || '') !== String(b?.from?._id || '')) return false;
+    if (a.status !== b.status) return false;
+  }
+  return true;
+};
+
 function FriendsList({ user }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('friends');
@@ -216,8 +246,8 @@ function FriendsList({ user }) {
       getFriends(),
       getFriendRequests()
     ]);
-    setFriends(friendsData);
-    setRequests(requestsData);
+    setFriends(prev => (areFriendsEqual(friendsData, prev) ? prev : friendsData));
+    setRequests(prev => (areRequestsEqual(requestsData, prev) ? prev : requestsData));
   }, []);
 
   useEffect(() => {

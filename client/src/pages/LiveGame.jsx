@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import LiveLeaderboard from '../components/Games/LiveLeaderboard';
@@ -23,11 +23,19 @@ const PageContainer = styled.div`
   margin: 0 auto;
   padding: 2rem;
   transition: opacity 0.3s ease;
+
+  @media (max-width: 600px) {
+    padding: 1rem;
+  }
 `;
 
 const Header = styled.div`
   text-align: center;
   margin-bottom: 3rem;
+
+  @media (max-width: 600px) {
+    margin-bottom: 2rem;
+  }
 `;
 
 const Title = styled.h1`
@@ -42,6 +50,10 @@ const Title = styled.h1`
   &::after {
     content: " 🎮";
   }
+
+  @media (max-width: 600px) {
+    font-size: 2.2rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -55,6 +67,12 @@ const RoleSelector = styled.div`
   justify-content: center;
   gap: 2rem;
   margin: 3rem 0;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
 `;
 
 const RoleCard = styled.button`
@@ -74,12 +92,21 @@ const RoleCard = styled.button`
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     border-color: #f48fb1;
   }
+
+  @media (max-width: 600px) {
+    width: 100%;
+    padding: 1.5rem 1.5rem;
+  }
 `;
 
 const RoleEmoji = styled.div`
   font-size: 4rem;
   margin-bottom: 1rem;
   transition: transform 0.2s ease;
+
+  @media (max-width: 600px) {
+    font-size: 3rem;
+  }
 `;
 
 const RoleTitle = styled.div`
@@ -103,6 +130,10 @@ const FormContainer = styled.div`
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 3px solid #e2e8f0;
   transition: opacity 0.3s ease;
+
+  @media (max-width: 600px) {
+    padding: 1.75rem 1.25rem;
+  }
 `;
 
 const FormTitle = styled.h2`
@@ -136,6 +167,11 @@ const Input = styled.input`
     box-shadow: 0 0 0 4px rgba(244, 143, 177, 0.2);
     outline: none;
   }
+
+  @media (max-width: 600px) {
+    font-size: 1rem;
+    padding: 0.85rem;
+  }
 `;
 
 const PinInput = styled(Input)`
@@ -144,6 +180,11 @@ const PinInput = styled(Input)`
   font-weight: 700;
   color: #e91e63;
   font-family: 'Courier New', monospace;
+
+  @media (max-width: 600px) {
+    font-size: 1.6rem;
+    letter-spacing: 0.35rem;
+  }
 `;
 
 const Button = styled.button`
@@ -192,6 +233,13 @@ const DashboardButton = styled.button`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  @media (max-width: 600px) {
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -577,6 +625,8 @@ const LiveGame = () => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
   const [teamScores, setTeamScores] = useState([]);
+  const roomRef = useRef(null);
+  const isSameData = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     useEffect(() => {
       if (accountName && !playerName) {
         setPlayerName(accountName);
@@ -672,14 +722,15 @@ const LiveGame = () => {
     const pollRoom = async () => {
       const room = await getRoom(roomData.pin);
       if (room) {
-        setRoomData(room);
+        setRoomData(prev => (isSameData(prev, room) ? prev : room));
+        roomRef.current = room;
         // Обновляем очки команд
         const teamsWithScores = TEAMS.map(team => {
           const teamParticipants = room.participants?.filter(p => p.teamId === team.id) || [];
           const teamScore = teamParticipants.reduce((sum, p) => sum + (p.score || 0), 0);
           return { ...team, score: teamScore };
         });
-        setTeamScores(teamsWithScores);
+        setTeamScores(prev => (isSameData(prev, teamsWithScores) ? prev : teamsWithScores));
         
         // Синхронизируем состояние игры
         setGameState(prevState => {

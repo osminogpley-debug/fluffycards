@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { API_ROUTES, authFetch } from '../../constants/api';
+import { API_ROUTES, authFetch, FILE_BASE_URL } from '../../constants/api';
 
 // SaveButton must be defined first since CardContainer references it
 const SaveButton = styled.button`
@@ -191,6 +191,15 @@ const PreviewContainer = styled.div`
   margin-bottom: 1rem;
 `;
 
+const PreviewImage = styled.img`
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  margin-bottom: 0.75rem;
+`;
+
 const PreviewTitle = styled.div`
   font-size: 0.8rem;
   color: var(--text-secondary);
@@ -314,6 +323,10 @@ function SetCard({ set, isPopular = false, onSave, showSaveButton = true }) {
   const cardCount = set.flashcards?.length || 0;
   const remainingCards = cardCount - previewCards.length;
 
+  const coverImage = set.coverImage?.startsWith('/uploads/')
+    ? `${FILE_BASE_URL}${set.coverImage}`
+    : set.coverImage;
+
   const handleSave = async (e) => {
     console.log('[SetCard] Save button clicked!');
     
@@ -434,6 +447,7 @@ function SetCard({ set, isPopular = false, onSave, showSaveButton = true }) {
       </TagsContainer>
 
       <PreviewContainer>
+        {coverImage && <PreviewImage src={coverImage} alt="cover" />}
         <PreviewTitle>
           🎴 Предпросмотр
         </PreviewTitle>
@@ -466,7 +480,7 @@ function SetCard({ set, isPopular = false, onSave, showSaveButton = true }) {
           <AuthorName>{set.owner?.username || '👤 Аноним'}</AuthorName>
         </AuthorInfo>
         <CardCount>
-          📝 {cardCount} кард
+          📝 {cardCount} карт
         </CardCount>
       </CardFooter>
 

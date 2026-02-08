@@ -429,6 +429,15 @@ const SetCard = styled.div`
     flex-direction: column;
     justify-content: center;
   }
+
+  .preview-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: block;
+  }
   
   .preview-term {
     font-weight: 600;
@@ -641,6 +650,23 @@ const ModalInput = styled.input`
   
   &::placeholder {
     color: #9ca3af;
+  }
+`;
+
+const ModalSelect = styled.select`
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 15px;
+  margin-bottom: 16px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #63b3ed;
   }
 `;
 
@@ -920,6 +946,8 @@ function Dashboard() {
   // State для уведомлений (друзья + сообщения)
   const [notificationCount, setNotificationCount] = useState({ unreadMessages: 0, pendingRequests: 0, total: 0 });
 
+  const isSameData = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
   const DEFAULT_PROFILE_IMAGE = 'https://fluffycards.com/default-avatar.png';
 
   const isCustomProfileImage = (url) => {
@@ -933,12 +961,21 @@ function Dashboard() {
     return url;
   };
 
+  const resolveImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+    return url;
+  };
+
   // State для папок
   const [folders, setFolders] = useState([]);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderDescription, setNewFolderDescription] = useState('');
   const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
+  const [showMoveSetModal, setShowMoveSetModal] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState('');
+  const [selectedSetForFolder, setSelectedSetForFolder] = useState(null);
   
   const cacheRef = useRef({
     stats: null,
@@ -958,9 +995,9 @@ function Dashboard() {
       // Кэш на 5 минут
       const now = Date.now();
       if (cache.stats && cache.sets && (now - cache.timestamp) < 300000) {
-        setStats(cache.stats);
-        setUserSets(cache.sets);
-        setFolders(cache.folders || []);
+        setStats(prev => (isSameData(prev, cache.stats) ? prev : cache.stats));
+        setUserSets(prev => (isSameData(prev, cache.sets) ? prev : cache.sets));
+        setFolders(prev => (isSameData(prev, cache.folders || []) ? prev : (cache.folders || [])));
         if (isInitial) setLoading(false);
         return;
       }
@@ -1008,10 +1045,10 @@ function Dashboard() {
       cache.folders = foldersData;
       cache.timestamp = Date.now();
       
-      setStats(statsData);
-      setUserSets(setsData);
-      setGamificationData(gamificationRes);
-      setFolders(foldersData);
+      setStats(prev => (isSameData(prev, statsData) ? prev : statsData));
+      setUserSets(prev => (isSameData(prev, setsData) ? prev : setsData));
+      setGamificationData(prev => (isSameData(prev, gamificationRes) ? prev : gamificationRes));
+      setFolders(prev => (isSameData(prev, foldersData) ? prev : foldersData));
       
       // Извлекаем популярные теги из наборов
       const tagCounts = {};
@@ -1043,7 +1080,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchNotifications = async () => {
       const data = await getNotificationCount();
-      setNotificationCount(data);
+      setNotificationCount(prev => (isSameData(prev, data) ? prev : data));
     };
     fetchNotifications();
     const notifInterval = setInterval(fetchNotifications, 60000);
@@ -1088,6 +1125,41 @@ function Dashboard() {
     } catch (error) {
       console.error('Error creating folder:', error);
       alert('Не удалось создать папку');
+    }
+  };
+
+  const openMoveSetModal = (set) => {
+    if (!folders.length) {
+      setShowCreateFolderModal(true);
+      return;
+    }
+    setSelectedSetForFolder(set);
+    setSelectedFolderId('');
+    setShowMoveSetModal(true);
+  };
+
+  const addSetToFolder = async () => {
+    if (!selectedFolderId || !selectedSetForFolder) return;
+
+    try {
+      const setId = selectedSetForFolder._id || selectedSetForFolder.id;
+      const res = await authFetch(`/api/folders/${selectedFolderId}/sets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ setId })
+      });
+
+      if (!res.ok) throw new Error('Failed to add set to folder');
+
+      const updatedFolders = await fetchFolders();
+      setFolders(updatedFolders);
+      cacheRef.current.folders = updatedFolders;
+      setShowMoveSetModal(false);
+      setSelectedFolderId('');
+      setSelectedSetForFolder(null);
+    } catch (error) {
+      console.error('Error adding set to folder:', error);
+      alert('Не удалось добавить набор в папку');
     }
   };
 
@@ -1202,6 +1274,13 @@ function Dashboard() {
                 🗑️
               </DeleteButton>
               <div className="preview">
+                {set.coverImage && (
+                  <img
+                    className="preview-image"
+                    src={resolveImageUrl(set.coverImage)}
+                    alt="cover"
+                  />
+                )}
                 {set.flashcards?.[0] ? (
                   <>
                     <div className="preview-term">{set.flashcards[0].term}</div>
@@ -1253,6 +1332,14 @@ function Dashboard() {
                 <ActionButton
                   onClick={(e) => {
                     e.stopPropagation();
+                    openMoveSetModal(set);
+                  }}
+                >
+                  📁 В папку
+                </ActionButton>
+                <ActionButton
+                  onClick={(e) => {
+                    e.stopPropagation();
                     navigate(`/sets/${set._id || set.id}/edit`);
                   }}
                 >
@@ -1280,6 +1367,13 @@ function Dashboard() {
             {recommendedSets.map((set) => (
               <SetCard key={`rec-${set._id || set.id}`} onClick={() => navigate(`/sets/${set._id || set.id}`)}>
                 <div className="preview">
+                  {set.coverImage && (
+                    <img
+                      className="preview-image"
+                      src={resolveImageUrl(set.coverImage)}
+                      alt="cover"
+                    />
+                  )}
                   {set.flashcards?.[0] ? (
                     <>
                       <div className="preview-term">{set.flashcards[0].term}</div>
@@ -1404,6 +1498,67 @@ function Dashboard() {
             >
               Создать
             </ModalButton>
+          </ModalButtons>
+        </ModalContent>
+      </ModalOverlay>
+    );
+  };
+
+  const renderMoveSetModal = () => {
+    if (!showMoveSetModal) return null;
+
+    const hasFolders = folders.length > 0;
+
+    return (
+      <ModalOverlay onClick={() => setShowMoveSetModal(false)}>
+        <ModalContent onClick={(e) => e.stopPropagation()}>
+          <h2>📁 Добавить набор в папку</h2>
+          <div style={{ marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+            Набор: <strong>{selectedSetForFolder?.title || 'Без названия'}</strong>
+          </div>
+          {hasFolders ? (
+            <ModalSelect
+              value={selectedFolderId}
+              onChange={(e) => setSelectedFolderId(e.target.value)}
+            >
+              <option value="">Выберите папку</option>
+              {folders.map(folder => (
+                <option key={folder._id || folder.id} value={folder._id || folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </ModalSelect>
+          ) : (
+            <div style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+              У вас пока нет папок
+            </div>
+          )}
+          <ModalButtons>
+            <ModalButton
+              className="cancel"
+              onClick={() => setShowMoveSetModal(false)}
+            >
+              Отмена
+            </ModalButton>
+            {hasFolders ? (
+              <ModalButton
+                className="create"
+                onClick={addSetToFolder}
+                disabled={!selectedFolderId}
+              >
+                Добавить
+              </ModalButton>
+            ) : (
+              <ModalButton
+                className="create"
+                onClick={() => {
+                  setShowMoveSetModal(false);
+                  setShowCreateFolderModal(true);
+                }}
+              >
+                Создать папку
+              </ModalButton>
+            )}
           </ModalButtons>
         </ModalContent>
       </ModalOverlay>
@@ -1954,6 +2109,7 @@ function Dashboard() {
 
       {/* Модальное окно создания папки */}
       {renderCreateFolderModal()}
+      {renderMoveSetModal()}
       
       {/* Gamification Modals */}
       <AchievementsModal 
