@@ -377,7 +377,7 @@ function AdminPage() {
 
   const fetchTickets = async () => {
     try {
-      const url = `http://${window.location.hostname}:5001/api/support/admin/all?status=${ticketFilter}`;
+      const url = `/api/support/admin/all?status=${ticketFilter}`;
       const res = await authFetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -390,7 +390,7 @@ function AdminPage() {
 
   const handleTicketStatusChange = async (ticketId, newStatus) => {
     try {
-      const url = `http://${window.location.hostname}:5001/api/support/admin/${ticketId}`;
+      const url = `/api/support/admin/${ticketId}`;
       const body = { status: newStatus };
       const responseText = ticketResponses[ticketId];
       if (responseText?.trim()) {

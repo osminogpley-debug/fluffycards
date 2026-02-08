@@ -46,7 +46,7 @@ function AISuggestionBox({ term, onApply }) {
   const getAIDefinition = async () => {
     setLoading(prev => ({ ...prev, definition: true }));
     try {
-      const response = await fetch('http://localhost:5001/api/ai/definition', {
+      const response = await fetch('/api/ai/definition', {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -67,7 +67,7 @@ function AISuggestionBox({ term, onApply }) {
   const getAIImage = async () => {
     setLoading(prev => ({ ...prev, image: true }));
     try {
-      const response = await fetch('http://localhost:5001/api/ai/image', {
+      const response = await fetch('/api/ai/image', {
         method: 'POST',
         credentials: 'include',
         headers: {

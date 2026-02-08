@@ -14,7 +14,7 @@ function useAuth() {
       setLoading(true);
       setError(null);
       
-      const apiUrl = `http://${window.location.hostname}:5001/api/auth/me`;
+      const apiUrl = `/api/auth/me`;
       const response = await authFetch(apiUrl);
       
       const data = await response.json();
@@ -36,7 +36,7 @@ function useAuth() {
 
   const logout = async () => {
     try {
-      const logoutUrl = `http://${window.location.hostname}:5001/api/auth/logout`;
+      const logoutUrl = `/api/auth/logout`;
       await fetch(logoutUrl, {
         credentials: 'include'
       });

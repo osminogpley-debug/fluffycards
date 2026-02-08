@@ -306,7 +306,7 @@ function ChatModal({ onClose, userId }) {
 
   const emojiList = ['😀', '😃', '😄', '😁', '😂', '🤣', '😊', '😍', '😘', '😎', '🤔', '😭', '😡', '👍', '👎', '🙏', '🔥', '🎉', '💯', '⭐', '⚡', '❤️', '💙', '💚'];
 
-  const baseUrl = `http://${window.location.hostname}:5001/api/chat`;
+  const baseUrl = `/api/chat`;
 
   const fetchConversations = useCallback(async () => {
     try {

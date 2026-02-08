@@ -407,7 +407,7 @@ function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const apiUrl = `http://${window.location.hostname}:5001/api/auth/me`;
+        const apiUrl = `/api/auth/me`;
         const response = await authFetch(apiUrl);
 
         if (response.ok) {
@@ -448,7 +448,7 @@ function App() {
 
     const sendHeartbeat = async () => {
       try {
-        const apiUrl = `http://${window.location.hostname}:5001/api/auth/heartbeat`;
+        const apiUrl = `/api/auth/heartbeat`;
         await authFetch(apiUrl, { method: 'POST' });
       } catch (error) {
         // Ignore heartbeat errors to avoid disrupting the session
@@ -491,7 +491,7 @@ function App() {
   }, [authState.isAuthenticated]);
 
   const logout = async () => {
-    const apiUrl = `http://${window.location.hostname}:5001/api/auth/logout`;
+    const apiUrl = `/api/auth/logout`;
     await fetch(apiUrl, {
       credentials: 'include'
     });

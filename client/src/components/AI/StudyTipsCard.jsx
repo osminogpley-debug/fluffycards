@@ -45,7 +45,7 @@ function StudyTipsCard({ cards }) {
     
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5001/api/ai/study-tips', {
+      const response = await fetch('/api/ai/study-tips', {
         method: 'POST',
         credentials: 'include',
         headers: {

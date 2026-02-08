@@ -360,7 +360,7 @@ function ProfilePage() {
       setLoading(true);
       
       // Fetch user data
-      const apiUrl = `http://${window.location.hostname}:5001/api/auth/me`;
+      const apiUrl = `/api/auth/me`;
       const userRes = await authFetch(apiUrl);
       if (userRes.ok) {
         const userData = await userRes.json();
@@ -390,7 +390,7 @@ function ProfilePage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const apiUrl = `http://${window.location.hostname}:5001/api/auth/profile`;
+      const apiUrl = `/api/auth/profile`;
       const res = await authFetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -444,7 +444,7 @@ function ProfilePage() {
       const formDataUpload = new FormData();
       formDataUpload.append('image', file);
       const token = localStorage.getItem('token');
-      const uploadUrl = `http://${window.location.hostname}:5001/api/upload`;
+      const uploadUrl = `/api/upload`;
       const uploadRes = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -455,7 +455,7 @@ function ProfilePage() {
         throw new Error(uploadData?.message || 'Ошибка загрузки изображения');
       }
 
-      const apiUrl = `http://${window.location.hostname}:5001/api/auth/profile`;
+      const apiUrl = `/api/auth/profile`;
       const res = await authFetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -489,7 +489,7 @@ function ProfilePage() {
 
   const handleRevertToEmoji = async () => {
     try {
-      const apiUrl = `http://${window.location.hostname}:5001/api/auth/profile`;
+      const apiUrl = `/api/auth/profile`;
       const res = await authFetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

@@ -423,7 +423,7 @@ function HelpPage() {
     setSupportError('');
     setSupportSuccess('');
     try {
-      const url = `http://${window.location.hostname}:5001/api/support`;
+      const url = `/api/support`;
       const response = await authFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

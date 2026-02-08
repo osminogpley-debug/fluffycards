@@ -202,7 +202,7 @@ function AuthPage(props) {
           return;
         }
 
-        const apiUrl = `http://${window.location.hostname}:5001/api/auth/google`;
+        const apiUrl = `/api/auth/google`;
         const payload = {
           idToken: response.credential,
           role: isLoginRef.current ? undefined : roleRef.current
@@ -281,7 +281,7 @@ function AuthPage(props) {
 
     try {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-      const apiUrl = `http://${window.location.hostname}:5001${endpoint}`;
+      const apiUrl = `${endpoint}`;
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {

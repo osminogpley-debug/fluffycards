@@ -211,7 +211,7 @@ function RegisterForm() {
     setIsLoading(true);
     
     try {
-      const apiUrl = `http://${window.location.hostname}:5001/api/auth/register`;
+      const apiUrl = `/api/auth/register`;
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
