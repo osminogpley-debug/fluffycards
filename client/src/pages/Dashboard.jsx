@@ -31,6 +31,13 @@ const UserHeader = styled.div`
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 20px;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const UserInfo = styled.div`
@@ -49,6 +56,13 @@ const Avatar = styled.div`
   font-size: 28px;
   box-shadow: 0 4px 12px rgba(99, 179, 237, 0.3);
   overflow: hidden;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+  }
 `;
 
 const AvatarImage = styled.img`
@@ -64,6 +78,10 @@ const UserDetails = styled.div`
     font-size: 24px;
     font-weight: 700;
     color: var(--text-primary);
+
+    @media (max-width: 768px) {
+      font-size: 18px;
+    }
   }
   
   .role {
@@ -84,6 +102,12 @@ const QuickStats = styled.div`
   display: flex;
   gap: 24px;
   align-items: center;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+    justify-content: space-around;
+    width: 100%;
+  }
 `;
 
 const StatItem = styled.div`
@@ -104,6 +128,11 @@ const StatItem = styled.div`
   
   &.streak .value {
     color: #f59e0b;
+  }
+
+  @media (max-width: 768px) {
+    .value { font-size: 18px; }
+    .label { font-size: 10px; }
   }
 `;
 
@@ -181,6 +210,12 @@ const GamificationButton = styled.button`
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    & > * { flex: 1; min-width: 0; justify-content: center; font-size: 13px; padding: 10px 8px; }
+  }
 `;
 
 // Навигация по вкладкам
@@ -189,7 +224,15 @@ const TabNavigation = styled.div`
   border-bottom: 1px solid var(--border-color);
   padding: 0 32px;
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar { display: none; }
+
+  @media (max-width: 768px) {
+    padding: 0 8px;
+  }
 `;
 
 const Tab = styled.button`
@@ -206,10 +249,18 @@ const Tab = styled.button`
   gap: 8px;
   transition: all 0.2s ease;
   position: relative;
+  white-space: nowrap;
+  flex-shrink: 0;
   
   &:hover {
     color: #63b3ed;
     background: var(--bg-hover);
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 14px;
+    font-size: 13px;
+    gap: 4px;
   }
 `;
 
@@ -246,6 +297,12 @@ const MainContent = styled.div`
   margin: 0 auto;
   padding: 32px;
   gap: 32px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+  }
 `;
 
 const ContentArea = styled.div`
@@ -258,7 +315,11 @@ const Sidebar = styled.div`
   flex-shrink: 0;
   
   @media (max-width: 1024px) {
-    display: none;
+    width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
   }
 `;
 
@@ -272,6 +333,14 @@ const ControlPanel = styled.div`
   gap: 16px;
   align-items: center;
   box-shadow: 0 2px 8px var(--shadow-color);
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const TagsCloud = styled.div`
@@ -401,6 +470,12 @@ const SetsGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
 `;
 
 const SetCard = styled.div`
@@ -507,6 +582,10 @@ const DeleteButton = styled.button`
   &:hover {
     background: var(--danger-hover-bg);
     transform: scale(1.1);
+  }
+
+  @media (max-width: 768px) {
+    opacity: 1;
   }
 `;
 
@@ -625,12 +704,22 @@ const ModalContent = styled.div`
   width: 100%;
   max-width: 480px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
   
   h2 {
     margin: 0 0 24px 0;
     font-size: 22px;
     font-weight: 600;
     color: var(--text-primary);
+  }
+
+  @media (max-width: 768px) {
+    margin: 16px;
+    padding: 20px;
+    border-radius: 12px;
+
+    h2 { font-size: 18px; margin-bottom: 16px; }
   }
 `;
 
@@ -902,6 +991,12 @@ const EmptyState = styled.div`
   p {
     margin: 0 0 24px 0;
     color: var(--text-secondary);
+  }
+
+  @media (max-width: 768px) {
+    padding: 32px 16px;
+    .icon { font-size: 48px; }
+    h3 { font-size: 17px; }
   }
 `;
 
@@ -1431,7 +1526,7 @@ function Dashboard() {
                 <div className="description">{folder.description}</div>
               )}
               <div className="meta">
-                <span>📚 {folder.setsCount || 0} наборов</span>
+                <span>📚 {folder.sets?.length || folder.setsCount || 0} наборов</span>
                 <span>•</span>
                 <span>{folder.isPublic ? '🌍 Публичная' : '🔒 Приватная'}</span>
               </div>
@@ -1970,6 +2065,14 @@ function Dashboard() {
             onClick={() => setActiveTab('classes')}
           >
             🎓 Классы
+          </Tab>
+        )}
+        {userRole === 'teacher' && (
+          <Tab 
+            active={activeTab === 'attendance'} 
+            onClick={() => navigate('/attendance')}
+          >
+            📋 Посещаемость
           </Tab>
         )}
         <Tab 

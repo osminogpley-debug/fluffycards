@@ -11,7 +11,14 @@ router.get('/', authMiddleware, async (req, res) => {
     const folders = await Folder.find({ userId: req.user.id })
       .sort({ createdAt: -1 });
     
-    res.json(folders);
+    // Add setsCount for backward compatibility
+    const foldersWithCount = folders.map(f => {
+      const obj = f.toObject();
+      obj.setsCount = obj.sets ? obj.sets.length : 0;
+      return obj;
+    });
+    
+    res.json(foldersWithCount);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

@@ -41,6 +41,7 @@ import WordMaze from './pages/WordMaze';
 import WordTrain from './pages/WordTrain';
 import HoneycombGame from './pages/HoneycombGame';
 import FolderDetail from './pages/FolderDetail';
+import AttendancePage from './pages/AttendancePage';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -803,6 +804,16 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <FolderDetail />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/attendance"
+                element={
+                  authState.isAuthenticated ? (
+                    <AttendancePage />
                   ) : (
                     <Navigate to="/login" />
                   )

@@ -233,7 +233,11 @@ const StudyModeButton = styled.button`
 const GamesGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 10px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const GameButton = styled.button`
@@ -241,19 +245,31 @@ const GameButton = styled.button`
   color: white;
   border: none;
   border-radius: 12px;
-  padding: 16px;
-  font-size: 15px;
+  padding: 14px 12px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+
+  .game-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
 
   &:hover {
     transform: translateY(-2px) scale(1.02);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
   }
 `;
 
@@ -868,14 +884,91 @@ function SetDetail() {
                 onClick={() => navigateToGame('match')}
                 disabled={flashcards.length === 0}
               >
-                🎯 Подбор
+                <span className="game-icon">🔗</span> Подбор
               </GameButton>
               <GameButton 
                 gradient="#60a5fa, #3b82f6"
                 onClick={() => navigateToGame('gravity')}
                 disabled={flashcards.length === 0}
               >
-                🚀 Гравитация
+                <span className="game-icon">🌌</span> Гравитация
+              </GameButton>
+              <GameButton 
+                gradient="#34d399, #10b981"
+                onClick={() => navigateToGame('scramble')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">🔀</span> Скрэмбл
+              </GameButton>
+              <GameButton 
+                gradient="#f472b6, #ec4899"
+                onClick={() => navigateToGame('quiz-blitz')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">⚡</span> Квиз-блиц
+              </GameButton>
+              <GameButton 
+                gradient="#a78bfa, #8b5cf6"
+                onClick={() => navigateToGame('true-false')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">✅</span> Да/Нет
+              </GameButton>
+              <GameButton 
+                gradient="#fb923c, #f97316"
+                onClick={() => navigateToGame('memory')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">🧠</span> Память
+              </GameButton>
+              <GameButton 
+                gradient="#fcd34d, #f59e0b"
+                onClick={() => navigateToGame('treasure-island')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">🏝️</span> Остров
+              </GameButton>
+              <GameButton 
+                gradient="#6ee7b7, #34d399"
+                onClick={() => navigateToGame('chain')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">⛓️</span> Цепочка
+              </GameButton>
+              <GameButton 
+                gradient="#93c5fd, #60a5fa"
+                onClick={() => navigateToGame('tower')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">🏗️</span> Башня
+              </GameButton>
+              <GameButton 
+                gradient="#f87171, #ef4444"
+                onClick={() => navigateToGame('rocket')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">🚀</span> Ракета
+              </GameButton>
+              <GameButton 
+                gradient="#c084fc, #a855f7"
+                onClick={() => navigateToGame('maze')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">🌀</span> Лабиринт
+              </GameButton>
+              <GameButton 
+                gradient="#2dd4bf, #14b8a6"
+                onClick={() => navigateToGame('train')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">🚂</span> Поезд
+              </GameButton>
+              <GameButton 
+                gradient="#fbbf24, #d97706"
+                onClick={() => navigateToGame('honeycomb')}
+                disabled={flashcards.length === 0}
+              >
+                <span className="game-icon">🐝</span> Соты
               </GameButton>
             </GamesGrid>
           </Section>
