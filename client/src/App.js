@@ -36,6 +36,10 @@ import MemoryGame from './pages/MemoryGame';
 import TreasureIsland from './pages/TreasureIsland';
 import ChainGame from './pages/ChainGame';
 import TowerGame from './pages/TowerGame';
+import RocketDock from './pages/RocketDock';
+import WordMaze from './pages/WordMaze';
+import WordTrain from './pages/WordTrain';
+import HoneycombGame from './pages/HoneycombGame';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -736,6 +740,46 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <TowerGame />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/rocket"
+                element={
+                  authState.isAuthenticated ? (
+                    <RocketDock />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/maze"
+                element={
+                  authState.isAuthenticated ? (
+                    <WordMaze />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/train"
+                element={
+                  authState.isAuthenticated ? (
+                    <WordTrain />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/honeycomb"
+                element={
+                  authState.isAuthenticated ? (
+                    <HoneycombGame />
                   ) : (
                     <Navigate to="/login" />
                   )

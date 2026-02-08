@@ -1486,6 +1486,46 @@ function Dashboard() {
             <span>Стройте башню из правильных ответов</span>
           </div>
         </SetCard>
+
+        <SetCard onClick={() => navigate('/games/rocket')}>
+          <div className="preview" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e40af 100%)' }}>
+            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🚀</div>
+          </div>
+          <h3>Ракетный док</h3>
+          <div className="meta">
+            <span>Заправляйте ракету знаниями и летите в космос</span>
+          </div>
+        </SetCard>
+
+        <SetCard onClick={() => navigate('/games/maze')}>
+          <div className="preview" style={{ background: 'linear-gradient(135deg, #d1fae5 0%, #059669 100%)' }}>
+            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🌀</div>
+          </div>
+          <h3>Лабиринт слов</h3>
+          <div className="meta">
+            <span>Найдите выход из лабиринта, отвечая на вопросы</span>
+          </div>
+        </SetCard>
+
+        <SetCard onClick={() => navigate('/games/train')}>
+          <div className="preview" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #b45309 100%)' }}>
+            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🚂</div>
+          </div>
+          <h3>Поезд слов</h3>
+          <div className="meta">
+            <span>Собери поезд из 10 вагонов правильных ответов</span>
+          </div>
+        </SetCard>
+
+        <SetCard onClick={() => navigate('/games/honeycomb')}>
+          <div className="preview" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #d97706 100%)' }}>
+            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🍯</div>
+          </div>
+          <h3>Соты</h3>
+          <div className="meta">
+            <span>Заполните соты мёдом, отвечая правильно</span>
+          </div>
+        </SetCard>
       </SetsGrid>
     );
   };
