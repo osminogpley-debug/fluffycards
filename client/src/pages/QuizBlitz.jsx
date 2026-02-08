@@ -513,7 +513,7 @@ function QuizBlitz() {
   }, [phase]);
 
   const handleSelectSet = (set) => {
-    navigate(`/games/quiz-blitz?setId=${set._id || set.id}`);
+    navigate(`/games/quiz-blitz?setId=${set._id}`);
   };
 
   const getStars = () => {

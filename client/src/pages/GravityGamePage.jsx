@@ -628,7 +628,7 @@ function GravityGamePage() {
   };
 
   const handleSelectSet = (set) => {
-    navigate(`/games/gravity?setId=${set._id || set.id}`);
+    navigate(`/games/gravity?setId=${set._id}`);
   };
 
   useEffect(() => {

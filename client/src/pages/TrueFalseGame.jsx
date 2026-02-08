@@ -315,7 +315,7 @@ function TrueFalseGame() {
   }, [isComplete, flashcards.length, correct]);
 
   const handleSelectSet = (set) => {
-    navigate(`/games/true-false?setId=${set._id || set.id}`);
+    navigate(`/games/true-false?setId=${set._id}`);
   };
 
   if (!setId) {

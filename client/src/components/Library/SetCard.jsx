@@ -339,7 +339,7 @@ function SetCard({ set, isPopular = false, onSave, showSaveButton = true }) {
     }
 
     // Получаем ID набора (поддержка _id или id)
-    const setId = set._id || set.id;
+    const setId = set._id;
     console.log('[SetCard] Set ID:', setId, 'Set object:', set);
     
     if (!setId) {
@@ -391,7 +391,7 @@ function SetCard({ set, isPopular = false, onSave, showSaveButton = true }) {
   };
 
   const handleCardClick = () => {
-    const setId = set._id || set.id;
+    const setId = set._id;
     if (setId) {
       navigate(`/sets/${setId}`);
     }

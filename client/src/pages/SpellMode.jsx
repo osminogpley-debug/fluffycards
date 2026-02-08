@@ -501,7 +501,7 @@ function SpellMode() {
   }, [isComplete, terms.length, correctCount]);
 
   const handleSelectSet = (set) => {
-    navigate(`/learn/spell?setId=${set._id || set.id}`);
+    navigate(`/learn/spell?setId=${set._id}`);
   };
 
   // Если нет setId - показываем выбор набора

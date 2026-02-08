@@ -237,7 +237,7 @@ function MemoryGame() {
   }, [isComplete, deck.length]);
 
   const handleSelectSet = (set) => {
-    navigate(`/games/memory?setId=${set._id || set.id}`);
+    navigate(`/games/memory?setId=${set._id}`);
   };
 
   const handleRestart = () => {

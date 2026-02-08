@@ -241,7 +241,7 @@ function SetSelector({ title, subtitle, onSelectSet, gameMode = false }) {
       <SetsGrid>
         {sets.map((set) => (
           <SetCard 
-            key={set._id || set.id} 
+            key={set._id} 
             onClick={() => handleSetClick(set)}
           >
             <SetTitle>{set.title}</SetTitle>

@@ -519,8 +519,9 @@ function LearningMode() {
   };
 
   const currentCard = remainingCards[currentIndex];
-  const progress = flashcards.length > 0 
-    ? ((flashcards.length - remainingCards.length + (currentIndex < remainingCards.length ? 1 : 0)) / flashcards.length) * 100 
+  const sessionTotal = remainingCards.length + knownCards.length + unknownCards.length;
+  const progress = sessionTotal > 0 
+    ? ((sessionTotal - remainingCards.length + (currentIndex < remainingCards.length ? 1 : 0)) / sessionTotal) * 100 
     : 0;
 
   const handleKnow = async () => {
@@ -635,7 +636,7 @@ function LearningMode() {
   };
 
   const handleSelectSet = (set) => {
-    navigate(`/learn/flashcards?setId=${set._id || set.id}`);
+    navigate(`/learn/flashcards?setId=${set._id}`);
   };
 
   // Если нет setId - показываем выбор набора
@@ -762,7 +763,7 @@ function LearningMode() {
       {currentSet && (
         <SetInfo>
           <h3>📚 {currentSet.title}</h3>
-          <p>Карточка {currentIndex + 1} из {remainingCards.length} (всего {flashcards.length})</p>
+          <p>Карточка {currentIndex + 1} из {sessionTotal} (всего {flashcards.length})</p>
         </SetInfo>
       )}
 
@@ -802,7 +803,7 @@ function LearningMode() {
       </FlipHint>
 
       <CardCounter>
-        Карточка {currentIndex + 1} из {remainingCards.length}
+        Карточка {currentIndex + 1} из {sessionTotal}
       </CardCounter>
 
       {/* Action Buttons for Know/Don't Know */}

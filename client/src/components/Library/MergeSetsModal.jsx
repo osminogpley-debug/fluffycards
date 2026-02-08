@@ -406,7 +406,7 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
   };
 
   const getMergedPreview = () => {
-    const selected = userSets.filter(set => selectedSets.includes(set.id));
+    const selected = userSets.filter(set => selectedSets.includes(set._id));
     let allCards = [];
     selected.forEach(set => {
       if (set.cards) {
@@ -417,7 +417,7 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
   };
 
   const getTotalCards = () => {
-    const selected = userSets.filter(set => selectedSets.includes(set.id));
+    const selected = userSets.filter(set => selectedSets.includes(set._id));
     return selected.reduce((total, set) => total + (set.cardCount || set.cards?.length || 0), 0);
   };
 
@@ -447,7 +447,7 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
     // Имитация API вызова
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const selected = userSets.filter(set => selectedSets.includes(set.id));
+    const selected = userSets.filter(set => selectedSets.includes(set._id));
     const mergedData = {
       name: mergedName,
       description: mergedDescription,
@@ -498,11 +498,11 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
             <SetsList>
               {userSets.map(set => (
                 <SetItem 
-                  key={set.id}
-                  $selected={selectedSets.includes(set.id)}
-                  onClick={() => toggleSetSelection(set.id)}
+                  key={set._id}
+                  $selected={selectedSets.includes(set._id)}
+                  onClick={() => toggleSetSelection(set._id)}
                 >
-                  <Checkbox $checked={selectedSets.includes(set.id)} />
+                  <Checkbox $checked={selectedSets.includes(set._id)} />
                   <SetInfo>
                     <SetName>{set.title}</SetName>
                     <SetMeta>

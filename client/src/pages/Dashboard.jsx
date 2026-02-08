@@ -1358,11 +1358,11 @@ function Dashboard() {
       {sortedSets.length > 0 ? (
         <SetsGrid>
           {sortedSets.map((set) => (
-            <SetCard key={set._id || set.id} onClick={() => navigate(`/sets/${set._id || set.id}`)}>
+            <SetCard key={set._id} onClick={() => navigate(`/sets/${set._id}`)}>
               <DeleteButton 
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteSet(set._id || set.id);
+                  deleteSet(set._id);
                 }}
                 title="Удалить набор"
               >
@@ -1419,7 +1419,7 @@ function Dashboard() {
                   className="primary"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/learn/${set._id || set.id}`);
+                    navigate(`/learn/${set._id}`);
                   }}
                 >
                   📖 Учить
@@ -1435,7 +1435,7 @@ function Dashboard() {
                 <ActionButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/sets/${set._id || set.id}/edit`);
+                    navigate(`/sets/${set._id}/edit`);
                   }}
                 >
                   ✏️ Редактировать
@@ -1460,7 +1460,7 @@ function Dashboard() {
           <h2>🔄 Рекомендуем повторить</h2>
           <SetsGrid style={{ marginBottom: 0 }}>
             {recommendedSets.map((set) => (
-              <SetCard key={`rec-${set._id || set.id}`} onClick={() => navigate(`/sets/${set._id || set.id}`)}>
+              <SetCard key={`rec-${set._id}`} onClick={() => navigate(`/sets/${set._id}`)}>
                 <div className="preview">
                   {set.coverImage && (
                     <img

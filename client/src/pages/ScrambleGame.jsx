@@ -541,7 +541,7 @@ function ScrambleGame() {
   }, [isComplete]);
 
   const handleSelectSet = (set) => {
-    navigate(`/games/scramble?setId=${set._id || set.id}`);
+    navigate(`/games/scramble?setId=${set._id}`);
   };
 
   // RENDER

@@ -265,21 +265,27 @@ router.get('/share/:id', async (req, res) => {
 });
 
 // Получение одного набора с карточками
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   try {
-    // Try to find set owned by user OR public set
-    let set = await FlashcardSet.findOne({
-      _id: req.params.id,
-      $or: [
-        { owner: req.user?._id },
+    const query = { _id: req.params.id };
+
+    // Авторизованный пользователь: свои наборы ИЛИ публичные
+    if (req.user?._id) {
+      query.$or = [
+        { owner: req.user._id },
         { isPublic: true }
-      ]
-    }).populate('owner', 'username profileImage');
-    
+      ];
+    } else {
+      // Неавторизованный: только публичные
+      query.isPublic = true;
+    }
+
+    const set = await FlashcardSet.findOne(query).populate('owner', 'username profileImage');
+
     if (!set) {
       return res.status(404).json({ message: 'Набор не найден' });
     }
-    
+
     res.json(set);
   } catch (error) {
     res.status(400).json({ message: error.message });

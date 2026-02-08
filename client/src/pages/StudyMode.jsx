@@ -763,7 +763,7 @@ function StudyMode() {
   }, [isComplete, flashcards.length, correctCount]);
 
   const handleSelectSet = (set) => {
-    navigate(`/learn/study?setId=${set._id || set.id}`);
+    navigate(`/learn/study?setId=${set._id}`);
   };
 
   // Auto-focus input in round 2

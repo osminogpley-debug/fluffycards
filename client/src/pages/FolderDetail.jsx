@@ -275,7 +275,7 @@ function FolderDetail() {
   }
 
   const folderSets = folder?.sets || [];
-  const availableSets = userSets.filter(set => !folderSets.some(fs => (fs._id || fs.id) === (set._id || set.id)));
+  const availableSets = userSets.filter(set => !folderSets.some(fs => fs._id === set._id));
 
   return (
     <PageContainer>
@@ -297,7 +297,7 @@ function FolderDetail() {
           <Select value={selectedSetId} onChange={(e) => setSelectedSetId(e.target.value)}>
             <option value="">Выберите набор для добавления</option>
             {availableSets.map(set => (
-              <option key={set._id || set.id} value={set._id || set.id}>
+              <option key={set._id} value={set._id}>
                 {set.title}
               </option>
             ))}
@@ -310,11 +310,11 @@ function FolderDetail() {
         ) : (
           <SetsGrid>
             {folderSets.map(set => (
-              <SetCard key={set._id || set.id} onClick={() => navigate(`/sets/${set._id || set.id}`)}>
+              <SetCard key={set._id} onClick={() => navigate(`/sets/${set._id}`)}>
                 <RemoveButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveSet(set._id || set.id);
+                    handleRemoveSet(set._id);
                   }}
                 >
                   Удалить

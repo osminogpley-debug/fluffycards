@@ -518,7 +518,7 @@ function WriteMode() {
   };
 
   const handleSelectSet = (set) => {
-    navigate(`/learn/write?setId=${set._id || set.id}`);
+    navigate(`/learn/write?setId=${set._id}`);
   };
 
   // Если нет setId - показываем выбор набора

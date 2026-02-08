@@ -366,7 +366,7 @@ function MatchGamePage() {
   };
 
   const handleSelectSet = (set) => {
-    navigate(`/games/match?setId=${set._id || set.id}`);
+    navigate(`/games/match?setId=${set._id}`);
   };
 
   // Если нет setId - показываем выбор набора
