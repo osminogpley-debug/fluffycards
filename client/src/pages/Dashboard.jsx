@@ -1456,6 +1456,36 @@ function Dashboard() {
             <span>Соревнуйтесь с друзьями онлайн</span>
           </div>
         </SetCard>
+
+        <SetCard onClick={() => navigate('/games/treasure-island')}>
+          <div className="preview" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)' }}>
+            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🏝️</div>
+          </div>
+          <h3>Остров сокровищ</h3>
+          <div className="meta">
+            <span>Пройдите карту и найдите сокровище</span>
+          </div>
+        </SetCard>
+
+        <SetCard onClick={() => navigate('/games/chain')}>
+          <div className="preview" style={{ background: 'linear-gradient(135deg, #ede9fe 0%, #7c3aed 100%)' }}>
+            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🔗</div>
+          </div>
+          <h3>Цепочка</h3>
+          <div className="meta">
+            <span>Создайте самую длинную цепь ответов</span>
+          </div>
+        </SetCard>
+
+        <SetCard onClick={() => navigate('/games/tower')}>
+          <div className="preview" style={{ background: 'linear-gradient(135deg, #cffafe 0%, #0891b2 100%)' }}>
+            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🏗️</div>
+          </div>
+          <h3>Башня знаний</h3>
+          <div className="meta">
+            <span>Стройте башню из правильных ответов</span>
+          </div>
+        </SetCard>
       </SetsGrid>
     );
   };

@@ -33,6 +33,9 @@ import logoImage from './assets/logo.png';
 import CreateClassPage from './pages/CreateClassPage';
 import TrueFalseGame from './pages/TrueFalseGame';
 import MemoryGame from './pages/MemoryGame';
+import TreasureIsland from './pages/TreasureIsland';
+import ChainGame from './pages/ChainGame';
+import TowerGame from './pages/TowerGame';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -703,6 +706,36 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <MemoryGame />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/treasure-island"
+                element={
+                  authState.isAuthenticated ? (
+                    <TreasureIsland />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/chain"
+                element={
+                  authState.isAuthenticated ? (
+                    <ChainGame />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/tower"
+                element={
+                  authState.isAuthenticated ? (
+                    <TowerGame />
                   ) : (
                     <Navigate to="/login" />
                   )
