@@ -6,508 +6,375 @@ import { API_ROUTES, authFetch } from '../constants/api';
 import { trackGameWin } from '../services/gamificationService';
 import SetSelector from '../components/SetSelector';
 
-/* ───────── keyframes ───────── */
+/* ─── keyframes ─── */
 const pop = keyframes`
-  0%   { transform: scale(0.6); opacity: 0; }
-  60%  { transform: scale(1.08); }
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.08); }
   100% { transform: scale(1); opacity: 1; }
 `;
-
 const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-3px); }
-  80% { transform: translateX(3px); }
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
 `;
-
-const chugChug = keyframes`
-  0%, 100% { transform: translateX(0); }
-  50%      { transform: translateX(-2px); }
-`;
-
-const wheelSpin = keyframes`
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-`;
-
-const smokeRise = keyframes`
-  0%   { opacity: 0.7; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(-40px) scale(2); }
-`;
-
 const wagonAttach = keyframes`
-  0%   { transform: translateX(30px) scale(0.8); opacity: 0; }
-  60%  { transform: translateX(-3px) scale(1.02); }
-  100% { transform: translateX(0) scale(1); opacity: 1; }
+  from { transform: translateX(60px) scale(0.8); opacity: 0; }
+  to   { transform: translateX(0) scale(1); opacity: 1; }
 `;
-
 const wagonDetach = keyframes`
   0%   { transform: translateX(0); opacity: 1; }
-  100% { transform: translateX(50px) translateY(10px); opacity: 0; }
+  100% { transform: translateX(80px) translateY(20px) rotate(8deg); opacity: 0; }
 `;
-
+const chug = keyframes`
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+`;
+const smoke = keyframes`
+  0%   { transform: translateY(0) scale(0.5); opacity: 0.8; }
+  100% { transform: translateY(-30px) scale(1.5); opacity: 0; }
+`;
+const letterPop = keyframes`
+  0%   { transform: scale(0) rotate(-20deg); }
+  60%  { transform: scale(1.15) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+`;
 const slideUp = keyframes`
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 `;
+const glow = keyframes`
+  0%,100% { box-shadow: 0 0 8px rgba(139,92,246,0.3); }
+  50%     { box-shadow: 0 0 20px rgba(139,92,246,0.6); }
+`;
 
-/* ───────── styled ───────── */
+/* ─── styled ─── */
 const Container = styled.div`
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 800px; margin: 0 auto; padding: 1.5rem;
   font-family: 'Segoe UI', sans-serif;
-
-  @media (max-width: 600px) {
-    padding: 0.75rem;
-  }
+  @media (max-width: 600px) { padding: 0.75rem; }
 `;
-
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: 1rem;
-`;
-
 const Title = styled.h1`
-  color: #b45309;
-  font-size: 2.4rem;
-  margin-bottom: 0.25rem;
-
-  @media (max-width: 600px) {
-    font-size: 2rem;
-  }
+  text-align: center; color: #8b5cf6; font-size: 2.2rem; margin-bottom: 0.5rem;
+  @media (max-width: 600px) { font-size: 1.6rem; }
 `;
-
-const Subtitle = styled.p`
-  color: var(--text-secondary, #6b7280);
-  font-size: 1rem;
-`;
-
-const TopBar = styled.div`
-  display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap; margin-bottom: 1rem;
-`;
-
+const Sub = styled.p`text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem;`;
+const TopBar = styled.div`display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;`;
 const Stat = styled.div`
-  background: var(--card-bg, white);
-  padding: 0.5rem 1.2rem; border-radius: 14px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--card-bg, #fff); padding: 0.5rem 1rem; border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid var(--border-color, #e5e7eb);
   text-align: center; min-width: 80px;
-  .val { font-size: 1.3rem; font-weight: 700; color: ${p => p.$color || '#b45309'}; }
-  .lbl { font-size: 0.7rem; color: var(--text-secondary); }
+  .val { font-size: 1.3rem; font-weight: 700; color: ${p => p.$c || '#8b5cf6'}; }
+  .lbl { font-size: 0.72rem; color: var(--text-secondary); }
 `;
 
-/* ── train area ── */
-const TrainWrapper = styled.div`
-  background: linear-gradient(180deg, #87CEEB 0%, #87CEEB 60%, #8B4513 60%, #228B22 65%, #228B22 100%);
-  border-radius: 24px;
-  padding: 2rem 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.08));
-  border: 1px solid var(--border-color, transparent);
-  min-height: 220px;
-  position:relative;
-  overflow: hidden;
-
-  @media (max-width: 600px) {
-    padding: 1.25rem 1rem;
-    min-height: 180px;
-  }
-`;
-
-const TrackLine = styled.div`
-  position: absolute;
-  bottom: 48px;
-  left: 0; right: 0;
-  height: 6px;
-  background: repeating-linear-gradient(90deg, #654321 0px, #654321 20px, transparent 20px, transparent 30px);
-`;
-
-const RailLine = styled.div`
-  position: absolute;
-  bottom: 42px;
-  left: 0; right: 0;
-  height: 3px;
-  background: #888;
-`;
-
-const TrainScroller = styled.div`
-  display: flex;
-  align-items: flex-end;
-  overflow-x: auto;
-  padding-bottom: 56px;
-  gap: 0;
-  min-height: 140px;
-  scroll-behavior: smooth;
+/* Train */
+const TrainTrack = styled.div`
+  display: flex; align-items: flex-end; gap: 4px; overflow-x: auto;
+  padding: 1rem 0.5rem; margin-bottom: 1rem; min-height: 80px;
+  border-bottom: 4px solid #78716c;
+  position: relative;
   &::-webkit-scrollbar { height: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
-
-  @media (max-width: 600px) {
-    padding-bottom: 44px;
-    min-height: 120px;
-  }
 `;
-
 const Locomotive = styled.div`
-  flex-shrink: 0;
-  width: 100px;
-  height: 90px;
-  background: linear-gradient(135deg, #1e3a5f, #0f2744);
-  border-radius: 10px 20px 4px 4px;
+  font-size: 2.8rem; flex-shrink: 0; animation: ${chug} 0.6s ease infinite;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 2.5rem;
-  animation: ${chugChug} 0.4s ease-in-out infinite;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-
-  &::before {
-    content: '';
-    position: absolute;
-    bottom: -10px; left: 10%; right: 10%;
-    height: 12px;
-    background: #333;
-    border-radius: 6px;
-  }
-
-  @media (max-width: 600px) {
-    width: 84px;
-    height: 76px;
-    font-size: 2rem;
-  }
 `;
-
-const Chimney = styled.div`
-  position: absolute; top: -20px; left: 18px;
-  width: 18px; height: 22px;
-  background: #333;
-  border-radius: 3px 3px 0 0;
+const SmokeCloud = styled.span`
+  position: absolute; top: -14px; left: 8px; font-size: 1.2rem;
+  animation: ${smoke} 1.5s ease infinite;
+  animation-delay: ${p => p.$d || 0}s;
 `;
-
-const SmokeParticle = styled.div`
-  position: absolute;
-  top: -42px;
-  left: ${p => 14 + (p.$i % 3) * 8}px;
-  width: 12px; height: 12px;
-  background: rgba(200, 200, 200, 0.7);
-  border-radius: 50%;
-  animation: ${smokeRise} ${p => 1 + p.$i * 0.3}s ease-out infinite;
-  animation-delay: ${p => p.$i * 0.35}s;
-`;
-
 const Wagon = styled.div`
-  flex-shrink: 0;
-  width: 72px;
-  height: 52px;
-  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  width: 56px; height: 40px; border-radius: 8px;
+  background: linear-gradient(135deg, ${p => p.$color});
+  color: white; font-weight: 700; font-size: 0.7rem; flex-shrink: 0;
+  animation: ${p => p.$detach ? wagonDetach : wagonAttach} 0.5s ease ${p => p.$detach ? 'forwards' : 'both'};
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   position: relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size: 1.6rem;
-  margin-left: 4px;
-  animation: ${p => p.$detaching ? css`${wagonDetach} 0.5s ease forwards` : css`${wagonAttach} 0.4s ease`};
-  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
 
-  background: ${p => {
-    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#e84393', '#00b894', '#6c5ce7', '#fd79a8', '#74b9ff'];
-    return colors[p.$index % colors.length];
-  }};
-
-  &::before {
-    content: '';
-    position: absolute;
-    bottom: -8px; left: 8%; right: 8%;
-    height: 10px;
-    background: #555;
-    border-radius: 5px;
-  }
-
-  @media (max-width: 600px) {
-    width: 60px;
-    height: 46px;
-    font-size: 1.4rem;
+  &::after {
+    content: ''; position: absolute; bottom: -6px;
+    width: 10px; height: 10px; border-radius: 50%; background: #44403c;
+    box-shadow: 28px 0 0 #44403c;
   }
 `;
 
-const WagonNumber = styled.div`
-  position: absolute;
-  top: 2px; right: 4px;
-  font-size: 0.55rem;
-  color: rgba(255,255,255,0.7);
-  font-weight: 700;
+/* Question area */
+const QuestionCard = styled.div`
+  background: var(--card-bg, #fff); border-radius: 20px; padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08); text-align: center;
+  border: 1px solid var(--border-color, #e5e7eb); animation: ${pop} 0.3s ease;
+  ${p => p.$shake && css`animation: ${shake} 0.5s ease;`}
 `;
+const DefText = styled.div`
+  font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.5rem;
+  font-style: italic;
+`;
+const BuiltWord = styled.div`
+  display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;
+  min-height: 52px; margin: 1rem 0; padding: 12px;
+  background: var(--bg-secondary, #f8fafc); border-radius: 14px;
+  border: 2px dashed ${p => p.$wrong ? '#ef4444' : p.$correct ? '#22c55e' : '#d1d5db'};
+  transition: border-color 0.3s;
+  ${p => p.$correct && css`animation: ${glow} 1s ease;`}
+`;
+const BuiltLetter = styled.div`
+  width: 38px; height: 42px; border-radius: 8px;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white; font-weight: 800; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  animation: ${letterPop} 0.3s ease;
+  cursor: pointer;
+  &:hover { opacity: 0.8; }
+`;
+const Placeholder = styled.div`
+  width: 38px; height: 42px; border-radius: 8px;
+  border: 2px dashed #d1d5db; background: transparent;
+`;
+const LettersPool = styled.div`
+  display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+  margin: 1rem 0;
+`;
+const LetterBtn = styled.button`
+  width: 42px; height: 46px; border-radius: 10px; border: 2px solid #e5e7eb;
+  background: var(--card-bg, #fff); color: var(--text-primary);
+  font-size: 1.15rem; font-weight: 700; cursor: pointer;
+  transition: all 0.15s; display: flex; align-items: center; justify-content: center;
 
-/* ── question ── */
-const QuestionArea = styled.div`
-  background: var(--card-bg, white);
-  border-radius: 24px;
-  padding: 2rem;
-  box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.08));
-  border: 1px solid var(--border-color, transparent);
-  animation: ${slideUp} 0.3s ease;
-  margin-bottom: 1.5rem;
-
-  @media (max-width: 600px) {
-    padding: 1.4rem 1.2rem;
+  &:hover:not(:disabled) {
+    border-color: #8b5cf6; transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(139,92,246,0.3);
   }
+  &:disabled { opacity: 0.3; cursor: default; transform: none; }
 `;
-
-const RoundLabel = styled.div`
-  text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;
+const ActionRow = styled.div`
+  display: flex; gap: 10px; justify-content: center; margin-top: 1rem;
 `;
-
-const QuestionText = styled.h2`
-  text-align: center; font-size: 1.5rem; color: var(--text-primary, #1f2937);
-  margin-bottom: 2rem; line-height: 1.5; word-break: break-word;
+const SmallBtn = styled.button`
+  padding: 8px 18px; border-radius: 10px; border: 2px solid var(--border-color, #e5e7eb);
+  background: var(--bg-secondary); color: var(--text-primary);
+  font-weight: 600; font-size: 0.85rem; cursor: pointer;
+  &:hover { border-color: #8b5cf6; }
 `;
-
-const OptionsGrid = styled.div`
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
-  @media (max-width: 500px) { grid-template-columns: 1fr; }
+const Feedback = styled.div`
+  margin-top: 1rem; padding: 10px 16px; border-radius: 12px; font-weight: 600;
+  animation: ${pop} 0.3s ease;
+  background: ${p => p.$ok ? '#dcfce7' : '#fee2e2'};
+  color: ${p => p.$ok ? '#15803d' : '#dc2626'};
 `;
-
-const OptionBtn = styled.button`
-  padding: 1rem; border-radius: 14px; font-size: 1rem; font-weight: 500;
-  cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
-  border: 2px solid; transition: all 0.2s ease; text-align: left;
-  word-break: break-word; font-family: inherit;
-  animation: ${p => p.$wrong ? css`${shake} 0.4s ease` : 'none'};
-  background: ${p => p.$correct ? '#dcfce7' : p.$wrong ? '#fee2e2' : 'var(--bg-secondary, #f9fafb)'};
-  border-color: ${p => p.$correct ? '#22c55e' : p.$wrong ? '#ef4444' : 'var(--border-color, #e5e7eb)'};
-  color: ${p => p.$correct ? '#166534' : p.$wrong ? '#991b1b' : 'var(--text-primary, #1f2937)'};
-  &:hover:not(:disabled) { transform: translateY(-2px); border-color: #b45309; }
+const Card = styled.div`
+  background: var(--card-bg, #fff); border-radius: 20px; padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08); text-align: center;
+  border: 1px solid var(--border-color, #e5e7eb); animation: ${pop} 0.4s ease;
 `;
-
-/* ── result ── */
-const ResultCard = styled.div`
-  background: var(--card-bg, white); border-radius: 24px; padding: 3rem 2rem;
-  text-align: center; box-shadow: 0 10px 40px var(--shadow-color, rgba(0,0,0,0.1));
-  border: 1px solid var(--border-color, transparent); animation: ${pop} 0.4s ease;
-`;
-
-const ResultTitle = styled.h2`font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--text-primary);`;
-const ResultText = styled.p`color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.6;`;
-
-const StatsGrid = styled.div`
-  display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem;
-`;
-const StatBox = styled.div`
-  background: var(--bg-secondary, #f3f4f6); padding: 1.2rem 1.5rem;
-  border-radius: 16px; min-width: 110px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  .val { font-size: 2rem; font-weight: 700; color: ${p => p.$color || '#b45309'}; }
-  .lbl { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
-`;
-
-const BtnRow = styled.div`display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;`;
 const Btn = styled.button`
-  padding: 0.9rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 600;
-  border: none; cursor: pointer; transition: all 0.3s ease; font-family: inherit; color: white;
-  background: ${p => p.$variant === 'secondary' ? 'linear-gradient(135deg, #6b7280, #4b5563)' : 'linear-gradient(135deg, #f59e0b, #b45309)'};
-  box-shadow: 0 4px 15px ${p => p.$variant === 'secondary' ? 'rgba(107,114,128,0.4)' : 'rgba(180,83,9,0.4)'};
-  &:hover { transform: translateY(-3px); }
+  padding: 12px 28px; border-radius: 14px; border: none; font-weight: 700;
+  font-size: 1rem; cursor: pointer; transition: all 0.2s;
+  background: ${p => p.$v === 'secondary' ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #8b5cf6, #7c3aed)'};
+  color: ${p => p.$v === 'secondary' ? 'var(--text-primary)' : 'white'};
+  border: ${p => p.$v === 'secondary' ? '2px solid var(--border-color)' : 'none'};
+  &:hover { transform: translateY(-2px); }
+`;
+const BtnRow = styled.div`display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;`;
+const StatsGrid = styled.div`display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 1.5rem 0;`;
+const StatBox = styled.div`
+  background: ${p => p.$c}11; border: 2px solid ${p => p.$c}33; border-radius: 16px;
+  padding: 1rem; text-align: center;
+  .val { font-size: 1.5rem; font-weight: 800; color: ${p => p.$c}; }
+  .lbl { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+`;
+const ProgressBar = styled.div`
+  width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; margin-bottom: 1rem; overflow: hidden;
+`;
+const ProgressFill = styled.div`
+  height: 100%; background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+  border-radius: 4px; transition: width 0.3s; width: ${p => p.$pct}%;
+`;
+const LoadW = styled.div`text-align:center;padding:3rem;color:var(--text-secondary);`;
+const ErrW = styled.div`text-align:center;padding:2rem;h3{color:#ef4444;}`;
+const RulesBox = styled.div`
+  text-align: left; max-width: 440px; margin: 1.5rem auto; line-height: 2;
+  font-size: 1rem; color: var(--text-primary);
 `;
 
-const LoadingWrap = styled.div`
-  display: flex; justify-content: center; padding: 80px;
-  .spinner { width: 48px; height: 48px; border: 4px solid #f3f3f3;
-    border-top: 4px solid #b45309; border-radius: 50%;
-    animation: ${wheelSpin} 1s linear infinite; }
-`;
-const ErrorWrap = styled.div`
-  text-align: center; padding: 3rem; background: var(--card-bg, #fee2e2);
-  border-radius: 24px; color: var(--text-primary, #991b1b); margin: 2rem 0;
-  border: 1px solid var(--border-color, #fca5a5);
-`;
+const TOTAL = 10;
+const WAGON_COLORS = [
+  '#ef4444,#dc2626', '#f59e0b,#d97706', '#22c55e,#16a34a', '#3b82f6,#2563eb',
+  '#8b5cf6,#7c3aed', '#ec4899,#db2777', '#14b8a6,#0d9488', '#f97316,#ea580c',
+  '#6366f1,#4f46e5', '#84cc16,#65a30d'
+];
 
-/* ───────── helpers ───────── */
-function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function generateOptions(card, allCards) {
-  const wrong = shuffleArray(allCards.filter(c => c.term !== card.term))
-    .slice(0, 3).map(c => c.definition);
-  while (wrong.length < 3) wrong.push(card.definition.split('').reverse().join(''));
-  return shuffleArray([card.definition, ...wrong]);
-}
-
-const MAX_WAGONS = 10;
-const TOTAL_ROUNDS = 15;
-
-/* ═══════════════════════════════════════ */
-function WordTrain() {
+export default function WordTrain() {
+  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const setId = searchParams.get('setId');
+  const setId = params.get('setId');
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentSet, setCurrentSet] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
+  const [currentSet, setCurrentSet] = useState(null);
+  const [queue, setQueue] = useState([]);
 
   const [gameStarted, setGameStarted] = useState(false);
+  const [finished, setFinished] = useState(false);
   const [round, setRound] = useState(0);
-  const [wagons, setWagons] = useState([]);
-  const [maxWagonsReached, setMaxWagonsReached] = useState(0);
   const [score, setScore] = useState(0);
   const [correct, setCorrect] = useState(0);
-  const [detachingWagon, setDetachingWagon] = useState(false);
+  const [wagons, setWagons] = useState([]);
+  const [built, setBuilt] = useState([]);
+  const [pool, setPool] = useState([]);
+  const [used, setUsed] = useState(new Set());
+  const [result, setResult] = useState(null);
+  const [shaking, setShaking] = useState(false);
+  const [detaching, setDetaching] = useState(false);
 
-  const [questionCard, setQuestionCard] = useState(null);
-  const [options, setOptions] = useState([]);
-  const [selectedIdx, setSelectedIdx] = useState(null);
-  const [answerResult, setAnswerResult] = useState(null);
-  const [isFinished, setIsFinished] = useState(false);
-
-  const sessionStart = useRef(Date.now());
+  const sessionStart = useRef(0);
   const statsRecorded = useRef(false);
-  const scrollRef = useRef(null);
 
-  useEffect(() => { if (setId) fetchSet(setId); }, [setId]);
+  useEffect(() => {
+    if (!setId) return;
+    const load = async () => {
+      try {
+        const r = await authFetch(`${API_ROUTES.DATA.SETS}/${setId}`);
+        if (!r.ok) throw new Error('Набор не найден');
+        const d = await r.json();
+        const cards = (d.cards || d.flashcards || []).filter(c => c.term && c.definition);
+        if (cards.length < 4) throw new Error('Нужно минимум 4 карточки');
+        setFlashcards(cards);
+        setCurrentSet(d);
+      } catch (e) { setError(e.message); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, [setId]);
 
-  const fetchSet = async (id) => {
-    try { setLoading(true); setError(null);
-      const res = await authFetch(`${API_ROUTES.DATA.SETS}/${id}`);
-      if (!res.ok) throw new Error('Не удалось загрузить набор');
-      const data = await res.json(); setCurrentSet(data);
-      if (data.flashcards?.length >= 4) setFlashcards(data.flashcards);
-      else setError('Нужно минимум 4 карточки');
-    } catch(e){ setError(e.message); } finally { setLoading(false); }
-  };
-
-  const prepareQuestion = useCallback((deck, rnd) => {
-    const card = deck[rnd % deck.length];
-    setQuestionCard(card);
-    setOptions(generateOptions(card, deck));
-    setSelectedIdx(null);
-    setAnswerResult(null);
+  const setupRound = useCallback((card) => {
+    const letters = card.term.split('');
+    const shuffled = [...letters].sort(() => Math.random() - 0.5);
+    // Ensure shuffled is not identical to original
+    if (shuffled.join('') === letters.join('') && letters.length > 1) {
+      const i = Math.floor(Math.random() * (letters.length - 1));
+      [shuffled[i], shuffled[i + 1]] = [shuffled[i + 1], shuffled[i]];
+    }
+    setPool(shuffled.map((l, i) => ({ letter: l, id: i })));
+    setBuilt([]);
+    setUsed(new Set());
+    setResult(null);
+    setShaking(false);
   }, []);
 
-  const startGame = useCallback(() => {
-    const deck = shuffleArray(flashcards);
-    setWagons([]); setScore(0); setCorrect(0); setRound(0);
-    setMaxWagonsReached(0); setDetachingWagon(false);
-    setIsFinished(false); setGameStarted(true);
+  const startGame = () => {
+    const shuffled = [...flashcards].sort(() => Math.random() - 0.5);
+    const q = [];
+    for (let i = 0; i < TOTAL; i++) q.push(shuffled[i % shuffled.length]);
+    setQueue(q);
+    setRound(0); setScore(0); setCorrect(0); setWagons([]); setDetaching(false);
+    setFinished(false); setGameStarted(true);
+    setupRound(q[0]);
     sessionStart.current = Date.now();
     statsRecorded.current = false;
-    prepareQuestion(deck, 0);
-  }, [flashcards, prepareQuestion]);
+  };
 
-  const wagonEmojis = ['📦', '🎁', '🧳', '📫', '🛢️', '🪵', '💎', '🏗️', '🎪', '🏠'];
+  const handleLetterClick = (idx) => {
+    if (result || used.has(idx)) return;
+    const newBuilt = [...built, pool[idx]];
+    setBuilt(newBuilt);
+    setUsed(new Set([...used, idx]));
 
-  // scroll train to the right when wagons are added
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
-  }, [wagons]);
-
-  const handleOption = (idx) => {
-    if (answerResult !== null) return;
-    setSelectedIdx(idx);
-    const isCorrect = options[idx] === questionCard.definition;
-    const nextRound = round + 1;
-
-    if (isCorrect) {
-      setAnswerResult('correct');
-      setCorrect(prev => prev + 1);
-      const added = wagons.length < MAX_WAGONS;
-      const bonus = (wagons.length + 1) * 10;
-      setScore(prev => prev + bonus);
-
-      setTimeout(() => {
-        if (added) {
-          const newWagons = [...wagons, { id: Date.now(), emoji: wagonEmojis[wagons.length % wagonEmojis.length] }];
-          setWagons(newWagons);
-          setMaxWagonsReached(prev => Math.max(prev, newWagons.length));
-
-          // check win
-          if (newWagons.length >= MAX_WAGONS) {
-            setIsFinished(true); setGameStarted(false);
-            trackGameWin();
-            confetti({ particleCount: 200, spread: 90, origin: { y: 0.5 } });
-            return;
-          }
-        }
-
-        if (nextRound >= TOTAL_ROUNDS) {
-          setIsFinished(true); setGameStarted(false);
-          if (wagons.length + (added ? 1 : 0) >= MAX_WAGONS) {
-            trackGameWin();
-            confetti({ particleCount: 130, spread: 80, origin: { y: 0.5 } });
-          }
-          return;
-        }
-
-        setRound(nextRound);
-        prepareQuestion(shuffleArray(flashcards), nextRound);
-      }, 900);
-    } else {
-      setAnswerResult('wrong');
-      setTimeout(() => {
-        if (wagons.length > 0) {
-          setDetachingWagon(true);
-          setTimeout(() => {
-            setWagons(prev => prev.slice(0, -1));
-            setDetachingWagon(false);
-          }, 500);
-        }
-
-        if (nextRound >= TOTAL_ROUNDS) {
-          setIsFinished(true); setGameStarted(false);
-          return;
-        }
-
-        setRound(nextRound);
-        prepareQuestion(shuffleArray(flashcards), nextRound);
-      }, 1000);
+    // Check if word is complete
+    const card = queue[round];
+    if (newBuilt.length === card.term.length) {
+      const builtWord = newBuilt.map(l => l.letter).join('');
+      if (builtWord === card.term) {
+        setResult('correct');
+        setScore(s => s + 20);
+        setCorrect(c => c + 1);
+        setWagons(w => [...w, { label: card.term, color: WAGON_COLORS[round % WAGON_COLORS.length] }]);
+        if ((correct + 1) % 3 === 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+        setTimeout(() => nextRound(), 1200);
+      } else {
+        setResult('wrong');
+        setShaking(true);
+        setDetaching(true);
+        setTimeout(() => {
+          if (wagons.length > 0) setWagons(w => w.slice(0, -1));
+          setDetaching(false);
+          setTimeout(() => nextRound(), 300);
+        }, 800);
+      }
     }
   };
 
-  useEffect(() => {
-    if (isFinished && !statsRecorded.current) {
-      statsRecorded.current = true;
-      const timeSpent = Math.round((Date.now() - sessionStart.current) / 1000);
-      authFetch(API_ROUTES.DATA.STATS_SESSION, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'train', cardsCount: round + 1, correctCount: correct, timeSpent })
-      }).catch(e => console.error('Stats:', e));
+  const handleBuiltClick = (idx) => {
+    if (result) return;
+    const letter = built[idx];
+    const newBuilt = built.filter((_, i) => i !== idx);
+    setBuilt(newBuilt);
+    const newUsed = new Set(used);
+    newUsed.delete(letter.id);
+    setUsed(newUsed);
+  };
+
+  const clearBuilt = () => {
+    if (result) return;
+    setBuilt([]);
+    setUsed(new Set());
+  };
+
+  const nextRound = () => {
+    if (round + 1 >= TOTAL) {
+      setFinished(true);
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+      return;
     }
-  }, [isFinished, correct, round]);
+    const next = round + 1;
+    setRound(next);
+    setupRound(queue[next]);
+  };
 
-  const handleSelectSet = (set) => navigate(`/games/train?setId=${set._id || set.id}`);
+  const recordStats = useCallback(async () => {
+    if (statsRecorded.current) return;
+    statsRecorded.current = true;
+    try {
+      const t = Math.round((Date.now() - sessionStart.current) / 1000);
+      await authFetch(API_ROUTES.DATA.STATS_SESSION, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'word-train', cardsCount: TOTAL, correctCount: correct, timeSpent: t })
+      });
+      if (correct / TOTAL >= 0.7) trackGameWin();
+    } catch {}
+  }, [correct]);
 
-  if (!setId) return <SetSelector title="🚂 Поезд слов" subtitle="Выберите набор карточек" onSelectSet={handleSelectSet} gameMode />;
-  if (loading) return <Container><LoadingWrap><div className="spinner" /></LoadingWrap></Container>;
-  if (error) return <Container><ErrorWrap><h3>😕 Ошибка</h3><p>{error}</p><Btn onClick={() => navigate('/games/train')} style={{ marginTop: '1rem' }}>Другой набор</Btn></ErrorWrap></Container>;
+  useEffect(() => { if (finished) recordStats(); }, [finished, recordStats]);
 
-  if (isFinished) {
-    const won = wagons.length >= MAX_WAGONS;
-    const pct = Math.round((correct / (round + 1)) * 100);
+  if (!setId) return <SetSelector title="🚂 Поезд слов" subtitle="Собирайте слова из букв — стройте поезд!" onSelectSet={s => navigate(`/games/word-train?setId=${s._id || s.id}`)} gameMode />;
+  if (loading) return <Container><LoadW>⏳ Загрузка...</LoadW></Container>;
+  if (error) return <Container><ErrW><h3>😕 Ошибка</h3><p>{error}</p><Btn onClick={() => navigate('/games/word-train')}>Другой набор</Btn></ErrW></Container>;
+
+  if (finished) {
+    const acc = Math.round((correct / TOTAL) * 100);
     return (
       <Container>
-        <ResultCard>
-          <ResultTitle>{won ? '🏆 Поезд укомплектован!' : '🚂 Поездка окончена!'}</ResultTitle>
-          <ResultText>{won ? `Великолепно! Все ${MAX_WAGONS} вагонов прицеплены!` : `Вам удалось прицепить ${maxWagonsReached} из ${MAX_WAGONS} вагонов`}</ResultText>
+        <Card>
+          <Title>{acc >= 70 ? '🏆 Поезд прибыл!' : '🚂 Конец пути'}</Title>
+          <Sub>{acc >= 90 ? 'Великолепный состав!' : acc >= 70 ? 'Хорошая поездка!' : 'Попробуйте ещё!'}</Sub>
+          <TrainTrack>
+            <Locomotive>🚂<SmokeCloud>💨</SmokeCloud></Locomotive>
+            {wagons.map((w, i) => <Wagon key={i} $color={w.color}>{w.label.slice(0, 4)}</Wagon>)}
+          </TrainTrack>
           <StatsGrid>
-            <StatBox $color="#b45309"><div className="val">{score}</div><div className="lbl">🏅 Очков</div></StatBox>
-            <StatBox $color="#22c55e"><div className="val">{correct}/{round + 1}</div><div className="lbl">✅ Верных</div></StatBox>
-            <StatBox $color="#2563eb"><div className="val">{pct}%</div><div className="lbl">📊 Точность</div></StatBox>
-            <StatBox $color="#059669"><div className="val">{maxWagonsReached}/{MAX_WAGONS}</div><div className="lbl">🚃 Вагонов</div></StatBox>
+            <StatBox $c="#8b5cf6"><div className="val">{score}</div><div className="lbl">🏅 Очков</div></StatBox>
+            <StatBox $c="#f59e0b"><div className="val">{wagons.length}</div><div className="lbl">🚃 Вагонов</div></StatBox>
+            <StatBox $c="#22c55e"><div className="val">{acc}%</div><div className="lbl">🎯 Точность</div></StatBox>
           </StatsGrid>
           <BtnRow>
             <Btn onClick={startGame}>Играть снова 🔄</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/games/train')}>Другой набор</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/dashboard')}>⬅️ Назад</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/games/word-train')}>Другой набор</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/dashboard')}>⬅️ Назад</Btn>
           </BtnRow>
-        </ResultCard>
+        </Card>
       </Container>
     );
   }
@@ -515,79 +382,95 @@ function WordTrain() {
   if (!gameStarted) {
     return (
       <Container>
-        <Header><Title>🚂 Поезд слов</Title><Subtitle>Собери самый длинный поезд!</Subtitle></Header>
+        <Title>🚂 Поезд слов</Title>
+        <Sub>Собирайте слова из букв — каждое верное слово = новый вагон!</Sub>
         {currentSet && (
-          <div style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', padding: '1rem 1.5rem', borderRadius: 12, textAlign: 'center', marginBottom: '1.5rem', border: '1px solid var(--border-color, transparent)' }}>
-            <h3 style={{ margin: '0 0 0.25rem', color: '#92400e' }}>📚 {currentSet.title}</h3>
-            <p style={{ margin: 0, color: '#b45309', fontSize: '0.9rem' }}>{currentSet.flashcards?.length || 0} карточек</p>
+          <div style={{ background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', padding: '1rem', borderRadius: 12, textAlign: 'center', marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: 0, color: '#5b21b6' }}>📚 {currentSet.title}</h3>
+            <p style={{ margin: '4px 0 0', color: '#7c3aed', fontSize: '0.9rem' }}>{flashcards.length} карточек</p>
           </div>
         )}
-        <ResultCard>
+        <Card>
           <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🚂</div>
-          <ResultTitle style={{ fontSize: '2rem' }}>Правила</ResultTitle>
-          <div style={{ textAlign: 'left', maxWidth: 420, margin: '1.5rem auto', lineHeight: 1.9, color: 'var(--text-primary)' }}>
-            <div>🚃 Собери поезд из {MAX_WAGONS} вагонов</div>
-            <div>❓ Каждый правильный ответ = +1 вагон</div>
-            <div>❌ Неправильный = отцепляется последний вагон</div>
-            <div>🔄 У вас {TOTAL_ROUNDS} раундов на сборку</div>
-            <div>🏆 Соберите все {MAX_WAGONS} вагонов чтобы победить!</div>
-            <div>💰 Чем больше вагонов — тем больше очков</div>
-          </div>
+          <h2>Правила</h2>
+          <RulesBox>
+            <div>📖 Вы видите <strong>определение</strong> карточки</div>
+            <div>🔤 Буквы термина перемешаны внизу</div>
+            <div>👆 Нажимайте буквы в правильном порядке</div>
+            <div>✅ Верное слово = новый вагон в поезде</div>
+            <div>❌ Ошибка = последний вагон отцепляется</div>
+            <div>🚂 Соберите состав из {TOTAL} вагонов!</div>
+          </RulesBox>
           <BtnRow>
             <Btn onClick={startGame}>🚀 В путь!</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/games/train')}>Другой набор</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/games/word-train')}>Другой набор</Btn>
           </BtnRow>
-        </ResultCard>
+        </Card>
       </Container>
     );
   }
 
+  const card = queue[round];
+
   return (
     <Container>
-      <Header><Title>🚂 Поезд слов</Title></Header>
+      <Title>🚂 Поезд слов</Title>
+      <ProgressBar><ProgressFill $pct={((round + 1) / TOTAL) * 100} /></ProgressBar>
 
       <TopBar>
-        <Stat $color="#b45309"><div className="val">{score}</div><div className="lbl">Очки</div></Stat>
-        <Stat $color="#22c55e"><div className="val">{wagons.length}/{MAX_WAGONS}</div><div className="lbl">Вагонов</div></Stat>
-        <Stat $color="#2563eb"><div className="val">{round + 1}/{TOTAL_ROUNDS}</div><div className="lbl">Раунд</div></Stat>
-        <Stat $color="#7c3aed"><div className="val">{correct}</div><div className="lbl">Верных</div></Stat>
+        <Stat $c="#8b5cf6"><div className="val">{score}</div><div className="lbl">Очки</div></Stat>
+        <Stat $c="#f59e0b"><div className="val">🚃 {wagons.length}</div><div className="lbl">Вагонов</div></Stat>
+        <Stat><div className="val">{round + 1}/{TOTAL}</div><div className="lbl">Раунд</div></Stat>
       </TopBar>
 
-      <TrainWrapper>
-        <TrackLine />
-        <RailLine />
-        <TrainScroller ref={scrollRef}>
-          <Locomotive>
-            <Chimney>
-              {[0, 1, 2].map(i => <SmokeParticle key={i} $i={i} />)}
-            </Chimney>
-            🚂
-          </Locomotive>
-          {wagons.map((w, i) => (
-            <Wagon key={w.id} $index={i} $detaching={detachingWagon && i === wagons.length - 1}>
-              {w.emoji}
-              <WagonNumber>#{i + 1}</WagonNumber>
-            </Wagon>
-          ))}
-        </TrainScroller>
-      </TrainWrapper>
+      <TrainTrack>
+        <Locomotive>🚂<SmokeCloud>💨</SmokeCloud><SmokeCloud $d={0.5}>💨</SmokeCloud></Locomotive>
+        {wagons.map((w, i) => (
+          <Wagon key={i} $color={w.color} $detach={detaching && i === wagons.length - 1}>
+            {w.label.slice(0, 4)}
+          </Wagon>
+        ))}
+      </TrainTrack>
 
-      {questionCard && (
-        <QuestionArea>
-          <RoundLabel>Раунд {round + 1} из {TOTAL_ROUNDS} • {answerResult === 'correct' ? '✅ Вагон прицеплен!' : answerResult === 'wrong' ? '❌ Вагон отцеплен!' : 'Ответьте правильно — прицепите вагон!'}</RoundLabel>
-          <QuestionText>{questionCard.term}</QuestionText>
-          <OptionsGrid>
-            {options.map((opt, idx) => (
-              <OptionBtn key={idx} disabled={answerResult !== null}
-                $correct={answerResult !== null && opt === questionCard.definition}
-                $wrong={answerResult === 'wrong' && selectedIdx === idx}
-                onClick={() => handleOption(idx)}>{opt}</OptionBtn>
-            ))}
-          </OptionsGrid>
-        </QuestionArea>
-      )}
+      <QuestionCard $shake={shaking}>
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Раунд {round + 1} из {TOTAL}</div>
+        <DefText>📖 {card?.definition}</DefText>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+          Соберите слово из букв ({card?.term.length} букв)
+        </div>
+
+        <BuiltWord $wrong={result === 'wrong'} $correct={result === 'correct'}>
+          {built.map((l, i) => (
+            <BuiltLetter key={`${l.id}-${i}`} onClick={() => handleBuiltClick(i)}>
+              {l.letter}
+            </BuiltLetter>
+          ))}
+          {Array.from({ length: Math.max(0, (card?.term.length || 0) - built.length) }).map((_, i) => (
+            <Placeholder key={`ph-${i}`} />
+          ))}
+        </BuiltWord>
+
+        <LettersPool>
+          {pool.map((l, idx) => (
+            <LetterBtn
+              key={l.id}
+              onClick={() => handleLetterClick(idx)}
+              disabled={used.has(idx) || !!result}
+            >
+              {l.letter}
+            </LetterBtn>
+          ))}
+        </LettersPool>
+
+        <ActionRow>
+          <SmallBtn onClick={clearBuilt} disabled={!!result || built.length === 0}>
+            🔄 Сбросить
+          </SmallBtn>
+        </ActionRow>
+
+        {result === 'correct' && <Feedback $ok>✅ Верно! Вагон прицеплен!</Feedback>}
+        {result === 'wrong' && <Feedback>❌ Неверно! Правильно: <strong>{card?.term}</strong></Feedback>}
+      </QuestionCard>
     </Container>
   );
 }
-
-export default WordTrain;

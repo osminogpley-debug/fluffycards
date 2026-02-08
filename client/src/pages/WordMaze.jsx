@@ -6,526 +6,385 @@ import { API_ROUTES, authFetch } from '../constants/api';
 import { trackGameWin } from '../services/gamificationService';
 import SetSelector from '../components/SetSelector';
 
-/* ───────── keyframes ───────── */
+/* ─── keyframes ─── */
 const pop = keyframes`
-  0%   { transform: scale(0.6); opacity: 0; }
-  60%  { transform: scale(1.08); }
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.08); }
   100% { transform: scale(1); opacity: 1; }
 `;
-
 const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-3px); }
-  80% { transform: translateX(3px); }
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
 `;
-
+const playerBounce = keyframes`
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.15); }
+`;
+const pathGlow = keyframes`
+  0%,100% { box-shadow: inset 0 0 8px rgba(34,197,94,0.2); }
+  50%     { box-shadow: inset 0 0 16px rgba(34,197,94,0.4); }
+`;
+const wallReveal = keyframes`
+  from { background: var(--card-bg, #e5e7eb); }
+  to   { background: #1e293b; }
+`;
 const slideUp = keyframes`
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 `;
-
-const playerBounce = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-4px); }
+const cellPop = keyframes`
+  0% { transform: scale(0.7); }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 `;
 
-const pathGlow = keyframes`
-  0%, 100% { box-shadow: 0 0 4px rgba(34, 197, 94, 0.3); }
-  50%      { box-shadow: 0 0 12px rgba(34, 197, 94, 0.6); }
-`;
-
-const wallShake = keyframes`
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.05); }
-`;
-
-/* ───────── styled ───────── */
+/* ─── styled ─── */
 const Container = styled.div`
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 800px; margin: 0 auto; padding: 1.5rem;
   font-family: 'Segoe UI', sans-serif;
-
-  @media (max-width: 600px) {
-    padding: 0.75rem;
-  }
+  @media (max-width: 600px) { padding: 0.75rem; }
 `;
-
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: 1rem;
-`;
-
 const Title = styled.h1`
-  color: #059669;
-  font-size: 2.4rem;
-  margin-bottom: 0.25rem;
-
-  @media (max-width: 600px) {
-    font-size: 2rem;
-  }
+  text-align: center; color: #059669; font-size: 2.2rem; margin-bottom: 0.5rem;
+  @media (max-width: 600px) { font-size: 1.6rem; }
 `;
-
-const Subtitle = styled.p`
-  color: var(--text-secondary, #6b7280);
-  font-size: 1rem;
-`;
-
-const TopBar = styled.div`
-  display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap; margin-bottom: 1rem;
-`;
-
+const Sub = styled.p`text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem;`;
+const TopBar = styled.div`display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;`;
 const Stat = styled.div`
-  background: var(--card-bg, white);
-  padding: 0.5rem 1.2rem; border-radius: 14px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--card-bg, #fff); padding: 0.5rem 1rem; border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid var(--border-color, #e5e7eb);
   text-align: center; min-width: 80px;
-  .val { font-size: 1.3rem; font-weight: 700; color: ${p => p.$color || '#059669'}; }
-  .lbl { font-size: 0.7rem; color: var(--text-secondary); }
+  .val { font-size: 1.3rem; font-weight: 700; color: ${p => p.$c || '#059669'}; }
+  .lbl { font-size: 0.72rem; color: var(--text-secondary); }
 `;
-
-/* --- maze grid --- */
-const MazeWrapper = styled.div`
-  background: var(--card-bg, white);
-  border-radius: 24px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.08));
-  border: 1px solid var(--border-color, transparent);
-
-  @media (max-width: 600px) {
-    padding: 1rem;
-  }
-`;
-
-const MazeLabel = styled.div`
-  text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem;
-`;
-
 const MazeGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(${p => p.$cols}, 1fr);
   gap: 4px;
   max-width: 500px;
-  margin: 0 auto;
-
-  @media (max-width: 600px) {
-    max-width: 360px;
-  }
+  margin: 0 auto 1.5rem;
+  @media (max-width: 500px) { gap: 2px; }
 `;
-
-const MazeCell = styled.div`
-  aspect-ratio: 1;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: ${p => p.$size || '1.2rem'};
-  font-weight: 600;
-  transition: all 0.3s ease;
+const Cell = styled.button`
+  aspect-ratio: 1; border-radius: 10px; border: 2px solid transparent;
+  font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
   cursor: ${p => p.$clickable ? 'pointer' : 'default'};
-  position: relative;
+  transition: all 0.2s; position: relative;
 
-  background: ${p => {
-    if (p.$isPlayer) return 'linear-gradient(135deg, #fbbf24, #f59e0b)';
-    if (p.$isFinish) return 'linear-gradient(135deg, #a78bfa, #7c3aed)';
-    if (p.$isVisited) return 'linear-gradient(135deg, #86efac, #22c55e)';
-    if (p.$isWall) return 'var(--bg-tertiary, #e5e7eb)';
-    if (p.$isCurrent) return 'linear-gradient(135deg, #67e8f9, #06b6d4)';
-    if (p.$isPath) return 'var(--bg-secondary, #f3f4f6)';
-    return 'var(--bg-secondary, #f9fafb)';
-  }};
+  ${p => p.$type === 'wall' && css`
+    background: #1e293b; color: #475569;
+    animation: ${wallReveal} 0.3s ease;
+  `}
+  ${p => p.$type === 'path' && css`
+    background: #dcfce7; border-color: #86efac;
+    animation: ${pathGlow} 2s ease infinite;
+  `}
+  ${p => p.$type === 'visited' && css`
+    background: #d1fae5; border-color: #6ee7b7;
+  `}
+  ${p => p.$type === 'player' && css`
+    background: #bbf7d0; border-color: #22c55e; border-width: 3px;
+    animation: ${playerBounce} 1s ease infinite;
+    box-shadow: 0 0 16px rgba(34,197,94,0.4);
+  `}
+  ${p => p.$type === 'unknown' && css`
+    background: var(--bg-secondary, #f1f5f9); border-color: var(--border-color, #e5e7eb);
+    &:hover { border-color: #059669; transform: scale(1.05); }
+  `}
+  ${p => p.$type === 'goal' && css`
+    background: #fef3c7; border-color: #fbbf24;
+    animation: ${playerBounce} 1.5s ease infinite;
+  `}
+  ${p => p.$type === 'start' && css`
+    background: #dbeafe; border-color: #93c5fd;
+  `}
+  ${p => p.$wrong && css`animation: ${shake} 0.4s ease;`}
 
-  border: 2px solid ${p => {
-    if (p.$isPlayer) return '#f59e0b';
-    if (p.$isFinish) return '#7c3aed';
-    if (p.$isVisited) return '#22c55e';
-    if (p.$isCurrent) return '#06b6d4';
-    if (p.$isWall) return 'var(--border-color, #d1d5db)';
-    return 'transparent';
-  }};
-
-  animation: ${p => {
-    if (p.$isPlayer) return css`${playerBounce} 1s ease-in-out infinite`;
-    if (p.$isCurrent) return css`${pathGlow} 1.5s ease infinite`;
-    if (p.$hitWall) return css`${wallShake} 0.3s ease`;
-    return 'none';
-  }};
-
-  box-shadow: ${p => p.$isPlayer ? '0 0 15px rgba(245, 158, 11, 0.5)' :
-    p.$isFinish ? '0 0 10px rgba(124, 58, 237, 0.3)' : 'none'};
-
-  &:hover {
-    ${p => p.$clickable && `
-      transform: scale(1.05);
-      box-shadow: 0 0 12px rgba(5, 150, 105, 0.3);
-    `}
-  }
-
-  @media (max-width: 600px) {
-    font-size: ${p => p.$size ? '1.1rem' : '0.75rem'};
+  @media (max-width: 500px) {
+    border-radius: 6px; font-size: 1.1rem;
   }
 `;
-
-const DirectionBtns = styled.div`
-  display: grid;
-  grid-template-areas:
-    ". up ."
-    "left . right"
-    ". down .";
-  gap: 0.5rem;
-  max-width: 200px;
-  margin: 1rem auto 0;
-`;
-
-const DirBtn = styled.button`
-  width: 56px; height: 56px;
-  border-radius: 14px;
-  border: 2px solid var(--border-color, #e5e7eb);
-  background: var(--card-bg, white);
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  grid-area: ${p => p.$area};
-  justify-self: center;
-  
-  &:hover {
-    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-    border-color: #059669;
-    transform: scale(1.08);
-  }
-  &:active { transform: scale(0.95); }
-
-  @media (max-width: 600px) {
-    width: 48px;
-    height: 48px;
-    font-size: 1.25rem;
-  }
-`;
-
-/* --- question overlay --- */
 const QuestionOverlay = styled.div`
-  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1000; padding: 1rem;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  animation: ${pop} 0.2s ease;
 `;
-
 const QuestionCard = styled.div`
-  background: var(--card-bg, white);
-  border-radius: 24px;
-  padding: 2.5rem 2rem;
-  max-width: 560px; width: 100%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  animation: ${pop} 0.35s ease;
-  border: 1px solid var(--border-color, transparent);
+  background: var(--card-bg, #fff); border-radius: 20px; padding: 2rem;
+  max-width: 440px; width: 100%; text-align: center;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+  animation: ${slideUp} 0.3s ease;
 `;
-
-const QuestionText = styled.h2`
-  text-align: center; font-size: 1.5rem; color: var(--text-primary, #1f2937);
-  margin-bottom: 2rem; line-height: 1.5; word-break: break-word;
+const QuestionTerm = styled.div`
+  font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 1rem 0 1.5rem;
+  @media (max-width: 600px) { font-size: 1.2rem; }
 `;
-
 const OptionsGrid = styled.div`
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
-  @media (max-width: 500px) { grid-template-columns: 1fr; }
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  @media (max-width: 400px) { grid-template-columns: 1fr; }
 `;
-
 const OptionBtn = styled.button`
-  padding: 1rem; border-radius: 14px; font-size: 1rem; font-weight: 500;
-  cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
-  border: 2px solid; transition: all 0.2s ease; text-align: left;
-  word-break: break-word; font-family: inherit;
-  animation: ${p => p.$wrong ? css`${shake} 0.4s ease` : 'none'};
-  background: ${p => p.$correct ? '#dcfce7' : p.$wrong ? '#fee2e2' : 'var(--bg-secondary, #f9fafb)'};
-  border-color: ${p => p.$correct ? '#22c55e' : p.$wrong ? '#ef4444' : 'var(--border-color, #e5e7eb)'};
-  color: ${p => p.$correct ? '#166534' : p.$wrong ? '#991b1b' : 'var(--text-primary, #1f2937)'};
-  &:hover:not(:disabled) { transform: translateY(-2px); border-color: #059669; }
+  padding: 12px; border-radius: 12px; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; word-break: break-word;
+  border: 2px solid var(--border-color, #e5e7eb);
+  background: var(--card-bg, #fff); color: var(--text-primary);
+  ${p => p.$correct && css`border-color: #22c55e; background: #dcfce7; color: #15803d;`}
+  ${p => p.$wrong && css`border-color: #ef4444; background: #fee2e2; color: #dc2626; animation: ${shake} 0.4s ease;`}
+  &:hover:not(:disabled) { border-color: #059669; transform: translateY(-2px); }
+  &:disabled { cursor: default; }
 `;
-
-/* --- result --- */
-const ResultCard = styled.div`
-  background: var(--card-bg, white); border-radius: 24px; padding: 3rem 2rem;
-  text-align: center; box-shadow: 0 10px 40px var(--shadow-color, rgba(0,0,0,0.1));
-  border: 1px solid var(--border-color, transparent); animation: ${pop} 0.4s ease;
+const Card = styled.div`
+  background: var(--card-bg, #fff); border-radius: 20px; padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08); text-align: center;
+  border: 1px solid var(--border-color, #e5e7eb); animation: ${pop} 0.4s ease;
 `;
-
-const ResultTitle = styled.h2`font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--text-primary);`;
-const ResultText = styled.p`color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.6;`;
-
-const StatsGrid = styled.div`
-  display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem;
-`;
-const StatBox = styled.div`
-  background: var(--bg-secondary, #f3f4f6); padding: 1.2rem 1.5rem;
-  border-radius: 16px; min-width: 110px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  .val { font-size: 2rem; font-weight: 700; color: ${p => p.$color || '#059669'}; }
-  .lbl { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
-`;
-
-const BtnRow = styled.div`display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;`;
 const Btn = styled.button`
-  padding: 0.9rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 600;
-  border: none; cursor: pointer; transition: all 0.3s ease; font-family: inherit; color: white;
-  background: ${p => p.$variant === 'secondary' ? 'linear-gradient(135deg, #6b7280, #4b5563)' : 'linear-gradient(135deg, #10b981, #059669)'};
-  box-shadow: 0 4px 15px ${p => p.$variant === 'secondary' ? 'rgba(107,114,128,0.4)' : 'rgba(5,150,105,0.4)'};
-  &:hover { transform: translateY(-3px); }
+  padding: 12px 28px; border-radius: 14px; border: none; font-weight: 700;
+  font-size: 1rem; cursor: pointer; transition: all 0.2s;
+  background: ${p => p.$v === 'secondary' ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #059669, #047857)'};
+  color: ${p => p.$v === 'secondary' ? 'var(--text-primary)' : 'white'};
+  border: ${p => p.$v === 'secondary' ? '2px solid var(--border-color)' : 'none'};
+  &:hover { transform: translateY(-2px); }
+`;
+const BtnRow = styled.div`display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;`;
+const StatsGrid = styled.div`display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 1.5rem 0;`;
+const StatBox = styled.div`
+  background: ${p => p.$c}11; border: 2px solid ${p => p.$c}33; border-radius: 16px;
+  padding: 1rem; text-align: center;
+  .val { font-size: 1.5rem; font-weight: 800; color: ${p => p.$c}; }
+  .lbl { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+`;
+const LoadW = styled.div`text-align:center;padding:3rem;color:var(--text-secondary);`;
+const ErrW = styled.div`text-align:center;padding:2rem;h3{color:#ef4444;}`;
+const RulesBox = styled.div`
+  text-align: left; max-width: 440px; margin: 1.5rem auto; line-height: 2;
+  font-size: 1rem; color: var(--text-primary);
 `;
 
-const LoadingWrap = styled.div`
-  display: flex; justify-content: center; padding: 80px;
-  .spinner { width: 48px; height: 48px; border: 4px solid #f3f3f3;
-    border-top: 4px solid #059669; border-radius: 50%; }
-`;
-const ErrorWrap = styled.div`
-  text-align: center; padding: 3rem; background: var(--card-bg, #fee2e2);
-  border-radius: 24px; color: var(--text-primary, #991b1b); margin: 2rem 0;
-  border: 1px solid var(--border-color, #fca5a5);
-`;
-
-/* ───────── maze generation ───────── */
-const MAZE_SIZE = 7;
+const SIZE = 5;
 
 function generateMaze(size) {
-  // Simple maze with a guaranteed path using DFS
-  const grid = Array(size).fill(null).map(() => Array(size).fill('wall'));
-  const visited = Array(size).fill(null).map(() => Array(size).fill(false));
+  // Simple maze: always a valid path from (0,0) to (size-1,size-1)
+  const grid = Array.from({ length: size }, () => Array(size).fill('unknown'));
 
-  const directions = [
-    [0, -2], [0, 2], [-2, 0], [2, 0]
-  ];
+  // Create a random path
+  const path = [];
+  let r = 0, c = 0;
+  path.push([0, 0]);
+  grid[0][0] = 'start';
 
-  function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+  while (r < size - 1 || c < size - 1) {
+    const moves = [];
+    if (r < size - 1) moves.push([r + 1, c]);
+    if (c < size - 1) moves.push([r, c + 1]);
+    // Occasional backtrack-like lateral moves
+    if (r > 0 && Math.random() < 0.2) moves.push([r - 1, c]);
+    if (c > 0 && Math.random() < 0.2) moves.push([r, c - 1]);
+
+    const [nr, nc] = moves[Math.floor(Math.random() * moves.length)];
+    if (grid[nr][nc] === 'unknown') {
+      grid[nr][nc] = 'path';
+      path.push([nr, nc]);
     }
-    return arr;
+    r = nr; c = nc;
   }
+  grid[size - 1][size - 1] = 'goal';
 
-  function carve(r, c) {
-    visited[r][c] = true;
-    grid[r][c] = 'path';
-
-    const dirs = shuffle([...directions]);
-    for (const [dr, dc] of dirs) {
-      const nr = r + dr;
-      const nc = c + dc;
-      if (nr >= 0 && nr < size && nc >= 0 && nc < size && !visited[nr][nc]) {
-        // carve wall between
-        grid[r + dr / 2][c + dc / 2] = 'path';
-        carve(nr, nc);
-      }
-    }
-  }
-
-  carve(0, 0);
-  grid[0][0] = 'path';
-  grid[size - 1][size - 1] = 'path';
-
-  return grid;
+  return { grid, path };
 }
 
-function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function generateOptions(card, allCards) {
-  const wrong = shuffleArray(allCards.filter(c => c.term !== card.term))
-    .slice(0, 3).map(c => c.definition);
-  while (wrong.length < 3) wrong.push(card.definition.split('').reverse().join(''));
-  return shuffleArray([card.definition, ...wrong]);
-}
-
-/* ═══════════════════════════════════════ */
-function WordMaze() {
+export default function WordMaze() {
+  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const setId = searchParams.get('setId');
+  const setId = params.get('setId');
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentSet, setCurrentSet] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
+  const [currentSet, setCurrentSet] = useState(null);
 
   const [gameStarted, setGameStarted] = useState(false);
-  const [maze, setMaze] = useState([]);
-  const [playerPos, setPlayerPos] = useState({ r: 0, c: 0 });
-  const [visitedCells, setVisitedCells] = useState(new Set(['0,0']));
-  const [steps, setSteps] = useState(0);
+  const [finished, setFinished] = useState(false);
+  const [maze, setMaze] = useState(null);
+  const [playerPos, setPlayerPos] = useState([0, 0]);
+  const [revealed, setRevealed] = useState({});
+  const [question, setQuestion] = useState(null);
+  const [qOptions, setQOptions] = useState([]);
+  const [qResult, setQResult] = useState(null);
+  const [qSelected, setQSelected] = useState(null);
+  const [targetCell, setTargetCell] = useState(null);
   const [score, setScore] = useState(0);
   const [correct, setCorrect] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [mistakes, setMistakes] = useState(0);
+  const [steps, setSteps] = useState(0);
+  const [wrongCell, setWrongCell] = useState(null);
+  const [qIdx, setQIdx] = useState(0);
 
-  const [showQuestion, setShowQuestion] = useState(false);
-  const [pendingMove, setPendingMove] = useState(null);
-  const [questionCard, setQuestionCard] = useState(null);
-  const [options, setOptions] = useState([]);
-  const [selectedIdx, setSelectedIdx] = useState(null);
-  const [answerResult, setAnswerResult] = useState(null);
-  const [isFinished, setIsFinished] = useState(false);
-
-  const sessionStart = useRef(Date.now());
+  const sessionStart = useRef(0);
   const statsRecorded = useRef(false);
-  const usedCards = useRef([]);
 
-  useEffect(() => { if (setId) fetchSet(setId); }, [setId]);
+  useEffect(() => {
+    if (!setId) return;
+    const load = async () => {
+      try {
+        const r = await authFetch(`${API_ROUTES.DATA.SETS}/${setId}`);
+        if (!r.ok) throw new Error('Набор не найден');
+        const d = await r.json();
+        const cards = (d.cards || d.flashcards || []).filter(c => c.term && c.definition);
+        if (cards.length < 4) throw new Error('Нужно минимум 4 карточки');
+        setFlashcards(cards);
+        setCurrentSet(d);
+      } catch (e) { setError(e.message); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, [setId]);
 
-  const fetchSet = async (id) => {
-    try {
-      setLoading(true); setError(null);
-      const res = await authFetch(`${API_ROUTES.DATA.SETS}/${id}`);
-      if (!res.ok) throw new Error('Не удалось загрузить набор');
-      const data = await res.json();
-      setCurrentSet(data);
-      if (data.flashcards?.length >= 4) setFlashcards(data.flashcards);
-      else setError('Нужно минимум 4 карточки');
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  };
-
-  const startGame = useCallback(() => {
-    const m = generateMaze(MAZE_SIZE);
-    setMaze(m);
-    setPlayerPos({ r: 0, c: 0 });
-    setVisitedCells(new Set(['0,0']));
-    setSteps(0); setScore(0); setCorrect(0); setTotalQuestions(0);
-    setShowQuestion(false); setPendingMove(null);
-    setSelectedIdx(null); setAnswerResult(null);
-    setIsFinished(false); setGameStarted(true);
-    usedCards.current = [];
+  const startGame = () => {
+    const m = generateMaze(SIZE);
+    setMaze(m.grid);
+    setPlayerPos([0, 0]);
+    setRevealed({ '0,0': true });
+    setScore(0); setCorrect(0); setMistakes(0); setSteps(0);
+    setQuestion(null); setFinished(false); setGameStarted(true); setQIdx(0);
     sessionStart.current = Date.now();
     statsRecorded.current = false;
-  }, []);
+  };
 
-  const getRandomCard = useCallback(() => {
-    let available = flashcards.filter((_, i) => !usedCards.current.includes(i));
-    if (available.length === 0) {
-      usedCards.current = [];
-      available = flashcards;
-    }
-    const idx = Math.floor(Math.random() * available.length);
-    const origIdx = flashcards.indexOf(available[idx]);
-    usedCards.current.push(origIdx);
-    return available[idx];
-  }, [flashcards]);
+  const isAdjacent = (r1, c1, r2, c2) => {
+    return (Math.abs(r1 - r2) + Math.abs(c1 - c2)) === 1;
+  };
 
-  const tryMove = useCallback((dr, dc) => {
-    if (showQuestion || isFinished) return;
-    const nr = playerPos.r + dr;
-    const nc = playerPos.c + dc;
+  const genOptions = (card) => {
+    const wrong = flashcards.filter(c => c.definition !== card.definition)
+      .sort(() => Math.random() - 0.5).slice(0, 3).map(c => c.definition);
+    return [card.definition, ...wrong].sort(() => Math.random() - 0.5);
+  };
 
-    if (nr < 0 || nr >= MAZE_SIZE || nc < 0 || nc >= MAZE_SIZE) return;
-    if (maze[nr][nc] === 'wall') return;
+  const handleCellClick = (r, c) => {
+    if (question || finished) return;
+    if (revealed[`${r},${c}`]) return;
+    if (!isAdjacent(playerPos[0], playerPos[1], r, c)) return;
 
-    const key = `${nr},${nc}`;
-    if (visitedCells.has(key)) {
-      // free move to visited cell
-      setPlayerPos({ r: nr, c: nc });
-      setSteps(s => s + 1);
-      return;
-    }
+    // Open question for this cell
+    const card = flashcards[qIdx % flashcards.length];
+    setQuestion(card);
+    setQOptions(genOptions(card));
+    setQResult(null); setQSelected(null);
+    setTargetCell([r, c]);
+  };
 
-    // new cell — ask question
-    const card = getRandomCard();
-    setQuestionCard(card);
-    setOptions(generateOptions(card, flashcards));
-    setSelectedIdx(null);
-    setAnswerResult(null);
-    setPendingMove({ r: nr, c: nc });
-    setShowQuestion(true);
-    setTotalQuestions(prev => prev + 1);
-  }, [showQuestion, isFinished, playerPos, maze, visitedCells, flashcards, getRandomCard]);
-
-  // keyboard
-  useEffect(() => {
-    const handler = (e) => {
-      switch (e.key) {
-        case 'ArrowUp': case 'w': case 'W': case 'ц': case 'Ц': tryMove(-1, 0); break;
-        case 'ArrowDown': case 's': case 'S': case 'ы': case 'Ы': tryMove(1, 0); break;
-        case 'ArrowLeft': case 'a': case 'A': case 'ф': case 'Ф': tryMove(0, -1); break;
-        case 'ArrowRight': case 'd': case 'D': case 'в': case 'В': tryMove(0, 1); break;
-        default: break;
-      }
-    };
-    if (gameStarted && !isFinished) window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [gameStarted, isFinished, tryMove]);
-
-  const handleOption = (idx) => {
-    if (answerResult !== null) return;
-    setSelectedIdx(idx);
-    const isCorrect = options[idx] === questionCard.definition;
+  const handleAnswer = (idx) => {
+    if (qResult) return;
+    setQSelected(idx);
+    const isCorrect = qOptions[idx] === question.definition;
 
     if (isCorrect) {
-      setAnswerResult('correct');
-      setCorrect(prev => prev + 1);
-      setScore(prev => prev + 15);
+      setQResult('correct');
+      setCorrect(c => c + 1);
+      setScore(s => s + 20);
+      setQIdx(q => q + 1);
 
       setTimeout(() => {
-        const { r, c } = pendingMove;
-        setPlayerPos({ r, c });
-        setVisitedCells(prev => new Set([...prev, `${r},${c}`]));
-        setSteps(s => s + 1);
-        setShowQuestion(false);
+        const [r, c] = targetCell;
+        const cellType = maze[r][c];
 
-        // check finish
-        if (r === MAZE_SIZE - 1 && c === MAZE_SIZE - 1) {
-          setIsFinished(true);
-          trackGameWin();
-          confetti({ particleCount: 180, spread: 90, origin: { y: 0.5 } });
+        setRevealed(prev => ({ ...prev, [`${r},${c}`]: true }));
+        setSteps(s => s + 1);
+
+        if (cellType === 'goal' || cellType === 'path' || cellType === 'start') {
+          setPlayerPos([r, c]);
+          if (cellType === 'goal') {
+            confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+            setFinished(true);
+          }
         }
+
+        setQuestion(null);
       }, 800);
     } else {
-      setAnswerResult('wrong');
+      setQResult('wrong');
+      setMistakes(m => m + 1);
+      setQIdx(q => q + 1);
+
       setTimeout(() => {
-        setShowQuestion(false);
+        const [r, c] = targetCell;
+        // Reveal as wall
+        setRevealed(prev => ({ ...prev, [`${r},${c}`]: true }));
+
+        // If the cell was actually a path, it becomes blocked for this game
+        const newMaze = maze.map(row => [...row]);
+        if (newMaze[r][c] !== 'goal') {
+          newMaze[r][c] = 'wall';
+        }
+        setMaze(newMaze);
+        setWrongCell(`${r},${c}`);
+        setTimeout(() => setWrongCell(null), 500);
+
+        setQuestion(null);
       }, 1200);
     }
   };
 
-  useEffect(() => {
-    if (isFinished && !statsRecorded.current) {
-      statsRecorded.current = true;
-      const timeSpent = Math.round((Date.now() - sessionStart.current) / 1000);
-      authFetch(API_ROUTES.DATA.STATS_SESSION, {
+  const recordStats = useCallback(async () => {
+    if (statsRecorded.current) return;
+    statsRecorded.current = true;
+    try {
+      const t = Math.round((Date.now() - sessionStart.current) / 1000);
+      await authFetch(API_ROUTES.DATA.STATS_SESSION, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'maze', cardsCount: totalQuestions, correctCount: correct, timeSpent })
-      }).catch(e => console.error('Stats:', e));
+        body: JSON.stringify({ mode: 'word-maze', cardsCount: steps, correctCount: correct, timeSpent: t })
+      });
+      if (correct > 0) trackGameWin();
+    } catch {}
+  }, [correct, steps]);
+
+  useEffect(() => { if (finished) recordStats(); }, [finished, recordStats]);
+
+  const getCellType = (r, c) => {
+    const key = `${r},${c}`;
+    if (r === playerPos[0] && c === playerPos[1]) return 'player';
+    if (!revealed[key]) return 'unknown';
+    return maze[r][c];
+  };
+
+  const getCellEmoji = (type, r, c) => {
+    if (type === 'player') return '🧭';
+    if (type === 'goal') return '🏆';
+    if (type === 'start') return '🏁';
+    if (type === 'wall') return '🧱';
+    if (type === 'path' || type === 'visited') return '✅';
+    if (type === 'unknown') {
+      // Show question mark if adjacent to player
+      if (isAdjacent(playerPos[0], playerPos[1], r, c)) return '❓';
+      return '·';
     }
-  }, [isFinished, correct, totalQuestions]);
+    return '';
+  };
 
-  const handleSelectSet = (set) => navigate(`/games/maze?setId=${set._id || set.id}`);
+  if (!setId) return <SetSelector title="🌿 Лабиринт слов" subtitle="Пройдите лабиринт, отвечая на вопросы!" onSelectSet={s => navigate(`/games/word-maze?setId=${s._id || s.id}`)} gameMode />;
+  if (loading) return <Container><LoadW>⏳ Загрузка...</LoadW></Container>;
+  if (error) return <Container><ErrW><h3>😕 Ошибка</h3><p>{error}</p><Btn onClick={() => navigate('/games/word-maze')}>Другой набор</Btn></ErrW></Container>;
 
-  if (!setId) return <SetSelector title="🌀 Лабиринт слов" subtitle="Выберите набор карточек" onSelectSet={handleSelectSet} gameMode />;
-  if (loading) return <Container><LoadingWrap><div className="spinner" /></LoadingWrap></Container>;
-  if (error) return <Container><ErrorWrap><h3>😕 Ошибка</h3><p>{error}</p><Btn onClick={() => navigate('/games/maze')} style={{ marginTop: '1rem' }}>Другой набор</Btn></ErrorWrap></Container>;
-
-  if (isFinished) {
+  if (finished) {
     return (
       <Container>
-        <ResultCard>
-          <ResultTitle>🏆 Лабиринт пройден!</ResultTitle>
-          <ResultText>Вы нашли выход из лабиринта за {steps} шагов!</ResultText>
+        <Card>
+          <Title>🏆 Лабиринт пройден!</Title>
+          <Sub>Вы нашли путь через лабиринт!</Sub>
           <StatsGrid>
-            <StatBox $color="#059669"><div className="val">{score}</div><div className="lbl">🏅 Очков</div></StatBox>
-            <StatBox $color="#f59e0b"><div className="val">{steps}</div><div className="lbl">👣 Шагов</div></StatBox>
-            <StatBox $color="#22c55e"><div className="val">{correct}/{totalQuestions}</div><div className="lbl">✅ Верных</div></StatBox>
+            <StatBox $c="#059669"><div className="val">{score}</div><div className="lbl">🏅 Очков</div></StatBox>
+            <StatBox $c="#3b82f6"><div className="val">{steps}</div><div className="lbl">👣 Шагов</div></StatBox>
+            <StatBox $c="#22c55e"><div className="val">{correct}</div><div className="lbl">✅ Верных</div></StatBox>
+            <StatBox $c="#ef4444"><div className="val">{mistakes}</div><div className="lbl">🧱 Стен</div></StatBox>
           </StatsGrid>
           <BtnRow>
             <Btn onClick={startGame}>Играть снова 🔄</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/games/maze')}>Другой набор</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/dashboard')}>⬅️ Назад</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/games/word-maze')}>Другой набор</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/dashboard')}>⬅️ Назад</Btn>
           </BtnRow>
-        </ResultCard>
+        </Card>
       </Container>
     );
   }
@@ -533,112 +392,93 @@ function WordMaze() {
   if (!gameStarted) {
     return (
       <Container>
-        <Header><Title>🌀 Лабиринт слов</Title><Subtitle>Пройдите лабиринт, отвечая на вопросы!</Subtitle></Header>
+        <Title>🌿 Лабиринт слов</Title>
+        <Sub>Найдите путь через лабиринт, отвечая на вопросы!</Sub>
         {currentSet && (
-          <div style={{ background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', padding: '1rem 1.5rem', borderRadius: 12, textAlign: 'center', marginBottom: '1.5rem', border: '1px solid var(--border-color, transparent)' }}>
-            <h3 style={{ margin: '0 0 0.25rem', color: '#065f46' }}>📚 {currentSet.title}</h3>
-            <p style={{ margin: 0, color: '#059669', fontSize: '0.9rem' }}>{currentSet.flashcards?.length || 0} карточек</p>
+          <div style={{ background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', padding: '1rem', borderRadius: 12, textAlign: 'center', marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: 0, color: '#065f46' }}>📚 {currentSet.title}</h3>
+            <p style={{ margin: '4px 0 0', color: '#059669', fontSize: '0.9rem' }}>{flashcards.length} карточек</p>
           </div>
         )}
-        <ResultCard>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🌀</div>
-          <ResultTitle style={{ fontSize: '2rem' }}>Правила</ResultTitle>
-          <div style={{ textAlign: 'left', maxWidth: 420, margin: '1.5rem auto', lineHeight: 1.9, color: 'var(--text-primary)' }}>
-            <div>🗺️ Найдите путь от 📍 старта до 💎 выхода</div>
-            <div>⬆️⬇️⬅️➡️ Двигайтесь стрелками или WASD</div>
-            <div>❓ На каждой новой клетке — вопрос</div>
-            <div>✅ Правильный ответ = вы проходите</div>
-            <div>❌ Неправильный = остаётесь на месте</div>
-            <div>👣 Чем меньше шагов — тем лучше!</div>
-          </div>
+        <Card>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🌿</div>
+          <h2>Правила</h2>
+          <RulesBox>
+            <div>🧭 Вы начинаете в левом верхнем углу</div>
+            <div>🏆 Цель — добраться до правого нижнего</div>
+            <div>❓ Нажмите на соседнюю клетку для вопроса</div>
+            <div>✅ Правильный ответ = путь открыт</div>
+            <div>❌ Ошибка = клетка становится стеной</div>
+            <div>🧱 Будьте осторожны — не заблокируйте путь!</div>
+          </RulesBox>
           <BtnRow>
             <Btn onClick={startGame}>🚀 Войти в лабиринт</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/games/maze')}>Другой набор</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/games/word-maze')}>Другой набор</Btn>
           </BtnRow>
-        </ResultCard>
+        </Card>
       </Container>
     );
   }
 
   return (
     <Container>
-      <Header><Title>🌀 Лабиринт слов</Title></Header>
+      <Title>🌿 Лабиринт слов</Title>
 
       <TopBar>
-        <Stat $color="#059669"><div className="val">{score}</div><div className="lbl">Очки</div></Stat>
-        <Stat $color="#f59e0b"><div className="val">👣 {steps}</div><div className="lbl">Шаги</div></Stat>
-        <Stat $color="#22c55e"><div className="val">{correct}</div><div className="lbl">Верных</div></Stat>
+        <Stat $c="#059669"><div className="val">{score}</div><div className="lbl">Очки</div></Stat>
+        <Stat $c="#3b82f6"><div className="val">{steps}</div><div className="lbl">Шагов</div></Stat>
+        <Stat $c="#22c55e"><div className="val">{correct}</div><div className="lbl">Верных</div></Stat>
+        <Stat $c="#ef4444"><div className="val">{mistakes}</div><div className="lbl">Стен</div></Stat>
       </TopBar>
 
-      <MazeWrapper>
-        <MazeLabel>Найдите путь к 💎</MazeLabel>
-        <MazeGrid $cols={MAZE_SIZE}>
-          {maze.map((row, r) =>
-            row.map((cell, c) => {
-              const isPlayer = playerPos.r === r && playerPos.c === c;
-              const isFinishCell = r === MAZE_SIZE - 1 && c === MAZE_SIZE - 1;
-              const key = `${r},${c}`;
-              const isVisited = visitedCells.has(key);
-              const isWall = cell === 'wall';
+      <MazeGrid $cols={SIZE}>
+        {maze && maze.map((row, r) =>
+          row.map((_, c) => {
+            const type = getCellType(r, c);
+            const clickable = type === 'unknown' && isAdjacent(playerPos[0], playerPos[1], r, c);
+            return (
+              <Cell
+                key={`${r},${c}`}
+                $type={type}
+                $clickable={clickable}
+                $wrong={wrongCell === `${r},${c}`}
+                onClick={() => clickable && handleCellClick(r, c)}
+              >
+                {getCellEmoji(type, r, c)}
+              </Cell>
+            );
+          })
+        )}
+      </MazeGrid>
 
-              return (
-                <MazeCell
-                  key={key}
-                  $isPlayer={isPlayer}
-                  $isFinish={isFinishCell && !isPlayer}
-                  $isVisited={isVisited && !isPlayer && !isFinishCell}
-                  $isWall={isWall}
-                  $isPath={!isWall && !isVisited && !isPlayer && !isFinishCell}
-                  $size={isPlayer || isFinishCell ? '1.4rem' : '0.8rem'}
-                >
-                  {isPlayer ? '📍' :
-                   isFinishCell ? '💎' :
-                   isWall ? '' :
-                   isVisited ? '✓' : ''}
-                </MazeCell>
-              );
-            })
-          )}
-        </MazeGrid>
+      <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+        Нажмите на ❓ рядом с 🧭 чтобы продвинуться
+      </div>
 
-        <DirectionBtns>
-          <DirBtn $area="up" onClick={() => tryMove(-1, 0)}>⬆️</DirBtn>
-          <DirBtn $area="left" onClick={() => tryMove(0, -1)}>⬅️</DirBtn>
-          <DirBtn $area="right" onClick={() => tryMove(0, 1)}>➡️</DirBtn>
-          <DirBtn $area="down" onClick={() => tryMove(1, 0)}>⬇️</DirBtn>
-        </DirectionBtns>
-      </MazeWrapper>
-
-      {showQuestion && questionCard && (
+      {question && (
         <QuestionOverlay>
           <QuestionCard>
-            <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-              🌀 Ответьте, чтобы пройти
-            </div>
-            <QuestionText>{questionCard.term}</QuestionText>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Ответьте правильно, чтобы пройти!</div>
+            <QuestionTerm>{question.term}</QuestionTerm>
             <OptionsGrid>
-              {options.map((opt, idx) => (
-                <OptionBtn key={idx} disabled={answerResult !== null}
-                  $correct={answerResult !== null && opt === questionCard.definition}
-                  $wrong={answerResult === 'wrong' && selectedIdx === idx}
-                  onClick={() => handleOption(idx)}>{opt}</OptionBtn>
-              ))}
+              {qOptions.map((opt, idx) => {
+                const isCorrectOpt = opt === question.definition;
+                return (
+                  <OptionBtn
+                    key={idx}
+                    $correct={qResult && isCorrectOpt}
+                    $wrong={qResult === 'wrong' && qSelected === idx}
+                    disabled={qResult !== null}
+                    onClick={() => handleAnswer(idx)}
+                  >
+                    {opt}
+                  </OptionBtn>
+                );
+              })}
             </OptionsGrid>
-            {answerResult === 'correct' && (
-              <div style={{ textAlign: 'center', marginTop: '1rem', color: '#16a34a', fontWeight: 700, fontSize: '1.1rem' }}>
-                ✅ Путь открыт!
-              </div>
-            )}
-            {answerResult === 'wrong' && (
-              <div style={{ textAlign: 'center', marginTop: '1rem', color: '#dc2626', fontWeight: 700, fontSize: '1.1rem' }}>
-                🚧 Путь заблокирован!
-              </div>
-            )}
           </QuestionCard>
         </QuestionOverlay>
       )}
     </Container>
   );
 }
-
-export default WordMaze;

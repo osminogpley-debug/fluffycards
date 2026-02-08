@@ -217,6 +217,15 @@ const Header = styled.header`
   padding: 1.5rem 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, ${props => props.$isDark ? '0.3' : '0.1'});
   border-bottom: 2px solid ${props => props.$isDark ? '#4a5568' : '#e6fffa'};
+  position: relative;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
 `;
 
 const Logo = styled.h1`
@@ -229,6 +238,10 @@ const Logo = styled.h1`
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   margin: 0;
+
+  @media (max-width: 768px) {
+    font-size: 1.4rem;
+  }
 `;
 
 const LogoImage = styled.img`
@@ -237,6 +250,11 @@ const LogoImage = styled.img`
   object-fit: contain;
   border-radius: 12px;
   flex: 0 0 auto;
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+  }
 `;
 
 const Tagline = styled.p`
@@ -244,6 +262,10 @@ const Tagline = styled.p`
   font-size: 0.9rem;
   margin-top: 0.25rem;
   margin-bottom: 0;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const MainContent = styled.main`
@@ -282,6 +304,13 @@ const HeaderActions = styled.div`
   gap: 0.75rem;
   align-items: center;
   flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    position: static;
+    transform: none;
+    justify-content: center;
+    gap: 0.5rem;
+  }
 `;
 
 const DonateLink = styled.a`
@@ -317,6 +346,12 @@ const NavButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(99, 179, 237, 0.3);
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.8rem;
+  }
   
   &:hover {
     transform: translateY(-2px);

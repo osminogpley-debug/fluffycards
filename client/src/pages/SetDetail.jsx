@@ -254,11 +254,21 @@ const GameButton = styled.button`
   gap: 8px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  min-width: 0;
 
   .game-icon {
     font-size: 22px;
     flex-shrink: 0;
+  }
+
+  @media (max-width: 600px) {
+    padding: 12px 10px;
+    font-size: 13px;
+    gap: 6px;
+
+    .game-icon { font-size: 18px; }
   }
 
   &:hover {

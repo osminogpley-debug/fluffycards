@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import confetti from 'canvas-confetti';
@@ -6,502 +6,385 @@ import { API_ROUTES, authFetch } from '../constants/api';
 import { trackGameWin } from '../services/gamificationService';
 import SetSelector from '../components/SetSelector';
 
-/* ───────── keyframes ───────── */
+/* ─── keyframes ─── */
 const pop = keyframes`
-  0%   { transform: scale(0.6); opacity: 0; }
-  60%  { transform: scale(1.08); }
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.08); }
   100% { transform: scale(1); opacity: 1; }
 `;
-
 const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-3px); }
-  80% { transform: translateX(3px); }
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
 `;
-
 const hexPulse = keyframes`
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
-  50%      { transform: scale(1.04); box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.06); }
 `;
-
 const fillAnim = keyframes`
-  0%   { transform: scale(0.7) rotate(-10deg); opacity: 0; }
-  60%  { transform: scale(1.1) rotate(2deg); }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  from { background-position: 0% 100%; }
+  to   { background-position: 0% 0%; }
 `;
-
-const crackAnim = keyframes`
-  0%   { transform: scale(1); opacity: 1; }
-  50%  { transform: scale(1.05); }
-  100% { transform: scale(0.95); opacity: 0.6; }
+const honeycombGlow = keyframes`
+  0%,100% { box-shadow: 0 0 8px rgba(245,158,11,0.3); }
+  50%     { box-shadow: 0 0 20px rgba(245,158,11,0.6); }
 `;
-
 const slideUp = keyframes`
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 `;
-
-const honeycombGlow = keyframes`
-  0%, 100% { filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.3)); }
-  50%      { filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.7)); }
+const buzzing = keyframes`
+  0%,100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(2px) translateY(-2px); }
+  50% { transform: translateX(-2px) translateY(1px); }
+  75% { transform: translateX(1px) translateY(-1px); }
 `;
 
-/* ───────── styled ───────── */
+/* ─── styled ─── */
 const Container = styled.div`
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 800px; margin: 0 auto; padding: 1.5rem;
   font-family: 'Segoe UI', sans-serif;
-
-  @media (max-width: 600px) {
-    padding: 0.75rem;
-  }
+  @media (max-width: 600px) { padding: 0.75rem; }
 `;
-
-const Header = styled.div`text-align: center; margin-bottom: 1rem;`;
 const Title = styled.h1`
-  color: #b45309;
-  font-size: 2.4rem;
-  margin-bottom: 0.25rem;
-
-  @media (max-width: 600px) {
-    font-size: 2rem;
-  }
+  text-align: center; color: #d97706; font-size: 2.2rem; margin-bottom: 0.5rem;
+  @media (max-width: 600px) { font-size: 1.6rem; }
 `;
-const Subtitle = styled.p`color: var(--text-secondary, #6b7280); font-size: 1rem;`;
-
-const TopBar = styled.div`
-  display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap; margin-bottom: 1rem;
-`;
+const Sub = styled.p`text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem;`;
+const TopBar = styled.div`display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;`;
 const Stat = styled.div`
-  background: var(--card-bg, white);
-  padding: 0.5rem 1.2rem; border-radius: 14px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--card-bg, #fff); padding: 0.5rem 1rem; border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid var(--border-color, #e5e7eb);
   text-align: center; min-width: 80px;
-  .val { font-size: 1.3rem; font-weight: 700; color: ${p => p.$color || '#b45309'}; }
-  .lbl { font-size: 0.7rem; color: var(--text-secondary); }
+  .val { font-size: 1.3rem; font-weight: 700; color: ${p => p.$c || '#d97706'}; }
+  .lbl { font-size: 0.72rem; color: var(--text-secondary); }
 `;
 
-/* ── honeycomb grid ── */
-const HoneycombWrapper = styled.div`
-  background: var(--card-bg, white);
-  border-radius: 24px;
-  padding: 2rem 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.08));
-  border: 1px solid var(--border-color, transparent);
-
-  @media (max-width: 600px) {
-    padding: 1.25rem 1rem;
-  }
-`;
-
-const HoneycombLabel = styled.div`
-  text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;
-`;
-
+/* Hex grid */
 const HexGrid = styled.div`
-  max-width: 500px;
-  margin: 0 auto;
-  position: relative;
-
-  @media (max-width: 600px) {
-    max-width: 360px;
-  }
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin: 1.5rem auto; max-width: 500px;
 `;
-
 const HexRow = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-top: -12px;
-  &:first-child { margin-top: 0; }
-
-  @media (max-width: 600px) {
-    margin-top: -10px;
-  }
+  display: flex; gap: 6px; justify-content: center;
+  margin-left: ${p => p.$offset ? '40px' : '0'};
+  @media (max-width: 500px) { margin-left: ${p => p.$offset ? '28px' : '0'}; gap: 3px; }
 `;
+const HexCell = styled.button`
+  width: 72px; height: 72px; position: relative; cursor: pointer;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  transition: all 0.3s; border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.75rem; text-align: center;
+  padding: 8px; word-break: break-word; line-height: 1.1;
 
-const HexCell = styled.div`
-  width: 72px;
-  height: 80px;
-  position: relative;
-  margin: 0 4px;
-  cursor: ${p => (p.$clickable ? 'pointer' : 'default')};
-  transition: all 0.3s ease;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 68px;
-    height: 78px;
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    background: ${p => {
-      if (p.$filled) return 'linear-gradient(135deg, #fbbf24, #f59e0b)';
-      if (p.$active) return 'linear-gradient(135deg, #67e8f9, #06b6d4)';
-      if (p.$cracked) return 'linear-gradient(135deg, #fca5a5, #ef4444)';
-      return 'linear-gradient(135deg, #fef3c7, #fde68a)';
-    }};
-    border: 3px solid ${p => {
-      if (p.$filled) return '#d97706';
-      if (p.$active) return '#0891b2';
-      if (p.$cracked) return '#dc2626';
-      return '#f59e0b';
-    }};
-    transition: all 0.3s ease;
-  }
-
-  animation: ${p => {
-    if (p.$active) return css`${hexPulse} 1.5s ease infinite`;
-    if (p.$justFilled) return css`${fillAnim} 0.4s ease`;
-    if (p.$cracked) return css`${crackAnim} 0.5s ease`;
-    return 'none';
-  }};
-
-  ${p => p.$clickable && `
-    &:hover::before {
-      background: linear-gradient(135deg, #a7f3d0, #6ee7b7);
-      border-color: #059669;
-    }
-    &:hover { transform: scale(1.08); }
+  ${p => p.$state === 'empty' && css`
+    background: #fef3c7; color: #92400e;
+    &:hover { background: #fde68a; transform: scale(1.08); }
+  `}
+  ${p => p.$state === 'filled' && css`
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white; animation: ${honeycombGlow} 2s ease infinite;
+  `}
+  ${p => p.$state === 'active' && css`
+    background: #dbeafe; color: #1e40af; border: 3px solid #3b82f6;
+    animation: ${hexPulse} 1s ease infinite;
+  `}
+  ${p => p.$state === 'wrong' && css`
+    background: #fee2e2; color: #dc2626;
+    animation: ${shake} 0.4s ease;
   `}
 
-  @media (max-width: 600px) {
-    width: 60px;
-    height: 66px;
-    margin: 0 3px;
-
-    &::before {
-      width: 56px;
-      height: 64px;
-    }
+  @media (max-width: 500px) {
+    width: 52px; height: 52px; font-size: 0.6rem; padding: 4px;
   }
 `;
-
-const HexContent = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: ${p => p.$size || '1.5rem'};
-  font-weight: 600;
-  z-index: 1;
-  text-align: center;
-  pointer-events: none;
-  color: ${p => p.$filled ? 'white' : 'var(--text-primary, #92400e)'};
-  text-shadow: ${p => p.$filled ? '0 1px 3px rgba(0,0,0,0.2)' : 'none'};
-
-  @media (max-width: 600px) {
-    font-size: ${p => p.$filled ? '1.3rem' : '1.1rem'};
-  }
+const Bee = styled.span`
+  font-size: 1.4rem; animation: ${buzzing} 0.5s ease infinite;
+  @media (max-width: 500px) { font-size: 1rem; }
 `;
 
-const ProgressBar = styled.div`
-  max-width: 400px;
-  margin: 1rem auto 0;
-  height: 10px;
-  background: var(--bg-secondary, #f3f4f6);
-  border-radius: 5px;
-  overflow: hidden;
+/* Question modal */
+const QOverlay = styled.div`
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  animation: ${pop} 0.2s ease;
 `;
-
-const ProgressFill = styled.div`
-  height: 100%;
-  background: linear-gradient(90deg, #fbbf24, #f59e0b);
-  border-radius: 5px;
-  transition: width 0.5s ease;
-  width: ${p => p.$pct}%;
+const QCard = styled.div`
+  background: var(--card-bg, #fff); border-radius: 20px; padding: 2rem;
+  max-width: 440px; width: 100%; text-align: center;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+  animation: ${slideUp} 0.3s ease;
 `;
-
-/* ── question ── */
-const QuestionOverlay = styled.div`
-  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1000; padding: 1rem;
+const QTerm = styled.div`
+  font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 1rem 0 1.5rem;
+  @media (max-width: 600px) { font-size: 1.2rem; }
 `;
-
-const QuestionCard = styled.div`
-  background: var(--card-bg, white);
-  border-radius: 24px;
-  padding: 2.5rem 2rem;
-  max-width: 560px; width: 100%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  animation: ${pop} 0.35s ease;
-  border: 1px solid var(--border-color, transparent);
+const QInput = styled.input`
+  width: 100%; padding: 14px 18px; border-radius: 14px; font-size: 1.1rem;
+  border: 2px solid ${p => p.$status === 'correct' ? '#22c55e' : p.$status === 'wrong' ? '#ef4444' : '#e5e7eb'};
+  background: ${p => p.$status === 'correct' ? '#f0fdf4' : p.$status === 'wrong' ? '#fef2f2' : 'var(--bg-secondary, #fff)'};
+  color: var(--text-primary); outline: none; transition: border 0.2s;
+  box-sizing: border-box;
+  &:focus { border-color: #d97706; }
+  ${p => p.$status === 'wrong' && css`animation: ${shake} 0.4s ease;`}
 `;
-
-const QuestionText = styled.h2`
-  text-align: center; font-size: 1.5rem; color: var(--text-primary, #1f2937);
-  margin-bottom: 2rem; line-height: 1.5; word-break: break-word;
+const QSubmit = styled.button`
+  margin-top: 12px; padding: 12px 28px; border-radius: 14px; border: none;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white; font-weight: 700; font-size: 1rem; cursor: pointer;
+  width: 100%;
+  &:hover { transform: translateY(-2px); }
+  &:disabled { opacity: 0.5; cursor: default; transform: none; }
 `;
-
-const OptionsGrid = styled.div`
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
-  @media (max-width: 500px) { grid-template-columns: 1fr; }
+const QFeedback = styled.div`
+  margin-top: 1rem; padding: 10px 16px; border-radius: 12px; font-weight: 600;
+  animation: ${pop} 0.3s ease;
+  background: ${p => p.$ok ? '#dcfce7' : '#fee2e2'};
+  color: ${p => p.$ok ? '#15803d' : '#dc2626'};
 `;
-
-const OptionBtn = styled.button`
-  padding: 1rem; border-radius: 14px; font-size: 1rem; font-weight: 500;
-  cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
-  border: 2px solid; transition: all 0.2s ease; text-align: left;
-  word-break: break-word; font-family: inherit;
-  animation: ${p => p.$wrong ? css`${shake} 0.4s ease` : 'none'};
-  background: ${p => p.$correct ? '#dcfce7' : p.$wrong ? '#fee2e2' : 'var(--bg-secondary, #f9fafb)'};
-  border-color: ${p => p.$correct ? '#22c55e' : p.$wrong ? '#ef4444' : 'var(--border-color, #e5e7eb)'};
-  color: ${p => p.$correct ? '#166534' : p.$wrong ? '#991b1b' : 'var(--text-primary, #1f2937)'};
-  &:hover:not(:disabled) { transform: translateY(-2px); border-color: #f59e0b; }
+const QHint = styled.div`
+  font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px;
+  span { color: #d97706; font-weight: 600; }
 `;
-
-/* ── result ── */
-const ResultCard = styled.div`
-  background: var(--card-bg, white); border-radius: 24px; padding: 3rem 2rem;
-  text-align: center; box-shadow: 0 10px 40px var(--shadow-color, rgba(0,0,0,0.1));
-  border: 1px solid var(--border-color, transparent); animation: ${pop} 0.4s ease;
+const Card = styled.div`
+  background: var(--card-bg, #fff); border-radius: 20px; padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08); text-align: center;
+  border: 1px solid var(--border-color, #e5e7eb); animation: ${pop} 0.4s ease;
 `;
-
-const ResultTitle = styled.h2`font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--text-primary);`;
-const ResultText = styled.p`color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.6;`;
-
-const StatsGrid = styled.div`
-  display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem;
-`;
-const StatBox = styled.div`
-  background: var(--bg-secondary, #f3f4f6); padding: 1.2rem 1.5rem;
-  border-radius: 16px; min-width: 110px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  .val { font-size: 2rem; font-weight: 700; color: ${p => p.$color || '#b45309'}; }
-  .lbl { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
-`;
-
-const BtnRow = styled.div`display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;`;
 const Btn = styled.button`
-  padding: 0.9rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 600;
-  border: none; cursor: pointer; transition: all 0.3s ease; font-family: inherit; color: white;
-  background: ${p => p.$variant === 'secondary' ? 'linear-gradient(135deg, #6b7280, #4b5563)' : 'linear-gradient(135deg, #fbbf24, #d97706)'};
-  box-shadow: 0 4px 15px ${p => p.$variant === 'secondary' ? 'rgba(107,114,128,0.4)' : 'rgba(217,119,6,0.4)'};
-  &:hover { transform: translateY(-3px); }
+  padding: 12px 28px; border-radius: 14px; border: none; font-weight: 700;
+  font-size: 1rem; cursor: pointer; transition: all 0.2s;
+  background: ${p => p.$v === 'secondary' ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #f59e0b, #d97706)'};
+  color: ${p => p.$v === 'secondary' ? 'var(--text-primary)' : 'white'};
+  border: ${p => p.$v === 'secondary' ? '2px solid var(--border-color)' : 'none'};
+  &:hover { transform: translateY(-2px); }
+`;
+const BtnRow = styled.div`display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;`;
+const StatsGrid = styled.div`display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 1.5rem 0;`;
+const StatBox = styled.div`
+  background: ${p => p.$c}11; border: 2px solid ${p => p.$c}33; border-radius: 16px;
+  padding: 1rem; text-align: center;
+  .val { font-size: 1.5rem; font-weight: 800; color: ${p => p.$c}; }
+  .lbl { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+`;
+const LoadW = styled.div`text-align:center;padding:3rem;color:var(--text-secondary);`;
+const ErrW = styled.div`text-align:center;padding:2rem;h3{color:#ef4444;}`;
+const RulesBox = styled.div`
+  text-align: left; max-width: 440px; margin: 1.5rem auto; line-height: 2;
+  font-size: 1rem; color: var(--text-primary);
 `;
 
-const LoadingWrap = styled.div`
-  display: flex; justify-content: center; padding: 80px;
-  .spinner { width: 48px; height: 48px; border: 4px solid #f3f3f3;
-    border-top: 4px solid #f59e0b; border-radius: 50%;
-    animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-`;
-const ErrorWrap = styled.div`
-  text-align: center; padding: 3rem; background: var(--card-bg, #fee2e2);
-  border-radius: 24px; color: var(--text-primary, #991b1b); margin: 2rem 0;
-  border: 1px solid var(--border-color, #fca5a5);
-`;
+// Hex grid layout: 3 rows of [3, 4, 3] = 10 cells
+const HEX_LAYOUT = [[3], [4], [3]];
+const TOTAL_CELLS = 10;
 
-/* ───────── helpers ───────── */
-function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+function normalize(s) {
+  return s.toLowerCase().trim().replace(/[.,!?;:"""''«»\-–—()[\]{}]/g, '').replace(/\s+/g, ' ');
+}
+
+function similarity(a, b) {
+  const s1 = normalize(a), s2 = normalize(b);
+  if (s1 === s2) return 1;
+  const longer = s1.length > s2.length ? s1 : s2;
+  const shorter = s1.length > s2.length ? s2 : s1;
+  if (longer.length === 0) return 1;
+  const costs = [];
+  for (let i = 0; i <= longer.length; i++) {
+    let lastVal = i;
+    for (let j = 0; j <= shorter.length; j++) {
+      if (i === 0) { costs[j] = j; }
+      else if (j > 0) {
+        let newVal = costs[j - 1];
+        if (longer[i - 1] !== shorter[j - 1]) newVal = Math.min(newVal, lastVal, costs[j]) + 1;
+        costs[j - 1] = lastVal;
+        lastVal = newVal;
+      }
+    }
+    if (i > 0) costs[shorter.length] = lastVal;
   }
-  return a;
+  return (longer.length - costs[shorter.length]) / longer.length;
 }
 
-function generateOptions(card, allCards) {
-  const wrong = shuffleArray(allCards.filter(c => c.term !== card.term))
-    .slice(0, 3).map(c => c.definition);
-  while (wrong.length < 3) wrong.push(card.definition.split('').reverse().join(''));
-  return shuffleArray([card.definition, ...wrong]);
-}
-
-/* ── hex grid layout: offset coords ── */
-// 4 rows: 3-4-3-4 = 14 cells
-const HEX_LAYOUT = [
-  { row: 0, count: 3, offset: false },
-  { row: 1, count: 4, offset: true },
-  { row: 2, count: 3, offset: false },
-  { row: 3, count: 4, offset: true },
-];
-
-const TOTAL_CELLS = HEX_LAYOUT.reduce((s, r) => s + r.count, 0); // 14
-
-const cellEmojis = ['🍯', '🐝', '🌸', '🌻', '🌺', '🌼', '🦋', '🐞', '🍀', '🌿', '💐', '🪻', '🌹', '🌷'];
-
-/* ═══════════════════════════════════════ */
-function HoneycombGame() {
+export default function HoneycombGame() {
+  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const setId = searchParams.get('setId');
+  const setId = params.get('setId');
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentSet, setCurrentSet] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
+  const [currentSet, setCurrentSet] = useState(null);
 
   const [gameStarted, setGameStarted] = useState(false);
-  const [cells, setCells] = useState([]); // { id, filled, justFilled, cracked }
-  const [activeCellIdx, setActiveCellIdx] = useState(null);
+  const [finished, setFinished] = useState(false);
+  const [cells, setCells] = useState([]); // { card, state: 'empty'|'filled'|'wrong' }
+  const [activeCell, setActiveCell] = useState(null);
+  const [answer, setAnswer] = useState('');
+  const [qStatus, setQStatus] = useState(null);
   const [score, setScore] = useState(0);
-  const [correct, setCorrect] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(0);
-  const [streak, setStreak] = useState(0);
+  const [filled, setFilled] = useState(0);
+  const [mistakes, setMistakes] = useState(0);
 
-  const [showQuestion, setShowQuestion] = useState(false);
-  const [questionCard, setQuestionCard] = useState(null);
-  const [options, setOptions] = useState([]);
-  const [selectedIdx, setSelectedIdx] = useState(null);
-  const [answerResult, setAnswerResult] = useState(null);
-  const [isFinished, setIsFinished] = useState(false);
-
-  const sessionStart = useRef(Date.now());
+  const inputRef = useRef(null);
+  const sessionStart = useRef(0);
   const statsRecorded = useRef(false);
-  const usedCards = useRef([]);
-
-  useEffect(() => { if (setId) fetchSet(setId); }, [setId]);
-
-  const fetchSet = async (id) => {
-    try { setLoading(true); setError(null);
-      const res = await authFetch(`${API_ROUTES.DATA.SETS}/${id}`);
-      if (!res.ok) throw new Error('Не удалось загрузить набор');
-      const data = await res.json(); setCurrentSet(data);
-      if (data.flashcards?.length >= 4) setFlashcards(data.flashcards);
-      else setError('Нужно минимум 4 карточки');
-    } catch(e) { setError(e.message); } finally { setLoading(false); }
-  };
-
-  const startGame = useCallback(() => {
-    const initial = Array.from({ length: TOTAL_CELLS }, (_, i) => ({
-      id: i, filled: false, justFilled: false, cracked: false, emoji: cellEmojis[i % cellEmojis.length]
-    }));
-    setCells(initial);
-    setActiveCellIdx(null);
-    setScore(0); setCorrect(0); setTotalQuestions(0); setStreak(0);
-    setShowQuestion(false); setSelectedIdx(null); setAnswerResult(null);
-    setIsFinished(false); setGameStarted(true);
-    usedCards.current = [];
-    sessionStart.current = Date.now();
-    statsRecorded.current = false;
-  }, []);
-
-  const getRandomCard = useCallback(() => {
-    let available = flashcards.filter((_, i) => !usedCards.current.includes(i));
-    if (available.length === 0) { usedCards.current = []; available = flashcards; }
-    const idx = Math.floor(Math.random() * available.length);
-    const origIdx = flashcards.indexOf(available[idx]);
-    usedCards.current.push(origIdx);
-    return available[idx];
-  }, [flashcards]);
-
-  const handleCellClick = useCallback((cellIdx) => {
-    if (showQuestion || isFinished) return;
-    if (cells[cellIdx].filled) return;
-
-    setActiveCellIdx(cellIdx);
-    const card = getRandomCard();
-    setQuestionCard(card);
-    setOptions(generateOptions(card, flashcards));
-    setSelectedIdx(null);
-    setAnswerResult(null);
-    setShowQuestion(true);
-    setTotalQuestions(prev => prev + 1);
-  }, [showQuestion, isFinished, cells, flashcards, getRandomCard]);
-
-  const handleOption = (idx) => {
-    if (answerResult !== null) return;
-    setSelectedIdx(idx);
-    const isCorrect = options[idx] === questionCard.definition;
-
-    if (isCorrect) {
-      setAnswerResult('correct');
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      setCorrect(prev => prev + 1);
-      const bonus = 10 + (newStreak >= 3 ? newStreak * 5 : 0);
-      setScore(prev => prev + bonus);
-
-      setTimeout(() => {
-        setCells(prev => {
-          const updated = prev.map((c, i) => {
-            if (i === activeCellIdx) return { ...c, filled: true, justFilled: true, cracked: false };
-            return { ...c, justFilled: false };
-          });
-
-          // check if all filled
-          const allFilled = updated.every(c => c.filled);
-          if (allFilled) {
-            setIsFinished(true); setGameStarted(false);
-            trackGameWin();
-            confetti({ particleCount: 220, spread: 100, origin: { y: 0.5 } });
-          }
-
-          return updated;
-        });
-        setShowQuestion(false);
-        setActiveCellIdx(null);
-      }, 800);
-    } else {
-      setAnswerResult('wrong');
-      setStreak(0);
-
-      setTimeout(() => {
-        // crack a random filled cell
-        setCells(prev => {
-          const filledIndexes = prev.map((c, i) => c.filled ? i : -1).filter(i => i >= 0);
-          if (filledIndexes.length > 0) {
-            const crackIdx = filledIndexes[Math.floor(Math.random() * filledIndexes.length)];
-            return prev.map((c, i) => {
-              if (i === crackIdx) return { ...c, filled: false, cracked: true, justFilled: false };
-              return { ...c, justFilled: false, cracked: false };
-            });
-          }
-          return prev.map(c => ({ ...c, justFilled: false, cracked: false }));
-        });
-        setShowQuestion(false);
-        setActiveCellIdx(null);
-      }, 1200);
-    }
-  };
-
-  const filledCount = cells.filter(c => c.filled).length;
-  const fillPct = Math.round((filledCount / TOTAL_CELLS) * 100);
 
   useEffect(() => {
-    if (isFinished && !statsRecorded.current) {
-      statsRecorded.current = true;
-      const timeSpent = Math.round((Date.now() - sessionStart.current) / 1000);
-      authFetch(API_ROUTES.DATA.STATS_SESSION, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'honeycomb', cardsCount: totalQuestions, correctCount: correct, timeSpent })
-      }).catch(e => console.error('Stats:', e));
+    if (!setId) return;
+    const load = async () => {
+      try {
+        const r = await authFetch(`${API_ROUTES.DATA.SETS}/${setId}`);
+        if (!r.ok) throw new Error('Набор не найден');
+        const d = await r.json();
+        const cards = (d.cards || d.flashcards || []).filter(c => c.term && c.definition);
+        if (cards.length < 4) throw new Error('Нужно минимум 4 карточки');
+        setFlashcards(cards);
+        setCurrentSet(d);
+      } catch (e) { setError(e.message); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, [setId]);
+
+  const startGame = () => {
+    const shuffled = [...flashcards].sort(() => Math.random() - 0.5);
+    const cellData = [];
+    for (let i = 0; i < TOTAL_CELLS; i++) {
+      cellData.push({ card: shuffled[i % shuffled.length], state: 'empty' });
     }
-  }, [isFinished, correct, totalQuestions]);
+    setCells(cellData);
+    setActiveCell(null); setAnswer(''); setQStatus(null);
+    setScore(0); setFilled(0); setMistakes(0);
+    setFinished(false); setGameStarted(true);
+    sessionStart.current = Date.now();
+    statsRecorded.current = false;
+  };
 
-  const handleSelectSet = (set) => navigate(`/games/honeycomb?setId=${set._id || set.id}`);
+  const handleCellClick = (idx) => {
+    if (cells[idx].state === 'filled' || activeCell !== null) return;
+    setActiveCell(idx);
+    setAnswer('');
+    setQStatus(null);
+    setTimeout(() => inputRef.current?.focus(), 200);
+  };
 
-  /* ── renders ── */
-  if (!setId) return <SetSelector title="🍯 Соты" subtitle="Выберите набор карточек" onSelectSet={handleSelectSet} gameMode />;
-  if (loading) return <Container><LoadingWrap><div className="spinner" /></LoadingWrap></Container>;
-  if (error) return <Container><ErrorWrap><h3>😕 Ошибка</h3><p>{error}</p><Btn onClick={() => navigate('/games/honeycomb')} style={{ marginTop: '1rem' }}>Другой набор</Btn></ErrorWrap></Container>;
+  const handleSubmit = (e) => {
+    e?.preventDefault();
+    if (activeCell === null || qStatus || !answer.trim()) return;
 
-  if (isFinished) {
-    const pct = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+    const cell = cells[activeCell];
+    const sim = similarity(answer, cell.card.definition);
+    const isCorrect = sim >= 0.75;
+
+    if (isCorrect) {
+      setQStatus('correct');
+      const newCells = [...cells];
+      newCells[activeCell] = { ...newCells[activeCell], state: 'filled' };
+      setCells(newCells);
+      setScore(s => s + 25);
+      const newFilled = filled + 1;
+      setFilled(newFilled);
+
+      if (newFilled % 3 === 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.6 } });
+
+      setTimeout(() => {
+        setActiveCell(null);
+        setAnswer('');
+        setQStatus(null);
+        if (newFilled >= TOTAL_CELLS) {
+          confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+          setFinished(true);
+        }
+      }, 1000);
+    } else {
+      setQStatus('wrong');
+      setMistakes(m => m + 1);
+      const newCells = [...cells];
+      newCells[activeCell] = { ...newCells[activeCell], state: 'wrong' };
+      setCells(newCells);
+
+      setTimeout(() => {
+        const resetCells = [...newCells];
+        resetCells[activeCell] = { ...resetCells[activeCell], state: 'empty' };
+        setCells(resetCells);
+        setActiveCell(null);
+        setAnswer('');
+        setQStatus(null);
+      }, 2000);
+    }
+  };
+
+  const getHint = () => {
+    if (activeCell === null) return '';
+    const def = cells[activeCell].card.definition;
+    return `${def.charAt(0)}${'·'.repeat(def.length - 1)} (${def.length})`;
+  };
+
+  const recordStats = useCallback(async () => {
+    if (statsRecorded.current) return;
+    statsRecorded.current = true;
+    try {
+      const t = Math.round((Date.now() - sessionStart.current) / 1000);
+      await authFetch(API_ROUTES.DATA.STATS_SESSION, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'honeycomb', cardsCount: TOTAL_CELLS, correctCount: filled, timeSpent: t })
+      });
+      if (filled >= TOTAL_CELLS * 0.7) trackGameWin();
+    } catch {}
+  }, [filled]);
+
+  useEffect(() => { if (finished) recordStats(); }, [finished, recordStats]);
+
+  // Build hex grid indices
+  const renderGrid = () => {
+    let idx = 0;
+    return HEX_LAYOUT.map((row, rowIndex) => (
+      <HexRow key={rowIndex} $offset={rowIndex % 2 === 1}>
+        {Array.from({ length: row[0] }).map((_, colIndex) => {
+          const cellIdx = idx++;
+          if (cellIdx >= cells.length) return null;
+          const cell = cells[cellIdx];
+          return (
+            <HexCell
+              key={cellIdx}
+              $state={activeCell === cellIdx ? 'active' : cell.state}
+              onClick={() => handleCellClick(cellIdx)}
+            >
+              {cell.state === 'filled'
+                ? <Bee>🍯</Bee>
+                : cell.state === 'wrong'
+                  ? '💔'
+                  : <span style={{ fontSize: '0.7rem' }}>{cell.card.term.length > 8 ? cell.card.term.slice(0, 7) + '…' : cell.card.term}</span>
+              }
+            </HexCell>
+          );
+        })}
+      </HexRow>
+    ));
+  };
+
+  if (!setId) return <SetSelector title="🍯 Соты" subtitle="Заполните соты мёдом, отвечая правильно!" onSelectSet={s => navigate(`/games/honeycomb?setId=${s._id || s.id}`)} gameMode />;
+  if (loading) return <Container><LoadW>⏳ Загрузка...</LoadW></Container>;
+  if (error) return <Container><ErrW><h3>😕 Ошибка</h3><p>{error}</p><Btn onClick={() => navigate('/games/honeycomb')}>Другой набор</Btn></ErrW></Container>;
+
+  if (finished) {
     return (
       <Container>
-        <ResultCard>
-          <ResultTitle>🍯 Соты заполнены!</ResultTitle>
-          <ResultText>Вы собрали все {TOTAL_CELLS} сот! Отличная работа!</ResultText>
+        <Card>
+          <Title>🍯 Все соты заполнены!</Title>
+          <Sub>Вы отлично справились — все ячейки полны мёда!</Sub>
           <StatsGrid>
-            <StatBox $color="#d97706"><div className="val">{score}</div><div className="lbl">🏅 Очков</div></StatBox>
-            <StatBox $color="#22c55e"><div className="val">{correct}/{totalQuestions}</div><div className="lbl">✅ Верных</div></StatBox>
-            <StatBox $color="#2563eb"><div className="val">{pct}%</div><div className="lbl">📊 Точность</div></StatBox>
+            <StatBox $c="#d97706"><div className="val">{score}</div><div className="lbl">🏅 Очков</div></StatBox>
+            <StatBox $c="#22c55e"><div className="val">{filled}/{TOTAL_CELLS}</div><div className="lbl">🍯 Заполнено</div></StatBox>
+            <StatBox $c="#ef4444"><div className="val">{mistakes}</div><div className="lbl">❌ Ошибок</div></StatBox>
           </StatsGrid>
           <BtnRow>
             <Btn onClick={startGame}>Играть снова 🔄</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/games/honeycomb')}>Другой набор</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/dashboard')}>⬅️ Назад</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/games/honeycomb')}>Другой набор</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/dashboard')}>⬅️ Назад</Btn>
           </BtnRow>
-        </ResultCard>
+        </Card>
       </Container>
     );
   }
@@ -509,114 +392,87 @@ function HoneycombGame() {
   if (!gameStarted) {
     return (
       <Container>
-        <Header><Title>🍯 Соты</Title><Subtitle>Заполните все соты правильными ответами!</Subtitle></Header>
+        <Title>🍯 Соты</Title>
+        <Sub>Нажимайте на ячейки и вписывайте определения!</Sub>
         {currentSet && (
-          <div style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', padding: '1rem 1.5rem', borderRadius: 12, textAlign: 'center', marginBottom: '1.5rem', border: '1px solid var(--border-color, transparent)' }}>
-            <h3 style={{ margin: '0 0 0.25rem', color: '#92400e' }}>📚 {currentSet.title}</h3>
-            <p style={{ margin: 0, color: '#b45309', fontSize: '0.9rem' }}>{currentSet.flashcards?.length || 0} карточек</p>
+          <div style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', padding: '1rem', borderRadius: 12, textAlign: 'center', marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: 0, color: '#92400e' }}>📚 {currentSet.title}</h3>
+            <p style={{ margin: '4px 0 0', color: '#d97706', fontSize: '0.9rem' }}>{flashcards.length} карточек</p>
           </div>
         )}
-        <ResultCard>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🍯</div>
-          <ResultTitle style={{ fontSize: '2rem' }}>Правила</ResultTitle>
-          <div style={{ textAlign: 'left', maxWidth: 420, margin: '1.5rem auto', lineHeight: 1.9, color: 'var(--text-primary)' }}>
-            <div>🐝 Заполните все {TOTAL_CELLS} сот</div>
-            <div>👆 Нажмите на пустую соту — появится вопрос</div>
-            <div>✅ Правильный ответ = сота заполняется мёдом</div>
-            <div>❌ Неправильный = одна заполненная сота ломается</div>
-            <div>🔥 Серия ответов даёт бонусные очки</div>
-            <div>🏆 Заполните все соты, чтобы победить!</div>
-          </div>
+        <Card>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🐝</div>
+          <h2>Правила</h2>
+          <RulesBox>
+            <div>🍯 На экране сетка из {TOTAL_CELLS} сот-ячеек</div>
+            <div>👆 Нажмите на ячейку — увидите <strong>термин</strong></div>
+            <div>⌨️ Впишите <strong>определение</strong> этого термина</div>
+            <div>✅ Верно = ячейка заполняется мёдом 🍯</div>
+            <div>❌ Ошибка = ячейка остаётся пустой</div>
+            <div>🏆 Заполните все соты!</div>
+          </RulesBox>
           <BtnRow>
-            <Btn onClick={startGame}>🐝 Начать сбор</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/games/honeycomb')}>Другой набор</Btn>
+            <Btn onClick={startGame}>🐝 Начать!</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/games/honeycomb')}>Другой набор</Btn>
           </BtnRow>
-        </ResultCard>
+        </Card>
       </Container>
     );
   }
 
-  // Render hex grid from layout
-  let cellIndex = 0;
-
   return (
     <Container>
-      <Header><Title>🍯 Соты</Title></Header>
+      <Title>🍯 Соты</Title>
 
       <TopBar>
-        <Stat $color="#d97706"><div className="val">{score}</div><div className="lbl">Очки</div></Stat>
-        <Stat $color="#22c55e"><div className="val">{filledCount}/{TOTAL_CELLS}</div><div className="lbl">Заполнено</div></Stat>
-        <Stat $color="#7c3aed"><div className="val">{correct}</div><div className="lbl">Верных</div></Stat>
-        {streak >= 2 && <Stat $color="#ef4444"><div className="val">🔥 {streak}</div><div className="lbl">Серия</div></Stat>}
+        <Stat $c="#d97706"><div className="val">{score}</div><div className="lbl">Очки</div></Stat>
+        <Stat $c="#22c55e"><div className="val">🍯 {filled}/{TOTAL_CELLS}</div><div className="lbl">Заполнено</div></Stat>
+        <Stat $c="#ef4444"><div className="val">{mistakes}</div><div className="lbl">Ошибок</div></Stat>
       </TopBar>
 
-      <HoneycombWrapper>
-        <HoneycombLabel>Нажмите на пустую соту, чтобы ответить</HoneycombLabel>
-        <HexGrid>
-          {HEX_LAYOUT.map((rowDef, ri) => {
-            const rowCells = [];
-            for (let ci = 0; ci < rowDef.count; ci++) {
-              const idx = cellIndex++;
-              const cell = cells[idx];
-              if (!cell) continue;
-              rowCells.push(
-                <HexCell
-                  key={cell.id}
-                  $filled={cell.filled}
-                  $active={activeCellIdx === idx}
-                  $justFilled={cell.justFilled}
-                  $cracked={cell.cracked}
-                  $clickable={!cell.filled && !showQuestion}
-                  onClick={() => handleCellClick(idx)}
-                >
-                  <HexContent $filled={cell.filled} $size={cell.filled ? '1.5rem' : '1.2rem'}>
-                    {cell.filled ? cell.emoji : (activeCellIdx === idx ? '❓' : '')}
-                  </HexContent>
-                </HexCell>
-              );
-            }
-            return <HexRow key={ri}>{rowCells}</HexRow>;
-          })}
-        </HexGrid>
+      <HexGrid>
+        {renderGrid()}
+      </HexGrid>
 
-        <ProgressBar>
-          <ProgressFill $pct={fillPct} />
-        </ProgressBar>
-        <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-          {fillPct}% заполнено
-        </div>
-      </HoneycombWrapper>
+      <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+        {activeCell === null ? 'Нажмите на ячейку, чтобы открыть вопрос 🐝' : ''}
+      </div>
 
-      {showQuestion && questionCard && (
-        <QuestionOverlay>
-          <QuestionCard>
-            <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-              🐝 Ответьте, чтобы заполнить соту{streak >= 2 ? ` • 🔥 Серия: ${streak}` : ''}
+      {activeCell !== null && (
+        <QOverlay onClick={(e) => { if (e.target === e.currentTarget && !qStatus) { setActiveCell(null); } }}>
+          <QCard>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🐝</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Впишите определение для термина:
             </div>
-            <QuestionText>{questionCard.term}</QuestionText>
-            <OptionsGrid>
-              {options.map((opt, idx) => (
-                <OptionBtn key={idx} disabled={answerResult !== null}
-                  $correct={answerResult !== null && opt === questionCard.definition}
-                  $wrong={answerResult === 'wrong' && selectedIdx === idx}
-                  onClick={() => handleOption(idx)}>{opt}</OptionBtn>
-              ))}
-            </OptionsGrid>
-            {answerResult === 'correct' && (
-              <div style={{ textAlign: 'center', marginTop: '1rem', color: '#16a34a', fontWeight: 700, fontSize: '1.1rem' }}>
-                🍯 Сота заполнена мёдом!
-              </div>
+            <QTerm>{cells[activeCell]?.card.term}</QTerm>
+            <QHint>💡 Подсказка: <span>{getHint()}</span></QHint>
+
+            <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
+              <QInput
+                ref={inputRef}
+                value={answer}
+                onChange={e => setAnswer(e.target.value)}
+                placeholder="Введите определение..."
+                $status={qStatus}
+                disabled={!!qStatus}
+                autoComplete="off"
+                autoFocus
+              />
+              <QSubmit type="submit" disabled={!!qStatus || !answer.trim()}>
+                Ответить
+              </QSubmit>
+            </form>
+
+            {qStatus === 'correct' && <QFeedback $ok>✅ Верно! Ячейка заполнена мёдом!</QFeedback>}
+            {qStatus === 'wrong' && (
+              <QFeedback>
+                ❌ Неверно! Правильно: <strong>{cells[activeCell]?.card.definition}</strong>
+              </QFeedback>
             )}
-            {answerResult === 'wrong' && (
-              <div style={{ textAlign: 'center', marginTop: '1rem', color: '#dc2626', fontWeight: 700, fontSize: '1.1rem' }}>
-                💔 Сота разрушена!
-              </div>
-            )}
-          </QuestionCard>
-        </QuestionOverlay>
+          </QCard>
+        </QOverlay>
       )}
     </Container>
   );
 }
-
-export default HoneycombGame;

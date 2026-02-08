@@ -6,846 +6,483 @@ import { API_ROUTES, authFetch } from '../constants/api';
 import { trackGameWin } from '../services/gamificationService';
 import SetSelector from '../components/SetSelector';
 
-/* ───────── keyframes ───────── */
+/* ─── keyframes ─── */
 const pop = keyframes`
-  0%   { transform: scale(0.7); opacity: 0; }
-  60%  { transform: scale(1.06); }
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.1); }
   100% { transform: scale(1); opacity: 1; }
 `;
-
+const shake = keyframes`
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+`;
 const slideUp = keyframes`
-  from { transform: translateY(20px); opacity: 0; }
+  from { transform: translateY(30px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 `;
-
-const pulse = keyframes`
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.06); }
+const glow = keyframes`
+  0%,100% { box-shadow: 0 0 8px rgba(124,58,237,0.3); }
+  50%     { box-shadow: 0 0 24px rgba(124,58,237,0.7); }
+`;
+const timerPulse = keyframes`
+  0%,100% { background: #ef4444; }
+  50%     { background: #dc2626; }
+`;
+const chainAppear = keyframes`
+  from { transform: scale(0) rotate(-180deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+`;
+const breakApart = keyframes`
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.3); opacity: 0.5; }
+  100% { transform: scale(0) rotate(90deg); opacity: 0; }
+`;
+const comboFlash = keyframes`
+  0%   { transform: scale(1); text-shadow: 0 0 0 transparent; }
+  50%  { transform: scale(1.3); text-shadow: 0 0 20px #f59e0b; }
+  100% { transform: scale(1); text-shadow: 0 0 0 transparent; }
 `;
 
-const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  20%  { transform: translateX(-8px); }
-  40%  { transform: translateX(8px); }
-  60%  { transform: translateX(-4px); }
-  80%  { transform: translateX(4px); }
-`;
-
-const shimmer = keyframes`
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-`;
-
-const linkGrow = keyframes`
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-`;
-
-/* ───────── styled ───────── */
+/* ─── styled ─── */
 const Container = styled.div`
-  max-width: 850px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 800px; margin: 0 auto; padding: 1.5rem;
   font-family: 'Segoe UI', sans-serif;
-
-  @media (max-width: 600px) {
-    padding: 0.75rem;
-  }
+  @media (max-width: 600px) { padding: 0.75rem; }
 `;
-
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: 1.5rem;
-`;
-
 const Title = styled.h1`
-  color: #7c3aed;
-  font-size: 2.4rem;
-  margin-bottom: 0.25rem;
-
-  @media (max-width: 600px) {
-    font-size: 2rem;
-  }
+  text-align: center; color: #7c3aed; font-size: 2.2rem; margin-bottom: 0.5rem;
+  @media (max-width: 600px) { font-size: 1.6rem; }
 `;
-
-const Subtitle = styled.p`
-  color: var(--text-secondary, #6b7280);
-  font-size: 1rem;
+const Sub = styled.p`
+  text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem;
 `;
-
-/* --- панель статистики --- */
 const TopBar = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 1.2rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-
-  @media (max-width: 600px) {
-    gap: 0.9rem;
-    margin-bottom: 1rem;
-  }
+  display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;
 `;
-
 const Stat = styled.div`
-  background: var(--card-bg, white);
-  padding: 0.6rem 1.2rem;
-  border-radius: 14px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-  border: 1px solid var(--border-color, #e5e7eb);
-  text-align: center;
-  min-width: 85px;
-  .val { font-size: 1.4rem; font-weight: 700; color: ${p => p.$color || '#7c3aed'}; }
-  .lbl { font-size: 0.75rem; color: var(--text-secondary); }
+  background: var(--card-bg, #fff); padding: 0.5rem 1rem; border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid var(--border-color, #e5e7eb);
+  text-align: center; min-width: 80px;
+  .val { font-size: 1.3rem; font-weight: 700; color: ${p => p.$c || '#7c3aed'}; }
+  .lbl { font-size: 0.72rem; color: var(--text-secondary); }
 `;
-
-/* --- визуализация цепочки --- */
-const ChainContainer = styled.div`
-  position: relative;
-  background: var(--card-bg, white);
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 20px var(--shadow-color, rgba(0,0,0,0.08));
-  border: 1px solid var(--border-color, transparent);
-  overflow: hidden;
-
-  @media (max-width: 600px) {
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
+const Card = styled.div`
+  background: var(--card-bg, #fff); border-radius: 20px; padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #e5e7eb);
+  text-align: center; animation: ${pop} 0.4s ease;
+  ${p => p.$shake && css`animation: ${shake} 0.5s ease;`}
 `;
-
-const ChainLabel = styled.div`
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.75rem;
+const TermDisplay = styled.div`
+  font-size: 2rem; font-weight: 800; color: var(--text-primary);
+  margin: 1.5rem 0 0.5rem; animation: ${slideUp} 0.3s ease;
+  @media (max-width: 600px) { font-size: 1.4rem; }
 `;
-
-const ChainTrack = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  flex-wrap: wrap;
-  min-height: 50px;
-  padding: 0.5rem 0;
+const HintText = styled.div`
+  font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;
+  span { color: #7c3aed; font-weight: 600; }
 `;
-
-const ChainLink = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  font-weight: 700;
-  color: white;
-  animation: ${pop} 0.3s ease;
-  position: relative;
-  flex-shrink: 0;
-  background: ${p => {
-    const colors = [
-      'linear-gradient(135deg, #a78bfa, #7c3aed)',
-      'linear-gradient(135deg, #818cf8, #4f46e5)',
-      'linear-gradient(135deg, #c084fc, #9333ea)',
-      'linear-gradient(135deg, #f0abfc, #d946ef)',
-      'linear-gradient(135deg, #a78bfa, #6d28d9)',
-    ];
-    return colors[p.$index % colors.length];
-  }};
-  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);
-
-  @media (max-width: 600px) {
-    width: 34px;
-    height: 34px;
-    font-size: 0.85rem;
-  }
+const InputRow = styled.div`
+  display: flex; gap: 10px; max-width: 500px; margin: 0 auto;
+  @media (max-width: 600px) { flex-direction: column; }
 `;
-
-const ChainConnector = styled.div`
-  width: 20px;
-  height: 4px;
-  background: linear-gradient(90deg, #a78bfa, #7c3aed);
-  border-radius: 2px;
-  animation: ${linkGrow} 0.2s ease;
-  transform-origin: left;
-  flex-shrink: 0;
-
-  @media (max-width: 600px) {
-    width: 14px;
-  }
+const Input = styled.input`
+  flex: 1; padding: 14px 18px; border-radius: 14px; font-size: 1.1rem;
+  border: 2px solid ${p => p.$status === 'correct' ? '#22c55e' : p.$status === 'wrong' ? '#ef4444' : '#e5e7eb'};
+  background: ${p => p.$status === 'correct' ? '#f0fdf4' : p.$status === 'wrong' ? '#fef2f2' : 'var(--bg-secondary, #fff)'};
+  color: var(--text-primary); outline: none; transition: border 0.2s;
+  &:focus { border-color: #7c3aed; }
+  ${p => p.$status === 'wrong' && css`animation: ${shake} 0.4s ease;`}
 `;
-
-const ChainBreak = styled.div`
-  font-size: 1.5rem;
-  animation: ${shake} 0.5s ease;
-  margin: 0 0.25rem;
+const SubmitBtn = styled.button`
+  padding: 14px 28px; border-radius: 14px; border: none;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white; font-weight: 700; font-size: 1rem; cursor: pointer;
+  transition: transform 0.15s; white-space: nowrap;
+  &:hover { transform: translateY(-2px); }
+  &:disabled { opacity: 0.5; cursor: default; transform: none; }
 `;
-
-const EmptyChain = styled.div`
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-  padding: 0.5rem;
+const TimerBar = styled.div`
+  width: 100%; height: 6px; background: #e5e7eb; border-radius: 3px;
+  margin: 1rem 0; overflow: hidden;
 `;
-
-/* --- combo multiplier --- */
-const ComboDisplay = styled.div`
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  animation: ${p => p.$active ? css`${pulse} 0.6s ease` : 'none'};
-  color: ${p => {
-    if (p.$combo >= 5) return '#dc2626';
-    if (p.$combo >= 3) return '#f59e0b';
-    return '#7c3aed';
-  }};
-`;
-
-const MultiplierBadge = styled.span`
-  display: inline-block;
-  padding: 0.2rem 0.7rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: white;
-  margin-left: 0.5rem;
-  background: ${p => {
-    if (p.$combo >= 5) return 'linear-gradient(135deg, #ef4444, #dc2626)';
-    if (p.$combo >= 3) return 'linear-gradient(135deg, #f59e0b, #d97706)';
-    return 'linear-gradient(135deg, #8b5cf6, #7c3aed)';
-  }};
-  background-size: 200% 100%;
-  animation: ${p => p.$combo >= 5 ? css`${shimmer} 2s linear infinite` : 'none'};
-`;
-
-/* --- карточка вопроса --- */
-const QuestionCard = styled.div`
-  background: var(--card-bg, white);
-  border-radius: 24px;
-  padding: 2rem;
-  box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.1));
-  border: 2px solid ${p =>
-    p.$status === 'correct' ? '#22c55e' :
-    p.$status === 'wrong' ? '#ef4444' :
-    'var(--border-color, transparent)'};
-  animation: ${slideUp} 0.3s ease;
-  transition: border-color 0.3s ease;
-
-  @media (max-width: 600px) {
-    padding: 1.4rem 1.2rem;
-  }
-`;
-
-const QuestionLabel = styled.div`
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.4rem;
-`;
-
-const QuestionText = styled.h2`
-  text-align: center;
-  font-size: 1.5rem;
-  color: var(--text-primary, #1f2937);
-  margin-bottom: 2rem;
-  line-height: 1.5;
-  word-break: break-word;
-`;
-
-const OptionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  @media (max-width: 500px) { grid-template-columns: 1fr; }
-`;
-
-const OptionBtn = styled.button`
-  padding: 1rem;
-  border-radius: 14px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
-  border: 2px solid;
-  transition: all 0.2s ease;
-  text-align: left;
-  word-break: break-word;
-  font-family: inherit;
-  animation: ${p => p.$wrong ? css`${shake} 0.4s ease` : 'none'};
-
-  background: ${p =>
-    p.$correct ? '#dcfce7' :
-    p.$wrong   ? '#fee2e2' :
-    'var(--bg-secondary, #f9fafb)'};
-
-  border-color: ${p =>
-    p.$correct ? '#22c55e' :
-    p.$wrong   ? '#ef4444' :
-    'var(--border-color, #e5e7eb)'};
-
-  color: ${p =>
-    p.$correct ? '#166534' :
-    p.$wrong   ? '#991b1b' :
-    'var(--text-primary, #1f2937)'};
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    border-color: #7c3aed;
-    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2);
-  }
-`;
-
-const PointsPopup = styled.div`
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-top: 1rem;
-  animation: ${pop} 0.35s ease;
-  color: ${p => p.$correct ? '#16a34a' : '#dc2626'};
-`;
-
-/* --- результат --- */
-const ResultCard = styled.div`
-  background: var(--card-bg, white);
-  border-radius: 24px;
-  padding: 3rem 2rem;
-  text-align: center;
-  box-shadow: 0 10px 40px var(--shadow-color, rgba(0,0,0,0.1));
-  border: 1px solid var(--border-color, transparent);
-  animation: ${pop} 0.4s ease;
-`;
-
-const ResultTitle = styled.h2`
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary, #1f2937);
-`;
-
-const ResultText = styled.p`
-  color: var(--text-secondary);
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
-  line-height: 1.6;
-`;
-
-const StatsGrid = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
-`;
-
-const StatBox = styled.div`
-  background: var(--bg-secondary, #f3f4f6);
-  padding: 1.2rem 1.5rem;
-  border-radius: 16px;
-  min-width: 110px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  .val { font-size: 2rem; font-weight: 700; color: ${p => p.$color || '#7c3aed'}; }
-  .lbl { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
-`;
-
-const BtnRow = styled.div`
-  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
-`;
-
-const Btn = styled.button`
-  padding: 0.9rem 2rem;
-  border-radius: 50px;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: inherit;
-  color: white;
-  background: ${p => p.$variant === 'secondary'
-    ? 'linear-gradient(135deg, #6b7280, #4b5563)'
-    : 'linear-gradient(135deg, #8b5cf6, #7c3aed)'};
-  box-shadow: 0 4px 15px ${p => p.$variant === 'secondary'
-    ? 'rgba(107,114,128,0.4)' : 'rgba(124,58,237,0.4)'};
-  &:hover { transform: translateY(-3px); }
-`;
-
-const ProgressBar = styled.div`
-  width: 100%;
-  height: 10px;
-  background: var(--border-color, #e5e7eb);
-  border-radius: 5px;
-  overflow: hidden;
-  margin-bottom: 1.5rem;
-`;
-
-const ProgressFill = styled.div`
-  height: 100%;
-  border-radius: 5px;
-  transition: width 0.5s ease;
+const TimerFill = styled.div`
+  height: 100%; border-radius: 3px; transition: width 0.1s linear;
   width: ${p => p.$pct}%;
-  background: linear-gradient(90deg, #a78bfa, #7c3aed);
+  background: ${p => p.$pct > 50 ? '#22c55e' : p.$pct > 25 ? '#f59e0b' : '#ef4444'};
+  ${p => p.$pct <= 15 && css`animation: ${timerPulse} 0.5s ease infinite;`}
+`;
+const ChainViz = styled.div`
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  flex-wrap: wrap; margin: 1.5rem 0; min-height: 50px;
+`;
+const Link = styled.div`
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.8rem;
+  animation: ${chainAppear} 0.4s ease;
+  ${p => p.$breaking && css`animation: ${breakApart} 0.6s ease forwards;`}
+`;
+const Connector = styled.div`
+  width: 16px; height: 3px; background: linear-gradient(90deg, #a78bfa, #7c3aed); border-radius: 2px;
+`;
+const ComboLabel = styled.div`
+  font-size: 1.5rem; font-weight: 800; color: #f59e0b; margin-bottom: 0.5rem;
+  animation: ${comboFlash} 0.6s ease;
+`;
+const Feedback = styled.div`
+  margin-top: 1rem; padding: 12px 20px; border-radius: 12px; font-weight: 600;
+  animation: ${pop} 0.3s ease;
+  background: ${p => p.$correct ? '#dcfce7' : '#fee2e2'};
+  color: ${p => p.$correct ? '#15803d' : '#dc2626'};
+`;
+const Btn = styled.button`
+  padding: 12px 28px; border-radius: 14px; border: none; font-weight: 700;
+  font-size: 1rem; cursor: pointer; transition: all 0.2s;
+  background: ${p => p.$v === 'secondary' ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)'};
+  color: ${p => p.$v === 'secondary' ? 'var(--text-primary)' : 'white'};
+  border: ${p => p.$v === 'secondary' ? '2px solid var(--border-color)' : 'none'};
+  &:hover { transform: translateY(-2px); }
+`;
+const BtnRow = styled.div`
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;
+`;
+const StatsGrid = styled.div`
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px; margin: 1.5rem 0;
+`;
+const StatBox = styled.div`
+  background: ${p => p.$c}11; border: 2px solid ${p => p.$c}33; border-radius: 16px;
+  padding: 1rem; text-align: center;
+  .val { font-size: 1.5rem; font-weight: 800; color: ${p => p.$c}; }
+  .lbl { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+`;
+const ProgressBar = styled.div`
+  width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; margin-bottom: 1rem;
+  overflow: hidden;
+`;
+const ProgressFill = styled.div`
+  height: 100%; background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  border-radius: 4px; transition: width 0.3s ease; width: ${p => p.$pct}%;
+`;
+const LoadW = styled.div`text-align:center;padding:3rem;color:var(--text-secondary);`;
+const ErrW = styled.div`text-align:center;padding:2rem;h3{color:#ef4444;}`;
+const RulesBox = styled.div`
+  text-align: left; max-width: 440px; margin: 1.5rem auto; line-height: 2;
+  font-size: 1rem; color: var(--text-primary);
 `;
 
-/* --- утилиты --- */
-const LoadingWrap = styled.div`
-  display: flex; justify-content: center; padding: 80px;
-  .spinner { width: 48px; height: 48px; border: 4px solid #f3f3f3;
-    border-top: 4px solid #7c3aed; border-radius: 50%; }
-`;
+const TOTAL = 15;
+const TIME_LIMIT = 15; // seconds per word
 
-const ErrorWrap = styled.div`
-  text-align: center; padding: 3rem;
-  background: var(--card-bg, #fee2e2); border-radius: 24px;
-  color: var(--text-primary, #991b1b); margin: 2rem 0;
-  border: 1px solid var(--border-color, #fca5a5);
-`;
+function normalize(s) {
+  return s.toLowerCase().trim().replace(/[.,!?;:"""''«»\-–—()[\]{}]/g, '').replace(/\s+/g, ' ');
+}
 
-/* ───────── helpers ───────── */
-const TOTAL_ROUNDS = 15;
-
-function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+function similarity(a, b) {
+  const s1 = normalize(a), s2 = normalize(b);
+  if (s1 === s2) return 1;
+  const longer = s1.length > s2.length ? s1 : s2;
+  const shorter = s1.length > s2.length ? s2 : s1;
+  if (longer.length === 0) return 1;
+  const costs = [];
+  for (let i = 0; i <= longer.length; i++) {
+    let lastVal = i;
+    for (let j = 0; j <= shorter.length; j++) {
+      if (i === 0) { costs[j] = j; }
+      else if (j > 0) {
+        let newVal = costs[j - 1];
+        if (longer[i - 1] !== shorter[j - 1]) newVal = Math.min(newVal, lastVal, costs[j]) + 1;
+        costs[j - 1] = lastVal;
+        lastVal = newVal;
+      }
+    }
+    if (i > 0) costs[shorter.length] = lastVal;
   }
-  return a;
+  return (longer.length - costs[shorter.length]) / longer.length;
 }
 
-function generateOptions(card, allCards) {
-  const wrong = shuffleArray(allCards.filter(c => c.term !== card.term))
-    .slice(0, 3)
-    .map(c => c.definition);
-  while (wrong.length < 3) {
-    wrong.push(card.definition.split('').reverse().join(''));
-  }
-  return shuffleArray([card.definition, ...wrong]);
-}
-
-function getMultiplier(chain) {
-  if (chain >= 10) return 5;
-  if (chain >= 7) return 4;
-  if (chain >= 5) return 3;
-  if (chain >= 3) return 2;
-  return 1;
-}
-
-function getComboLabel(chain) {
-  if (chain >= 10) return '🔥 НЕВЕРОЯТНО!';
-  if (chain >= 7) return '🔥 СУПЕР!';
-  if (chain >= 5) return '⚡ ОТЛИЧНО!';
-  if (chain >= 3) return '✨ КОМБО!';
-  return '';
-}
-
-/* ═══════════════════════════════════════
-   КОМПОНЕНТ
-   ═══════════════════════════════════════ */
-function ChainGame() {
+export default function ChainGame() {
+  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const setId = searchParams.get('setId');
+  const setId = params.get('setId');
 
-  /* загрузка */
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentSet, setCurrentSet] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
+  const [currentSet, setCurrentSet] = useState(null);
+  const [queue, setQueue] = useState([]);
 
-  /* игра */
   const [gameStarted, setGameStarted] = useState(false);
+  const [finished, setFinished] = useState(false);
   const [round, setRound] = useState(0);
-  const [score, setScore] = useState(0);
   const [chain, setChain] = useState(0);
   const [maxChain, setMaxChain] = useState(0);
+  const [score, setScore] = useState(0);
   const [correct, setCorrect] = useState(0);
-  const [questionsQueue, setQuestionsQueue] = useState([]);
-  const [currentCard, setCurrentCard] = useState(null);
-  const [options, setOptions] = useState([]);
-  const [selectedIdx, setSelectedIdx] = useState(null);
-  const [answerResult, setAnswerResult] = useState(null);
-  const [pointsEarned, setPointsEarned] = useState(0);
-  const [chainHistory, setChainHistory] = useState([]); // [{result: 'correct'|'wrong', index: n}]
-  const [isFinished, setIsFinished] = useState(false);
+  const [answer, setAnswer] = useState('');
+  const [status, setStatus] = useState(null); // 'correct' | 'wrong'
+  const [correctAnswer, setCorrectAnswer] = useState('');
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [breaking, setBreaking] = useState(false);
 
-  const sessionStart = useRef(Date.now());
+  const inputRef = useRef(null);
+  const timerRef = useRef(null);
+  const sessionStart = useRef(0);
   const statsRecorded = useRef(false);
-  const transitioning = useRef(false);
 
-  /* загрузка набора */
+  /* fetch flashcards */
   useEffect(() => {
-    if (setId) fetchSet(setId);
+    if (!setId) return;
+    const load = async () => {
+      try {
+        const r = await authFetch(`${API_ROUTES.DATA.SETS}/${setId}`);
+        if (!r.ok) throw new Error('Набор не найден');
+        const d = await r.json();
+        const cards = (d.cards || d.flashcards || []).filter(c => c.term && c.definition);
+        if (cards.length < 4) throw new Error('Нужно минимум 4 карточки');
+        setFlashcards(cards);
+        setCurrentSet(d);
+      } catch (e) { setError(e.message); }
+      finally { setLoading(false); }
+    };
+    load();
   }, [setId]);
 
-  const fetchSet = async (id) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await authFetch(`${API_ROUTES.DATA.SETS}/${id}`);
-      if (!res.ok) throw new Error('Не удалось загрузить набор');
-      const data = await res.json();
-      setCurrentSet(data);
-      if (data.flashcards && data.flashcards.length >= 4) {
-        setFlashcards(data.flashcards);
-      } else {
-        setError('Нужно минимум 4 карточки для этой игры');
-      }
-    } catch (err) {
-      setError(err.message || 'Ошибка загрузки');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* подготовка очереди */
-  const prepareQueue = useCallback(() => {
-    const queue = [];
-    const shuffled = shuffleArray(flashcards);
-    for (let i = 0; i < TOTAL_ROUNDS; i++) {
-      queue.push(shuffled[i % shuffled.length]);
-    }
-    return queue;
+  const buildQueue = useCallback(() => {
+    const shuffled = [...flashcards].sort(() => Math.random() - 0.5);
+    const q = [];
+    for (let i = 0; i < TOTAL; i++) q.push(shuffled[i % shuffled.length]);
+    return q;
   }, [flashcards]);
 
-  /* старт */
-  const startGame = useCallback(() => {
-    const queue = prepareQueue();
-    setQuestionsQueue(queue);
-    setCurrentCard(queue[0]);
-    setOptions(generateOptions(queue[0], flashcards));
-    setRound(0);
-    setScore(0);
-    setChain(0);
-    setMaxChain(0);
-    setCorrect(0);
-    setSelectedIdx(null);
-    setAnswerResult(null);
-    setPointsEarned(0);
-    setChainHistory([]);
-    setIsFinished(false);
-    setGameStarted(true);
+  const startGame = () => {
+    const q = buildQueue();
+    setQueue(q);
+    setRound(0); setChain(0); setMaxChain(0); setScore(0); setCorrect(0);
+    setAnswer(''); setStatus(null); setCorrectAnswer(''); setBreaking(false);
+    setTimeLeft(TIME_LIMIT); setFinished(false); setGameStarted(true);
     sessionStart.current = Date.now();
     statsRecorded.current = false;
-    transitioning.current = false;
-  }, [prepareQueue, flashcards]);
+    setTimeout(() => inputRef.current?.focus(), 200);
+  };
 
-  /* переход к следующему вопросу */
-  const nextQuestion = useCallback(() => {
-    if (transitioning.current) return;
-    transitioning.current = true;
+  /* timer */
+  useEffect(() => {
+    if (!gameStarted || finished || status) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 0.1) {
+          clearInterval(timerRef.current);
+          handleTimeout();
+          return 0;
+        }
+        return Math.max(0, t - 0.1);
+      });
+    }, 100);
+    return () => clearInterval(timerRef.current);
+  }, [gameStarted, finished, round, status]);
 
-    const nextRound = round + 1;
-    if (nextRound >= TOTAL_ROUNDS) {
-      setIsFinished(true);
-      if (correct > TOTAL_ROUNDS * 0.7) {
-        trackGameWin();
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-      }
-      transitioning.current = false;
-      return;
-    }
+  const handleTimeout = () => {
+    clearInterval(timerRef.current);
+    setStatus('wrong');
+    setCorrectAnswer(queue[round]?.definition || '');
+    setBreaking(true);
+    setChain(0);
+    setTimeout(() => { setBreaking(false); nextRound(); }, 2000);
+  };
 
-    setRound(nextRound);
-    const nextCard = questionsQueue[nextRound];
-    setCurrentCard(nextCard);
-    setOptions(generateOptions(nextCard, flashcards));
-    setSelectedIdx(null);
-    setAnswerResult(null);
-    setPointsEarned(0);
-    transitioning.current = false;
-  }, [round, questionsQueue, flashcards, correct]);
+  const getMultiplier = (c) => c >= 10 ? 5 : c >= 7 ? 4 : c >= 5 ? 3 : c >= 3 ? 2 : 1;
 
-  /* обработка ответа */
-  const handleOption = (idx) => {
-    if (answerResult !== null || transitioning.current) return;
+  const handleSubmit = (e) => {
+    e?.preventDefault();
+    if (status || !answer.trim()) return;
+    clearInterval(timerRef.current);
 
-    setSelectedIdx(idx);
-    const isCorrect = options[idx] === currentCard.definition;
+    const card = queue[round];
+    const sim = similarity(answer, card.definition);
+    const isCorrect = sim >= 0.75;
 
     if (isCorrect) {
       const newChain = chain + 1;
       const mult = getMultiplier(newChain);
-      const pts = 10 * mult;
+      const speedBonus = Math.round(timeLeft * 2);
+      const pts = (10 + speedBonus) * mult;
       setChain(newChain);
-      setMaxChain(prev => Math.max(prev, newChain));
-      setScore(prev => prev + pts);
-      setCorrect(prev => prev + 1);
-      setPointsEarned(pts);
-      setAnswerResult('correct');
-      setChainHistory(prev => [...prev, { result: 'correct', index: newChain }]);
-
-      if (newChain % 5 === 0) {
-        confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
-      }
+      setMaxChain(m => Math.max(m, newChain));
+      setScore(s => s + pts);
+      setCorrect(c => c + 1);
+      setStatus('correct');
+      if (newChain % 5 === 0) confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
     } else {
+      setStatus('wrong');
+      setCorrectAnswer(card.definition);
+      setBreaking(true);
       setChain(0);
-      setPointsEarned(0);
-      setAnswerResult('wrong');
-      setChainHistory(prev => [...prev, { result: 'wrong', index: 0 }]);
     }
-
-    setTimeout(nextQuestion, 1300);
+    setTimeout(() => { setBreaking(false); nextRound(); }, isCorrect ? 1000 : 2500);
   };
 
-  /* статистика */
+  const nextRound = () => {
+    if (round + 1 >= TOTAL) {
+      setFinished(true);
+      return;
+    }
+    setRound(r => r + 1);
+    setAnswer('');
+    setStatus(null);
+    setCorrectAnswer('');
+    setTimeLeft(TIME_LIMIT);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  const getHint = () => {
+    if (!queue[round]) return '';
+    const def = queue[round].definition;
+    const first = def.charAt(0);
+    const len = def.length;
+    return `${first}${'·'.repeat(len - 1)} (${len} букв)`;
+  };
+
+  /* stats */
   const recordStats = useCallback(async () => {
     if (statsRecorded.current) return;
     statsRecorded.current = true;
     try {
-      const timeSpent = Math.round((Date.now() - sessionStart.current) / 1000);
+      const t = Math.round((Date.now() - sessionStart.current) / 1000);
       await authFetch(API_ROUTES.DATA.STATS_SESSION, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'chain',
-          cardsCount: TOTAL_ROUNDS,
-          correctCount: correct,
-          timeSpent
-        })
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'chain', cardsCount: TOTAL, correctCount: correct, timeSpent: t })
       });
-    } catch (e) { console.error('Stats:', e); }
+      if (correct / TOTAL >= 0.7) trackGameWin();
+    } catch {}
   }, [correct]);
 
-  useEffect(() => {
-    if (isFinished) recordStats();
-  }, [isFinished, recordStats]);
+  useEffect(() => { if (finished) recordStats(); }, [finished, recordStats]);
 
-  /* ────── RENDER ────── */
-  const handleSelectSet = (set) => navigate(`/games/chain?setId=${set._id || set.id}`);
+  /* render */
+  if (!setId) return <SetSelector title="⛓️ Цепочка" subtitle="Печатайте определения на скорость!" onSelectSet={s => navigate(`/games/chain?setId=${s._id || s.id}`)} gameMode />;
+  if (loading) return <Container><LoadW>⏳ Загрузка...</LoadW></Container>;
+  if (error) return <Container><ErrW><h3>😕 Ошибка</h3><p>{error}</p><Btn onClick={() => navigate('/games/chain')}>Другой набор</Btn></ErrW></Container>;
 
-  if (!setId) {
-    return (
-      <SetSelector
-        title="🔗 Цепочка"
-        subtitle="Выберите набор карточек"
-        onSelectSet={handleSelectSet}
-        gameMode
-      />
-    );
-  }
-
-  if (loading) return <Container><LoadingWrap><div className="spinner" /></LoadingWrap></Container>;
-  if (error) return (
-    <Container>
-      <ErrorWrap>
-        <h3>😕 Ошибка</h3><p>{error}</p>
-        <Btn onClick={() => navigate('/games/chain')} style={{ marginTop: '1rem' }}>
-          Выбрать другой набор
-        </Btn>
-      </ErrorWrap>
-    </Container>
-  );
-
-  /* ──── результат ──── */
-  if (isFinished) {
-    const accuracy = TOTAL_ROUNDS > 0 ? Math.round((correct / TOTAL_ROUNDS) * 100) : 0;
+  if (finished) {
+    const acc = Math.round((correct / TOTAL) * 100);
     return (
       <Container>
-        <ResultCard>
-          <ResultTitle>{accuracy >= 70 ? '🏆 Отличная цепочка!' : '🔗 Игра окончена'}</ResultTitle>
-          <ResultText>
-            {accuracy >= 90 ? 'Невероятный результат! Вы мастер цепочек!' :
-             accuracy >= 70 ? 'Отличная работа! Цепочка была впечатляющей!' :
-             'Неплохо! Тренируйтесь, чтобы построить более длинную цепочку!'}
-          </ResultText>
+        <Card>
+          <Title>{acc >= 70 ? '🏆 Отличная цепочка!' : '⛓️ Игра окончена'}</Title>
+          <Sub>{acc >= 90 ? 'Невероятная скорость и точность!' : acc >= 70 ? 'Отличная работа!' : 'Продолжайте тренироваться!'}</Sub>
           <StatsGrid>
-            <StatBox $color="#7c3aed">
-              <div className="val">{score}</div>
-              <div className="lbl">🏅 Очков</div>
-            </StatBox>
-            <StatBox $color="#f59e0b">
-              <div className="val">{maxChain}</div>
-              <div className="lbl">🔗 Макс. цепь</div>
-            </StatBox>
-            <StatBox $color="#22c55e">
-              <div className="val">{accuracy}%</div>
-              <div className="lbl">🎯 Точность</div>
-            </StatBox>
-            <StatBox $color="#3b82f6">
-              <div className="val">{correct}/{TOTAL_ROUNDS}</div>
-              <div className="lbl">✅ Верных</div>
-            </StatBox>
+            <StatBox $c="#7c3aed"><div className="val">{score}</div><div className="lbl">🏅 Очков</div></StatBox>
+            <StatBox $c="#f59e0b"><div className="val">{maxChain}</div><div className="lbl">⛓️ Макс. цепь</div></StatBox>
+            <StatBox $c="#22c55e"><div className="val">{acc}%</div><div className="lbl">🎯 Точность</div></StatBox>
+            <StatBox $c="#3b82f6"><div className="val">{correct}/{TOTAL}</div><div className="lbl">✅ Верных</div></StatBox>
           </StatsGrid>
           <BtnRow>
             <Btn onClick={startGame}>Играть снова 🔄</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/games/chain')}>
-              Другой набор
-            </Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/dashboard')}>
-              ⬅️ Назад
-            </Btn>
+            <Btn $v="secondary" onClick={() => navigate('/games/chain')}>Другой набор</Btn>
+            <Btn $v="secondary" onClick={() => navigate('/dashboard')}>⬅️ Назад</Btn>
           </BtnRow>
-        </ResultCard>
+        </Card>
       </Container>
     );
   }
 
-  /* ──── стартовый экран ──── */
   if (!gameStarted) {
     return (
       <Container>
-        <Header>
-          <Title>🔗 Цепочка</Title>
-          <Subtitle>Создайте самую длинную цепь правильных ответов!</Subtitle>
-        </Header>
-
+        <Title>⛓️ Цепочка</Title>
+        <Sub>Печатайте определения на скорость — стройте цепочку!</Sub>
         {currentSet && (
-          <div style={{
-            background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
-            padding: '1rem 1.5rem',
-            borderRadius: 12,
-            textAlign: 'center',
-            marginBottom: '1.5rem',
-            border: '1px solid var(--border-color, transparent)'
-          }}>
-            <h3 style={{ margin: '0 0 0.25rem', color: '#5b21b6' }}>📚 {currentSet.title}</h3>
-            <p style={{ margin: 0, color: '#7c3aed', fontSize: '0.9rem' }}>
-              {currentSet.flashcards?.length || 0} карточек
-            </p>
+          <div style={{ background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', padding: '1rem', borderRadius: 12, textAlign: 'center', marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: 0, color: '#5b21b6' }}>📚 {currentSet.title}</h3>
+            <p style={{ margin: '4px 0 0', color: '#7c3aed', fontSize: '0.9rem' }}>{flashcards.length} карточек</p>
           </div>
         )}
-
-        <ResultCard>
+        <Card>
           <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⛓️</div>
-          <ResultTitle style={{ fontSize: '2rem' }}>Правила</ResultTitle>
-          <div style={{
-            textAlign: 'left',
-            maxWidth: 420,
-            margin: '1.5rem auto',
-            lineHeight: 1.9,
-            color: 'var(--text-primary)',
-            fontSize: '1rem'
-          }}>
-            <div>📝 <strong>{TOTAL_ROUNDS} раундов</strong> с вопросами</div>
-            <div>✅ Правильный ответ добавляет звено в цепь</div>
-            <div>❌ Ошибка разрывает цепь — начинайте заново</div>
-            <div>⚡ <strong>Комбо-множитель</strong> растёт с длиной цепи</div>
-            <div>🔗 3 подряд = x2, 5 = x3, 7 = x4, 10 = x5!</div>
-            <div>🏆 Цель — набрать максимум очков</div>
-          </div>
+          <h2>Правила</h2>
+          <RulesBox>
+            <div>⌨️ <strong>Печатайте</strong> определение для каждого термина</div>
+            <div>⏱️ <strong>{TIME_LIMIT} секунд</strong> на каждый ответ</div>
+            <div>⛓️ Правильные ответы подряд = цепочка</div>
+            <div>⚡ Цепь 3+ = x2, 5+ = x3, 7+ = x4, 10+ = x5</div>
+            <div>🚀 Чем быстрее — тем больше бонусных очков</div>
+            <div>💡 Подсказка: первая буква и длина слова</div>
+          </RulesBox>
           <BtnRow>
             <Btn onClick={startGame}>🚀 Начать игру</Btn>
-            <Btn $variant="secondary" onClick={() => navigate('/games/chain')}>
-              Другой набор
-            </Btn>
+            <Btn $v="secondary" onClick={() => navigate('/games/chain')}>Другой набор</Btn>
           </BtnRow>
-        </ResultCard>
+        </Card>
       </Container>
     );
   }
 
-  /* ──── основная игра ──── */
-  const progress = ((round + 1) / TOTAL_ROUNDS) * 100;
+  const pct = (timeLeft / TIME_LIMIT) * 100;
+  const progress = ((round + 1) / TOTAL) * 100;
   const mult = getMultiplier(chain);
-  const comboLabel = getComboLabel(chain);
 
   return (
     <Container>
-      <Header>
-        <Title>🔗 Цепочка</Title>
-      </Header>
-
-      <ProgressBar>
-        <ProgressFill $pct={progress} />
-      </ProgressBar>
+      <Title>⛓️ Цепочка</Title>
+      <ProgressBar><ProgressFill $pct={progress} /></ProgressBar>
 
       <TopBar>
-        <Stat $color="#7c3aed">
-          <div className="val">{score}</div>
-          <div className="lbl">Очки</div>
-        </Stat>
-        <Stat $color="#f59e0b">
-          <div className="val">🔗 {chain}</div>
-          <div className="lbl">Цепь</div>
-        </Stat>
-        <Stat $color="#22c55e">
-          <div className="val">{correct}</div>
-          <div className="lbl">Верных</div>
-        </Stat>
-        <Stat>
-          <div className="val">{round + 1}/{TOTAL_ROUNDS}</div>
-          <div className="lbl">Раунд</div>
-        </Stat>
+        <Stat $c="#7c3aed"><div className="val">{score}</div><div className="lbl">Очки</div></Stat>
+        <Stat $c="#f59e0b"><div className="val">⛓️ {chain}</div><div className="lbl">Цепь {mult > 1 ? `x${mult}` : ''}</div></Stat>
+        <Stat $c="#22c55e"><div className="val">{correct}</div><div className="lbl">Верных</div></Stat>
+        <Stat><div className="val">{round + 1}/{TOTAL}</div><div className="lbl">Раунд</div></Stat>
       </TopBar>
 
-      {/* визуализация цепочки */}
-      <ChainContainer>
-        <ChainLabel>Текущая цепочка</ChainLabel>
+      <ChainViz>
+        {chain === 0 && !breaking && <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Начните цепь правильным ответом!</span>}
+        {Array.from({ length: Math.min(chain, 12) }).map((_, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <Connector />}
+            <Link $breaking={breaking}>{i + 1}</Link>
+          </React.Fragment>
+        ))}
+        {chain > 12 && <span style={{ fontWeight: 700, color: '#7c3aed', marginLeft: 6 }}>+{chain - 12}</span>}
+      </ChainViz>
 
-        {chain > 0 && comboLabel && (
-          <ComboDisplay $active $combo={chain}>
-            {comboLabel}
-            <MultiplierBadge $combo={chain}>x{mult}</MultiplierBadge>
-          </ComboDisplay>
+      {chain >= 3 && <ComboLabel key={chain}>🔥 x{mult} Комбо!</ComboLabel>}
+
+      <Card $shake={status === 'wrong'}>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Раунд {round + 1} из {TOTAL}</div>
+        <TermDisplay key={round}>{queue[round]?.term}</TermDisplay>
+        <HintText>💡 Подсказка: <span>{getHint()}</span></HintText>
+
+        <TimerBar><TimerFill $pct={pct} /></TimerBar>
+
+        <form onSubmit={handleSubmit}>
+          <InputRow>
+            <Input
+              ref={inputRef}
+              value={answer}
+              onChange={e => setAnswer(e.target.value)}
+              placeholder="Введите определение..."
+              $status={status}
+              disabled={!!status}
+              autoComplete="off"
+              autoFocus
+            />
+            <SubmitBtn type="submit" disabled={!!status || !answer.trim()}>
+              Ответить
+            </SubmitBtn>
+          </InputRow>
+        </form>
+
+        {status === 'correct' && <Feedback $correct>✅ Верно! +{Math.round(timeLeft * 2) + 10} очков</Feedback>}
+        {status === 'wrong' && (
+          <Feedback>
+            ❌ Неверно! Правильный ответ: <strong>{correctAnswer}</strong>
+          </Feedback>
         )}
-
-        <ChainTrack>
-          {chain === 0 && chainHistory.length > 0 && (
-            <EmptyChain>Цепь разорвана! Начните новую 💪</EmptyChain>
-          )}
-          {chain === 0 && chainHistory.length === 0 && (
-            <EmptyChain>Ответьте правильно, чтобы начать цепь</EmptyChain>
-          )}
-          {Array.from({ length: Math.min(chain, 15) }).map((_, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <ChainConnector />}
-              <ChainLink $index={i}>
-                {i + 1}
-              </ChainLink>
-            </React.Fragment>
-          ))}
-          {chain > 15 && (
-            <span style={{ marginLeft: 8, color: 'var(--text-secondary)', fontWeight: 600 }}>
-              +{chain - 15}…
-            </span>
-          )}
-        </ChainTrack>
-      </ChainContainer>
-
-      {/* вопрос */}
-      {currentCard && (
-        <QuestionCard $status={answerResult}>
-          <QuestionLabel>
-            Раунд {round + 1} из {TOTAL_ROUNDS}
-          </QuestionLabel>
-          <QuestionText>{currentCard.term}</QuestionText>
-
-          <OptionsGrid>
-            {options.map((opt, idx) => {
-              const isSelected = selectedIdx === idx;
-              const isCorrectOption = opt === currentCard.definition;
-              return (
-                <OptionBtn
-                  key={idx}
-                  disabled={answerResult !== null}
-                  $correct={answerResult !== null && isCorrectOption}
-                  $wrong={answerResult === 'wrong' && isSelected}
-                  onClick={() => handleOption(idx)}
-                >
-                  {opt}
-                </OptionBtn>
-              );
-            })}
-          </OptionsGrid>
-
-          {answerResult === 'correct' && pointsEarned > 0 && (
-            <PointsPopup $correct>
-              +{pointsEarned} очков!
-              {mult > 1 && ` (x${mult})`}
-            </PointsPopup>
-          )}
-          {answerResult === 'wrong' && (
-            <PointsPopup>
-              💔 Цепь разорвана!
-            </PointsPopup>
-          )}
-        </QuestionCard>
-      )}
+      </Card>
     </Container>
   );
 }
-
-export default ChainGame;
