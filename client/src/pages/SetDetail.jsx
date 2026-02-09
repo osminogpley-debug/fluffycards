@@ -785,6 +785,7 @@ function SetDetail() {
   }
 
   const flashcards = setData.flashcards || setData.cards || [];
+  const clozeAvailable = Boolean(setData?.clozeText) && (setData?.clozeBlanks?.length || 0) > 0;
   const authorName = setData.owner?.username || setData.author?.username || setData.author?.name || 'Неизвестный автор';
   const authorAvatar = setData.owner?.username?.[0]?.toUpperCase() || setData.author?.avatar || '👤';
 
@@ -1046,6 +1047,13 @@ function SetDetail() {
                 disabled={flashcards.length === 0}
               >
                 <span className="game-icon">🐝</span> Соты
+              </GameButton>
+              <GameButton 
+                gradient="#fde68a, #f59e0b"
+                onClick={() => navigateToGame('fill-blanks')}
+                disabled={!clozeAvailable}
+              >
+                <span className="game-icon">🧩</span> Пропуски
               </GameButton>
             </GamesGrid>
           </Section>

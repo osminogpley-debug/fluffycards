@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { API_ROUTES, authFetch } from '../../constants/api';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -369,6 +370,12 @@ const EmptyState = styled.div`
   color: #718096;
 `;
 
+const ErrorText = styled.div`
+  color: #ef4444;
+  font-size: 0.9rem;
+  margin-top: 8px;
+`;
+
 const EmptyIcon = styled.div`
   font-size: 3rem;
   margin-bottom: 1rem;
@@ -384,6 +391,7 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
   const [isLoading, setIsLoading] = useState(false);
   const [mergeSuccess, setMergeSuccess] = useState(false);
   const [nameError, setNameError] = useState(false);
+  const [mergeError, setMergeError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -394,6 +402,7 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
       setTagInput('');
       setMergeSuccess(false);
       setNameError(false);
+      setMergeError('');
     }
   }, [isOpen]);
 
@@ -409,8 +418,8 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
     const selected = userSets.filter(set => selectedSets.includes(set._id));
     let allCards = [];
     selected.forEach(set => {
-      if (set.cards) {
-        allCards = [...allCards, ...set.cards];
+      if (set.flashcards) {
+        allCards = [...allCards, ...set.flashcards];
       }
     });
     return allCards.slice(0, 5);
@@ -418,7 +427,7 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
 
   const getTotalCards = () => {
     const selected = userSets.filter(set => selectedSets.includes(set._id));
-    return selected.reduce((total, set) => total + (set.cardCount || set.cards?.length || 0), 0);
+    return selected.reduce((total, set) => total + (set.cardCount || set.flashcards?.length || 0), 0);
   };
 
   const handleTagKeyDown = (e) => {
@@ -442,28 +451,40 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
       return;
     }
 
+    if (selectedSets.length < 2) {
+      setMergeError('Выберите минимум два набора для объединения');
+      return;
+    }
+
     setIsLoading(true);
-    
-    // Имитация API вызова
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const selected = userSets.filter(set => selectedSets.includes(set._id));
-    const mergedData = {
-      name: mergedName,
-      description: mergedDescription,
-      tags,
-      sets: selected,
-      totalCards: getTotalCards()
-    };
-    
-    onMerge?.(mergedData);
-    
-    setIsLoading(false);
-    setMergeSuccess(true);
-    
-    setTimeout(() => {
-      onClose();
-    }, 1500);
+    setMergeError('');
+
+    try {
+      const res = await authFetch(`${API_ROUTES.DATA.SETS}/merge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          setIds: selectedSets,
+          title: mergedName.trim(),
+          description: mergedDescription.trim(),
+          tags
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Ошибка объединения наборов');
+      }
+
+      const mergedSet = await res.json();
+      onMerge?.(mergedSet);
+      setMergeSuccess(true);
+      setTimeout(() => onClose(), 1200);
+    } catch (err) {
+      setMergeError(err.message || 'Ошибка объединения наборов');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -581,6 +602,7 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
                     placeholder={tags.length === 0 ? "Добавьте теги..." : ""}
                   />
                 </TagsInput>
+                {mergeError && <ErrorText>{mergeError}</ErrorText>}
               </InputGroup>
             </>
           )}

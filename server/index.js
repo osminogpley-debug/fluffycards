@@ -19,6 +19,7 @@ import chatRoutes from './routes/chat.js';
 import translateRoutes from './routes/translate.js';
 import uploadRoutes from './routes/upload.js';
 import attendanceRoutes from './routes/attendance.js';
+import draftRoutes from './routes/drafts.js';
 import authMiddleware from './middleware/auth.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -69,6 +70,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/translate', translateRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/drafts', draftRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static('/var/www/fluffycards/uploads'));

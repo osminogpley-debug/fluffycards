@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -299,6 +299,58 @@ const DangerButton = styled(Button)`
     background: linear-gradient(135deg, #feb2b2 0%, #fc8181 100%);
     transform: translateY(-2px);
   }
+`;
+
+const ConfirmOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+`;
+
+const ConfirmModal = styled.div`
+  width: 100%;
+  max-width: 460px;
+  background: var(--card-bg);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+`;
+
+const ConfirmHeader = styled.div`
+  padding: 20px 24px 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+`;
+
+const ConfirmBody = styled.div`
+  padding: 0 24px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+`;
+
+const ConfirmActions = styled.div`
+  padding: 0 24px 24px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+`;
+
+const DraftStatus = styled.div`
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
 `;
 
 const MainContent = styled.main`
@@ -818,6 +870,79 @@ const ImportSection = styled.div`
   transition: all 0.4s ease;
 `;
 
+const ClozeEditor = styled.div`
+  display: grid;
+  gap: 16px;
+`;
+
+const ClozeTextArea = styled(TextArea)`
+  min-height: 160px;
+`;
+
+const ClozeActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const ClozePreview = styled.div`
+  background: var(--bg-tertiary);
+  border: 2px dashed var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+`;
+
+const ClozeBlank = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 10px;
+  margin: 0 4px;
+  min-width: 48px;
+  border-radius: 999px;
+  background: ${props => props.$highlight ? '#fde68a' : 'var(--bg-secondary)'};
+  color: ${props => props.$highlight ? '#92400e' : 'var(--text-secondary)'};
+  border: 2px solid ${props => props.$highlight ? '#f59e0b' : 'var(--border-color)'};
+  font-weight: 600;
+  letter-spacing: 1px;
+`;
+
+const ClozeList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+`;
+
+const ClozeChip = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  font-size: 13px;
+  color: var(--text-primary);
+`;
+
+const ClozeRemove = styled.button`
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 14px;
+`;
+
+const ClozeHint = styled.div`
+  font-size: 13px;
+  color: var(--text-secondary);
+`;
+
 const FooterActions = styled.div`
   display: flex;
   gap: 16px;
@@ -1047,6 +1172,10 @@ function SetBuilder() {
   const [isPublic, setIsPublic] = useState(false);
   const [tags, setTags] = useState([]);
   const [cards, setCards] = useState([{ id: Date.now(), term: '', definition: '', pinyin: '', translation: '', imageUrl: '', tabSplit: false }]);
+  const [clozeText, setClozeText] = useState('');
+  const [clozeBlanks, setClozeBlanks] = useState([]);
+  const [clozeError, setClozeError] = useState('');
+  const [clozeNotice, setClozeNotice] = useState('');
   const [importText, setImportText] = useState('');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [popularTags, setPopularTags] = useState([]);
@@ -1057,6 +1186,15 @@ function SetBuilder() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
+  const [draftStatus, setDraftStatus] = useState('');
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [exitTarget, setExitTarget] = useState('/dashboard');
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  const autosaveTimerRef = useRef(null);
+  const lastSavedSnapshotRef = useRef('');
+  const clozeTextRef = useRef(null);
   
   // Состояние загрузки пиньиня для каждой карточки
   const [loadingPinyin, setLoadingPinyin] = useState({});
@@ -1068,11 +1206,14 @@ function SetBuilder() {
   
   // Загрузка данных при редактировании
   useEffect(() => {
-    if (isEditMode && id) {
-      loadSetData();
-    }
-    // Загружаем популярные теги
-    loadPopularTags();
+    const init = async () => {
+      if (isEditMode && id) {
+        await loadSetData();
+      }
+      await loadDraft();
+      loadPopularTags();
+    };
+    init();
   }, [isEditMode, id]);
   
   const loadPopularTags = async () => {
@@ -1088,6 +1229,204 @@ function SetBuilder() {
       console.error('Error loading popular tags:', error);
     }
   };
+
+  const buildClozeSegments = (text, blanks) => {
+    if (!text) return [];
+    const sorted = [...blanks].sort((a, b) => a.start - b.start);
+    const segments = [];
+    let cursor = 0;
+
+    sorted.forEach((blank, index) => {
+      if (blank.start > cursor) {
+        segments.push({ type: 'text', value: text.slice(cursor, blank.start) });
+      }
+      segments.push({ type: 'blank', index, answer: blank.answer });
+      cursor = blank.end;
+    });
+
+    if (cursor < text.length) {
+      segments.push({ type: 'text', value: text.slice(cursor) });
+    }
+
+    return segments;
+  };
+
+  const addClozeBlank = () => {
+    setClozeError('');
+    if (!clozeTextRef.current) return;
+    const start = clozeTextRef.current.selectionStart;
+    const end = clozeTextRef.current.selectionEnd;
+
+    if (start === end) {
+      setClozeError('Выделите слово или фразу для пропуска');
+      return;
+    }
+
+    const raw = clozeText.slice(start, end);
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      setClozeError('Выделение не содержит текста');
+      return;
+    }
+
+    const offset = raw.indexOf(trimmed);
+    const blankStart = start + offset;
+    const blankEnd = blankStart + trimmed.length;
+
+    const overlaps = clozeBlanks.some(blank => blankStart < blank.end && blankEnd > blank.start);
+    if (overlaps) {
+      setClozeError('Этот участок уже используется как пропуск');
+      return;
+    }
+
+    const nextBlanks = [...clozeBlanks, { start: blankStart, end: blankEnd, answer: trimmed }]
+      .sort((a, b) => a.start - b.start);
+    setClozeBlanks(nextBlanks);
+  };
+
+  const removeClozeBlank = (index) => {
+    setClozeBlanks(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  const buildDraftPayload = () => {
+    return {
+      setId: isEditMode ? id : null,
+      title: title.trim(),
+      description: description.trim(),
+      coverImage: coverImage || '',
+      isPublic,
+      tags: tags.filter(tag => tag.trim()),
+      clozeText,
+      clozeBlanks,
+      cards: cards.map(card => ({
+        id: String(card.id),
+        term: card.term || '',
+        definition: card.definition || '',
+        pinyin: card.pinyin || '',
+        translation: card.translation || '',
+        imageUrl: card.imageUrl || ''
+      }))
+    };
+  };
+
+  const hasDraftData = () => {
+    if (title.trim() || description.trim() || coverImage.trim()) return true;
+    if (tags.length > 0) return true;
+    if (clozeText.trim() || clozeBlanks.length > 0) return true;
+    return cards.some(card => card.term.trim() || card.definition.trim());
+  };
+
+  const saveDraft = async (silent = false) => {
+    if (!hasDraftData()) return;
+
+    const snapshot = JSON.stringify(buildDraftPayload());
+    if (snapshot === lastSavedSnapshotRef.current) return;
+
+    setSavingDraft(true);
+    try {
+      const res = await authFetch(`${API_ROUTES.DATA.DRAFTS}/sets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildDraftPayload())
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        lastSavedSnapshotRef.current = snapshot;
+        if (!silent) {
+          setDraftStatus('Черновик сохранен');
+          setTimeout(() => setDraftStatus(''), 2000);
+        }
+      }
+    } catch (err) {
+      if (!silent) {
+        setDraftStatus('Ошибка сохранения черновика');
+        setTimeout(() => setDraftStatus(''), 2500);
+      }
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const applyDraftData = (draft) => {
+    setTitle(draft?.title || '');
+    setDescription(draft?.description || '');
+    setCoverImage(draft?.coverImage || '');
+    setIsPublic(Boolean(draft?.isPublic));
+    setTags(draft?.tags || []);
+    setClozeText(draft?.clozeText || '');
+    setClozeBlanks(draft?.clozeBlanks || []);
+
+    const draftCards = Array.isArray(draft?.cards) && draft.cards.length > 0
+      ? draft.cards.map((card, index) => ({
+        id: card.id || String(Date.now() + index),
+        term: card.term || '',
+        definition: card.definition || '',
+        pinyin: card.pinyin || '',
+        translation: card.translation || '',
+        imageUrl: card.imageUrl || '',
+        tabSplit: false
+      }))
+      : [{ id: Date.now(), term: '', definition: '', pinyin: '', translation: '', imageUrl: '', tabSplit: false }];
+
+    setCards(draftCards);
+
+    const termsMap = {};
+    draftCards.forEach(card => {
+      termsMap[card.id] = card.term;
+    });
+    setOriginalTerms(termsMap);
+
+    const snapshot = JSON.stringify({
+      setId: isEditMode ? id : null,
+      title: draft?.title || '',
+      description: draft?.description || '',
+      coverImage: draft?.coverImage || '',
+      isPublic: Boolean(draft?.isPublic),
+      tags: draft?.tags || [],
+      clozeText: draft?.clozeText || '',
+      clozeBlanks: draft?.clozeBlanks || [],
+      cards: draftCards.map(card => ({
+        id: String(card.id),
+        term: card.term || '',
+        definition: card.definition || '',
+        pinyin: card.pinyin || '',
+        translation: card.translation || '',
+        imageUrl: card.imageUrl || ''
+      }))
+    });
+    lastSavedSnapshotRef.current = snapshot;
+  };
+
+  const loadDraft = async () => {
+    try {
+      const params = isEditMode && id ? `?setId=${id}` : '';
+      const res = await authFetch(`${API_ROUTES.DATA.DRAFTS}/sets${params}`);
+      if (!res.ok) return;
+      const draft = await res.json();
+      if (draft) {
+        applyDraftData(draft);
+        setDraftStatus('Черновик восстановлен');
+        setTimeout(() => setDraftStatus(''), 2500);
+      }
+    } catch (err) {
+      console.warn('Draft load error:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    if (!hasDraftData()) return;
+
+    const snapshot = JSON.stringify(buildDraftPayload());
+    if (snapshot === lastSavedSnapshotRef.current) return;
+
+    autosaveTimerRef.current = setTimeout(() => {
+      saveDraft(true);
+    }, 1500);
+
+    return () => clearTimeout(autosaveTimerRef.current);
+  }, [title, description, coverImage, isPublic, tags, cards, clozeText, clozeBlanks]);
   
   // useEffect для отслеживания изменения term
   // Если term изменился и это китайское слово - сбрасываем pinyin и translation
@@ -1121,6 +1460,8 @@ function SetBuilder() {
       setCoverImage(data.coverImage || '');
       setIsPublic(data.isPublic || false);
       setTags(data.tags || []);
+      setClozeText(data.clozeText || '');
+      setClozeBlanks(data.clozeBlanks || []);
       
       if (data.flashcards && data.flashcards.length > 0) {
         const loadedCards = data.flashcards.map((card, index) => ({
@@ -1141,6 +1482,25 @@ function SetBuilder() {
           termsMap[card.id] = card.term;
         });
         setOriginalTerms(termsMap);
+
+        lastSavedSnapshotRef.current = JSON.stringify({
+          setId: id,
+          title: data.title || '',
+          description: data.description || '',
+          coverImage: data.coverImage || '',
+          isPublic: Boolean(data.isPublic),
+          tags: data.tags || [],
+          clozeText: data.clozeText || '',
+          clozeBlanks: data.clozeBlanks || [],
+          cards: loadedCards.map(card => ({
+            id: String(card.id),
+            term: card.term || '',
+            definition: card.definition || '',
+            pinyin: card.pinyin || '',
+            translation: card.translation || '',
+            imageUrl: card.imageUrl || ''
+          }))
+        });
       }
     } catch (err) {
       setError('Ошибка загрузки набора: ' + err.message);
@@ -1526,6 +1886,8 @@ function SetBuilder() {
       coverImage: coverImage || '',
       isPublic,
       tags: tags.filter(tag => tag.trim()),
+      clozeText: clozeText || '',
+      clozeBlanks: clozeBlanks || [],
       flashcards: validCards.map(card => ({
         term: card.term.trim(),
         definition: card.definition.trim(),
@@ -1556,6 +1918,13 @@ function SetBuilder() {
       }
       
       const savedSet = await response.json();
+
+      try {
+        const params = isEditMode && id ? `?setId=${id}` : '';
+        await authFetch(`${API_ROUTES.DATA.DRAFTS}/sets${params}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('Draft delete error:', err);
+      }
       
       // Показываем успех и переходим на Dashboard
       alert(isEditMode ? '✅ Набор обновлен!' : '✅ Набор создан!');
@@ -1566,12 +1935,30 @@ function SetBuilder() {
       setSaving(false);
     }
   };
+
+  const requestExit = (target) => {
+    const snapshot = JSON.stringify(buildDraftPayload());
+    const hasChanges = snapshot !== lastSavedSnapshotRef.current;
+    if (!hasChanges) {
+      navigate(target);
+      return;
+    }
+
+    setExitTarget(target);
+    setShowExitConfirm(true);
+  };
+
+  const handleExit = async (saveBeforeExit) => {
+    if (saveBeforeExit) {
+      await saveDraft(false);
+    }
+    setShowExitConfirm(false);
+    navigate(exitTarget);
+  };
   
   // Отмена
   const handleCancel = () => {
-    if (window.confirm('Вы уверены? Несохраненные изменения будут потеряны.')) {
-      navigate('/dashboard');
-    }
+    requestExit('/dashboard');
   };
   
   if (loading) {
@@ -1585,7 +1972,7 @@ function SetBuilder() {
   return (
     <PageContainer>
       <Header>
-        <Logo onClick={() => navigate('/dashboard')}>
+        <Logo onClick={() => requestExit('/dashboard')}>
           <span className="text">FluffyCards</span>
         </Logo>
         
@@ -1595,6 +1982,12 @@ function SetBuilder() {
             <span>Карточек:</span>
             <span className="count">{cards.length}</span>
           </CardCounter>
+
+          {(savingDraft || draftStatus) && (
+            <DraftStatus>
+              {savingDraft ? 'Сохранение черновика...' : draftStatus}
+            </DraftStatus>
+          )}
           
           <SecondaryButton onClick={handleCancel} disabled={saving}>
             ❌ Отмена
@@ -1758,6 +2151,81 @@ function SetBuilder() {
               </PopularTags>
             )}
           </FormGroup>
+        </FormSection>
+
+        {/* Текст с пропусками */}
+        <FormSection>
+          <SectionTitle>
+            <span className="icon">🧩</span>
+            Текст с пропусками
+          </SectionTitle>
+
+          <ClozeEditor>
+            <ClozeTextArea
+              ref={clozeTextRef}
+              placeholder="Вставьте полный текст, затем выделите слова или фразы и нажмите 'Сделать пропуск'"
+              value={clozeText}
+              onChange={(e) => {
+                const next = e.target.value;
+                setClozeText(next);
+                if (clozeBlanks.length > 0) {
+                  setClozeBlanks([]);
+                  setClozeNotice('Текст изменен, пропуски сброшены');
+                  setTimeout(() => setClozeNotice(''), 2500);
+                }
+              }}
+            />
+
+            <ClozeActions>
+              <PrimaryButton onClick={addClozeBlank} type="button">
+                ✂️ Сделать пропуск
+              </PrimaryButton>
+              <SecondaryButton
+                type="button"
+                onClick={() => {
+                  setClozeText('');
+                  setClozeBlanks([]);
+                }}
+              >
+                Очистить текст
+              </SecondaryButton>
+              <DraftStatus>
+                Пропусков: {clozeBlanks.length}
+              </DraftStatus>
+            </ClozeActions>
+
+            {(clozeError || clozeNotice) && (
+              <ClozeHint style={{ color: clozeError ? '#ef4444' : 'var(--text-secondary)' }}>
+                {clozeError || clozeNotice}
+              </ClozeHint>
+            )}
+
+            <ClozePreview>
+              {clozeText
+                ? buildClozeSegments(clozeText, clozeBlanks).map((segment, idx) => {
+                    if (segment.type === 'text') {
+                      return <span key={`text-${idx}`}>{segment.value}</span>;
+                    }
+                    return (
+                      <ClozeBlank key={`blank-${idx}`} $highlight>
+                        ...
+                      </ClozeBlank>
+                    );
+                  })
+                : 'Здесь появится предпросмотр текста с пропусками'}
+            </ClozePreview>
+
+            {clozeBlanks.length > 0 && (
+              <ClozeList>
+                {clozeBlanks.map((blank, index) => (
+                  <ClozeChip key={`${blank.start}-${blank.end}-${index}`}>
+                    «{blank.answer}»
+                    <ClozeRemove type="button" onClick={() => removeClozeBlank(index)}>✕</ClozeRemove>
+                  </ClozeChip>
+                ))}
+              </ClozeList>
+            )}
+          </ClozeEditor>
         </FormSection>
         
         {/* Импорт из текста */}
@@ -2057,6 +2525,28 @@ function SetBuilder() {
           </PrimaryButton>
         </FooterActions>
       </MainContent>
+
+      {showExitConfirm && (
+        <ConfirmOverlay onClick={() => setShowExitConfirm(false)}>
+          <ConfirmModal onClick={(e) => e.stopPropagation()}>
+            <ConfirmHeader>Покинуть страницу?</ConfirmHeader>
+            <ConfirmBody>
+              Есть несохраненные изменения. Хотите сохранить черновик перед выходом?
+            </ConfirmBody>
+            <ConfirmActions>
+              <PrimaryButton onClick={() => handleExit(true)} disabled={savingDraft}>
+                💾 Сохранить черновик и выйти
+              </PrimaryButton>
+              <DangerButton onClick={() => handleExit(false)}>
+                Выйти без сохранения
+              </DangerButton>
+              <SecondaryButton onClick={() => setShowExitConfirm(false)}>
+                Остаться
+              </SecondaryButton>
+            </ConfirmActions>
+          </ConfirmModal>
+        </ConfirmOverlay>
+      )}
     </PageContainer>
   );
 }

@@ -15,6 +15,7 @@ export const API_ROUTES = {
     STATS: `${API_BASE_URL}/stats/dashboard`,
     STATS_SESSION: `${API_BASE_URL}/stats/session`,
     SETS: `${API_BASE_URL}/sets`,
+    DRAFTS: `${API_BASE_URL}/drafts`,
     FOLDERS: `${API_BASE_URL}/folders`,
     HEALTH: `${API_BASE_URL}/health`
   },

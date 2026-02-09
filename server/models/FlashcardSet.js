@@ -15,6 +15,14 @@ const flashcardSetSchema = new mongoose.Schema({
   description: { type: String },
   coverImage: { type: String },
   flashcards: [flashcardSchema],
+  clozeText: { type: String, default: '' },
+  clozeBlanks: [
+    {
+      start: { type: Number, required: true },
+      end: { type: Number, required: true },
+      answer: { type: String, required: true }
+    }
+  ],
   isPublic: { type: Boolean, default: false },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },  
   tags: [{ type: String }],

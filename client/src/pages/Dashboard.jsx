@@ -12,6 +12,7 @@ import AchievementsModal from '../components/AchievementsModal';
 import LeaderboardModal from '../components/LeaderboardModal';
 import LevelBadge from '../components/LevelBadge';
 import ChatModal from '../components/ChatModal';
+import MergeSetsModal from '../components/Library/MergeSetsModal';
 import { getNotificationCount } from '../services/socialService';
 
 // ===== СТИЛИ =====
@@ -1034,6 +1035,7 @@ function Dashboard() {
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [gamificationData, setGamificationData] = useState(null);
+  const [showMergeModal, setShowMergeModal] = useState(false);
   
   // State для чата
   const [showChat, setShowChat] = useState(false);
@@ -1327,6 +1329,9 @@ function Dashboard() {
         <ButtonGroup>
           <FolderButton onClick={() => setShowCreateFolderModal(true)}>
             📁 Создать папку
+          </FolderButton>
+          <FolderButton onClick={() => setShowMergeModal(true)}>
+            🔀 Объединить наборы
           </FolderButton>
           <FolderButton onClick={() => navigate('/sets/create')}>
             ➕ Создать набор
@@ -1774,6 +1779,16 @@ function Dashboard() {
           <h3>Соты</h3>
           <div className="meta">
             <span>Заполните соты мёдом, отвечая правильно</span>
+          </div>
+        </SetCard>
+
+        <SetCard onClick={() => navigate('/games/fill-blanks')}>
+          <div className="preview" style={{ background: 'linear-gradient(135deg, #fde68a 0%, #f59e0b 100%)' }}>
+            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🧩</div>
+          </div>
+          <h3>Пропуски в тексте</h3>
+          <div className="meta">
+            <span>Вставляйте пропущенные слова и фразы</span>
           </div>
         </SetCard>
       </SetsGrid>
@@ -2225,6 +2240,12 @@ function Dashboard() {
         isOpen={showLeaderboardModal} 
         onClose={() => setShowLeaderboardModal(false)}
         isDark={isDark}
+      />
+      <MergeSetsModal
+        isOpen={showMergeModal}
+        onClose={() => setShowMergeModal(false)}
+        userSets={userSets}
+        onMerge={() => fetchData(true)}
       />
       {showChat && (
         <ChatModal 

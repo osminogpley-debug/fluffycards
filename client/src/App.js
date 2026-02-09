@@ -40,6 +40,7 @@ import RocketDock from './pages/RocketDock';
 import WordMaze from './pages/WordMaze';
 import WordTrain from './pages/WordTrain';
 import HoneycombGame from './pages/HoneycombGame';
+import FillBlanksGame from './pages/FillBlanksGame';
 import FolderDetail from './pages/FolderDetail';
 import AttendancePage from './pages/AttendancePage';
 import SharedSetPage from './pages/SharedSetPage';
@@ -818,6 +819,16 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <HoneycombGame />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/games/fill-blanks"
+                element={
+                  authState.isAuthenticated ? (
+                    <FillBlanksGame />
                   ) : (
                     <Navigate to="/login" />
                   )

@@ -227,6 +227,8 @@ router.post('/:id/copy', authMiddleware, async (req, res) => {
       description: originalSet.description,
       coverImage: originalSet.coverImage,
       flashcards: originalSet.flashcards,
+      clozeText: originalSet.clozeText || '',
+      clozeBlanks: originalSet.clozeBlanks || [],
       isPublic: false, // Копия по умолчанию приватная
       owner: req.user._id,
       tags: originalSet.tags
@@ -264,6 +266,51 @@ router.get('/share/:id', async (req, res) => {
   }
 });
 
+// Merge sets into a new set
+router.post('/merge', authMiddleware, async (req, res) => {
+  try {
+    const { setIds, title, description = '', tags = [], isPublic = false, clozeText = '', clozeBlanks = [] } = req.body;
+
+    if (!Array.isArray(setIds) || setIds.length < 2) {
+      return res.status(400).json({ message: 'Нужно выбрать минимум 2 набора' });
+    }
+    if (!title || !title.trim()) {
+      return res.status(400).json({ message: 'Название нового набора обязательно' });
+    }
+
+    const sets = await FlashcardSet.find({
+      _id: { $in: setIds },
+      owner: req.user._id
+    });
+
+    if (sets.length < 2) {
+      return res.status(404).json({ message: 'Наборы не найдены или доступ запрещен' });
+    }
+
+    const mergedFlashcards = sets.flatMap(set => set.flashcards || []);
+    const mergedTags = Array.from(new Set([
+      ...tags.filter(Boolean).map(t => t.trim().toLowerCase()),
+      ...sets.flatMap(set => (set.tags || []).map(t => t.trim().toLowerCase()))
+    ].filter(Boolean)));
+
+    const newSet = new FlashcardSet({
+      title: title.trim(),
+      description: description.trim(),
+      flashcards: mergedFlashcards,
+      clozeText: clozeText || '',
+      clozeBlanks: Array.isArray(clozeBlanks) ? clozeBlanks : [],
+      isPublic: Boolean(isPublic),
+      owner: req.user._id,
+      tags: mergedTags
+    });
+
+    await newSet.save();
+    res.status(201).json(newSet);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // Получение одного набора с карточками
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
@@ -295,7 +342,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // Создание нового набора с карточками
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { title, description, coverImage, flashcards = [], isPublic, tags = [] } = req.body;
+    const { title, description, coverImage, flashcards = [], isPublic, tags = [], clozeText = '', clozeBlanks = [] } = req.body;
     
     console.log('[Create Set] isPublic value:', isPublic, 'type:', typeof isPublic);
     
@@ -311,6 +358,8 @@ router.post('/', authMiddleware, async (req, res) => {
       description,
       coverImage,
       flashcards,
+      clozeText,
+      clozeBlanks: Array.isArray(clozeBlanks) ? clozeBlanks : [],
       isPublic: Boolean(isPublic),
       owner: req.user._id,
       tags: normalizedTags
@@ -328,7 +377,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // Обновление набора (название, описание, карточки, теги)
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { title, description, coverImage, flashcards, isPublic, tags } = req.body;
+    const { title, description, coverImage, flashcards, isPublic, tags, clozeText, clozeBlanks } = req.body;
     
     console.log('[Update Set] isPublic value:', isPublic, 'type:', typeof isPublic);
     
@@ -345,6 +394,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (description !== undefined) set.description = description;
     if (coverImage !== undefined) set.coverImage = coverImage;
     if (flashcards !== undefined) set.flashcards = flashcards;
+    if (clozeText !== undefined) set.clozeText = clozeText || '';
+    if (clozeBlanks !== undefined) set.clozeBlanks = Array.isArray(clozeBlanks) ? clozeBlanks : [];
     if (isPublic !== undefined) set.isPublic = Boolean(isPublic);
     if (tags !== undefined) {
       // Нормализуем теги
