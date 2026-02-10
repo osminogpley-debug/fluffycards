@@ -284,6 +284,11 @@ const GameButton = styled.button`
 `;
 
 // Тест
+const TestButtons = styled.div`
+  display: grid;
+  gap: 12px;
+`;
+
 const TestButton = styled.button`
   width: 100%;
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
@@ -304,6 +309,13 @@ const TestButton = styled.button`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -1048,25 +1060,25 @@ function SetDetail() {
               >
                 <span className="game-icon">🐝</span> Соты
               </GameButton>
-              <GameButton 
-                gradient="#fde68a, #f59e0b"
-                onClick={() => navigateToGame('fill-blanks')}
-                disabled={!clozeAvailable}
-              >
-                <span className="game-icon">🧩</span> Пропуски
-              </GameButton>
             </GamesGrid>
           </Section>
 
           {/* Тест */}
           <Section>
             <SectionTitle>📝 Тестирование</SectionTitle>
-            <TestButton 
-              onClick={navigateToTest}
-              disabled={flashcards.length === 0}
-            >
-              📝 Создать тест
-            </TestButton>
+            <TestButtons>
+              <TestButton 
+                onClick={navigateToTest}
+                disabled={flashcards.length === 0}
+              >
+                📝 Создать тест
+              </TestButton>
+              <TestButton 
+                onClick={() => navigateToGame('fill-blanks')}
+              >
+                🧩 Пропуски в тексте
+              </TestButton>
+            </TestButtons>
           </Section>
 
           {/* Действия автора */}

@@ -5,7 +5,8 @@ import { Helmet } from 'react-helmet-async';
 import SearchBar from '../components/Library/SearchBar';
 import SetCard from '../components/Library/SetCard';
 import MergeSetsModal from '../components/Library/MergeSetsModal';
-import { API_ROUTES } from '../constants/api';
+import { API_ROUTES, authFetch } from '../constants/api';
+import useAuth from '../hooks/useAuth';
 
 
 
@@ -416,6 +417,7 @@ const examOptions = ['Все', 'ЕГЭ', 'ОГЭ', 'TOEFL', 'IELTS', 'HSK', 'JLP
 
 function PublicLibrary() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все');
   const [selectedLanguage, setSelectedLanguage] = useState('Все');
@@ -432,6 +434,7 @@ function PublicLibrary() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [userSets, setUserSets] = useState([]);
   
   const itemsPerPage = 6;
   const loaderRef = useRef(null);
@@ -494,13 +497,36 @@ function PublicLibrary() {
     }
   }, [searchQuery, selectedCategory, selectedLanguage, selectedLevel, selectedExam, selectedTag, sortBy, currentPage, itemsPerPage]);
 
+  const loadUserSets = useCallback(async () => {
+    if (!user) {
+      setUserSets([]);
+      return;
+    }
+    try {
+      const res = await authFetch(API_ROUTES.DATA.SETS);
+      if (!res.ok) throw new Error('Не удалось загрузить ваши наборы');
+      const data = await res.json();
+      setUserSets(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error loading user sets:', error);
+      setUserSets([]);
+    }
+  }, [user]);
+
   // Load public sets from API
   useEffect(() => {
     loadSets();
   }, [loadSets]);
 
+  useEffect(() => {
+    if (isMergeModalOpen) {
+      loadUserSets();
+    }
+  }, [isMergeModalOpen, loadUserSets]);
+
   const handleMerge = (mergedData) => {
-    setToastMessage(`🔀 Наборы объединены в "${mergedData.name}"!`);
+    const mergedTitle = mergedData?.title || mergedData?.name || 'новый набор';
+    setToastMessage(`🔀 Наборы объединены в "${mergedTitle}"!`);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -517,6 +543,14 @@ function PublicLibrary() {
 
   const handleCreateSet = () => {
     navigate('/dashboard');
+  };
+
+  const handleOpenMerge = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setIsMergeModalOpen(true);
   };
 
   const hasActiveFilters = Boolean(
@@ -699,7 +733,7 @@ function PublicLibrary() {
             </ClearFiltersButton>
           )}
 
-          <MergeButton onClick={() => setIsMergeModalOpen(true)}>
+          <MergeButton onClick={handleOpenMerge}>
             🔀 Объединить наборы
           </MergeButton>
         </FiltersSection>
@@ -809,7 +843,7 @@ function PublicLibrary() {
       <MergeSetsModal
         isOpen={isMergeModalOpen}
         onClose={() => setIsMergeModalOpen(false)}
-        userSets={[]}
+        userSets={userSets}
         onMerge={handleMerge}
       />
 

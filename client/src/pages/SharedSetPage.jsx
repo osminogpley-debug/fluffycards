@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { API_BASE_URL, FILE_BASE_URL, authFetch } from '../constants/api';
-import { useAuth } from '../hooks/useAuth';
+import useAuth from '../hooks/useAuth';
 
 const PageWrapper = styled.div`
   min-height: 100vh;
@@ -240,7 +240,7 @@ const resolveImageUrl = (url) => {
 export default function SharedSetPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { authState } = useAuth();
+  const { user } = useAuth();
   const [setData, setSetData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -267,7 +267,7 @@ export default function SharedSetPage() {
   }, [id]);
 
   const handleCopy = async () => {
-    if (!authState.isAuthenticated) {
+    if (!user) {
       navigate('/login');
       return;
     }
