@@ -78,7 +78,7 @@ const BlankBox = styled.span`
   margin: 0 6px;
   border-radius: 12px;
   border: 2px dashed ${props => props.$status === 'correct' ? '#22c55e' : props.$status === 'wrong' ? '#ef4444' : '#94a3b8'};
-  background: ${props => props.$status === 'correct' ? '#dcfce7' : props.$status === 'wrong' ? '#fee2e2' : 'white'};
+  background: ${props => props.$status === 'correct' ? 'rgba(34, 197, 94, 0.16)' : props.$status === 'wrong' ? 'rgba(239, 68, 68, 0.16)' : 'var(--bg-secondary)'};
   transition: all 0.2s ease;
   ${props => props.$active && css`
     animation: ${pulse} 1.2s ease infinite;
@@ -95,6 +95,10 @@ const BlankInput = styled.input`
   font-size: 0.95rem;
   color: var(--text-primary);
   outline: none;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
 `;
 
 const WordBank = styled.div`
@@ -122,7 +126,7 @@ const WordChip = styled.button`
   padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid var(--border-color);
-  background: white;
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 600;

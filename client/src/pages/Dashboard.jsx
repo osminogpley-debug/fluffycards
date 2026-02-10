@@ -496,7 +496,8 @@ const SetCard = styled.div`
   }
   
   .preview {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;

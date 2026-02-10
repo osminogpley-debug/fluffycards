@@ -1251,6 +1251,54 @@ function SetBuilder() {
     return segments;
   };
 
+  const adjustClozeBlanksForTextChange = (prevText, nextText, prevBlanks) => {
+    if (!prevBlanks.length) return prevBlanks;
+    if (prevText === nextText) return prevBlanks;
+
+    const minLen = Math.min(prevText.length, nextText.length);
+    let prefix = 0;
+    while (prefix < minLen && prevText[prefix] === nextText[prefix]) {
+      prefix += 1;
+    }
+
+    let suffix = 0;
+    while (
+      suffix < minLen - prefix &&
+      prevText[prevText.length - 1 - suffix] === nextText[nextText.length - 1 - suffix]
+    ) {
+      suffix += 1;
+    }
+
+    const prevMidLen = prevText.length - prefix - suffix;
+    const nextMidLen = nextText.length - prefix - suffix;
+    const delta = nextMidLen - prevMidLen;
+    const editStart = prefix;
+    const suffixStartPrev = prevText.length - suffix;
+
+    const nextBlanks = prevBlanks.map(blank => {
+      if (blank.end <= editStart) {
+        return blank;
+      }
+
+      if (blank.start >= suffixStartPrev) {
+        const shiftedStart = blank.start + delta;
+        const shiftedEnd = blank.end + delta;
+        if (shiftedStart < 0 || shiftedEnd > nextText.length) return null;
+        return { ...blank, start: shiftedStart, end: shiftedEnd, answer: nextText.slice(shiftedStart, shiftedEnd).trim() };
+      }
+
+      const adjustedStart = blank.start;
+      const adjustedEnd = blank.end + delta;
+      if (adjustedEnd <= adjustedStart) return null;
+      if (adjustedStart < 0 || adjustedEnd > nextText.length) return null;
+      const updatedAnswer = nextText.slice(adjustedStart, adjustedEnd).trim();
+      if (!updatedAnswer) return null;
+      return { ...blank, start: adjustedStart, end: adjustedEnd, answer: updatedAnswer };
+    }).filter(Boolean);
+
+    return nextBlanks.sort((a, b) => a.start - b.start);
+  };
+
   const addClozeBlank = () => {
     setClozeError('');
     if (!clozeTextRef.current) return;
@@ -2167,12 +2215,13 @@ function SetBuilder() {
               value={clozeText}
               onChange={(e) => {
                 const next = e.target.value;
+                const updatedBlanks = adjustClozeBlanksForTextChange(clozeText, next, clozeBlanks);
                 setClozeText(next);
-                if (clozeBlanks.length > 0) {
-                  setClozeBlanks([]);
-                  setClozeNotice('Текст изменен, пропуски сброшены');
+                if (updatedBlanks.length !== clozeBlanks.length) {
+                  setClozeNotice('Текст изменен, пропуски обновлены');
                   setTimeout(() => setClozeNotice(''), 2500);
                 }
+                setClozeBlanks(updatedBlanks);
               }}
             />
 

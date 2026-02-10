@@ -34,6 +34,7 @@ router.get('/public', async (req, res) => {
     console.log('[PUBLIC SETS] Query:', query);
 
     const normalizeTag = (value) => value?.toString().trim().toLowerCase();
+    const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const tagFilters = [];
     
     // Поиск по названию/описанию
@@ -75,7 +76,8 @@ router.get('/public', async (req, res) => {
     }
 
     if (tagFilters.length > 0) {
-      query.tags = { $all: tagFilters };
+      const regexFilters = tagFilters.map(tag => new RegExp(`^${escapeRegex(tag)}$`, 'i'));
+      query.tags = { $all: regexFilters };
     }
     
     // Опции сортировки

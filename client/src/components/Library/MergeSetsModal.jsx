@@ -527,7 +527,7 @@ function MergeSetsModal({ isOpen, onClose, userSets = [], onMerge }) {
                   <SetInfo>
                     <SetName>{set.title}</SetName>
                     <SetMeta>
-                      📝 {set.cardCount || set.cards?.length || 0} карточек
+                      📝 {set.cardCount || set.flashcards?.length || set.cards?.length || 0} карточек
                     </SetMeta>
                   </SetInfo>
                 </SetItem>
