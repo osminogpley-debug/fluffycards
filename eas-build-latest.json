@@ -1,0 +1,9 @@
+﻿Run this command inside a project directory.
+node.exe :     Error: build:view command failed.
+строка:1 знак:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    Error: build:view command fai 
+   led.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
