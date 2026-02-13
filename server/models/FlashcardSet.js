@@ -26,12 +26,13 @@ const flashcardSetSchema = new mongoose.Schema({
   isPublic: { type: Boolean, default: false },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },  
   tags: [{ type: String }],
-  createdAt: { type: Date, default: Date.now },
   lastStudied: { type: Date },
   studyStats: {
     totalViews: { type: Number, default: 0 },
     masteryLevel: { type: Number, default: 0 }
   }
+}, {
+  timestamps: true
 });
 
 // Метод для импорта из текста

@@ -1090,9 +1090,9 @@ function Dashboard() {
       // Only show loading spinner on initial load, not on background polls
       if (isInitial) setLoading(true);
       
-      // Кэш на 5 минут
+      // Кэш на 5 минут, но не для initial load
       const now = Date.now();
-      if (cache.stats && cache.sets && (now - cache.timestamp) < 300000) {
+      if (!isInitial && cache.stats && cache.sets && (now - cache.timestamp) < 300000) {
         setStats(prev => (isSameData(prev, cache.stats) ? prev : cache.stats));
         setUserSets(prev => (isSameData(prev, cache.sets) ? prev : cache.sets));
         setFolders(prev => (isSameData(prev, cache.folders || []) ? prev : (cache.folders || [])));

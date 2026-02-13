@@ -520,6 +520,8 @@ function LearningMode() {
 
   const currentCard = remainingCards[currentIndex];
   const sessionTotal = remainingCards.length + knownCards.length + unknownCards.length;
+  const processedCount = knownCards.length + unknownCards.length;
+  const currentPosition = processedCount + 1;
   const progress = sessionTotal > 0 
     ? ((sessionTotal - remainingCards.length + (currentIndex < remainingCards.length ? 1 : 0)) / sessionTotal) * 100 
     : 0;
@@ -763,7 +765,7 @@ function LearningMode() {
       {currentSet && (
         <SetInfo>
           <h3>📚 {currentSet.title}</h3>
-          <p>Карточка {currentIndex + 1} из {sessionTotal} (всего {flashcards.length})</p>
+          <p>Карточка {currentPosition} из {sessionTotal} (всего {flashcards.length})</p>
         </SetInfo>
       )}
 
@@ -803,7 +805,7 @@ function LearningMode() {
       </FlipHint>
 
       <CardCounter>
-        Карточка {currentIndex + 1} из {sessionTotal}
+        Карточка {currentPosition} из {sessionTotal}
       </CardCounter>
 
       {/* Action Buttons for Know/Don't Know */}
