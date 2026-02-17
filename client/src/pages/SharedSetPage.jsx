@@ -215,13 +215,13 @@ const Toast = styled.div`
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  background: #22c55e;
+  background: ${({ type }) => type === 'error' ? '#f56565' : '#22c55e'};
   color: white;
   padding: 12px 24px;
   border-radius: 12px;
   font-weight: 600;
   font-size: 14px;
-  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
+  box-shadow: 0 8px 24px ${({ type }) => type === 'error' ? 'rgba(245, 101, 101, 0.35)' : 'rgba(34, 197, 94, 0.4)'};
   z-index: 9999;
   animation: fadeInUp 0.3s ease;
 
@@ -246,6 +246,7 @@ export default function SharedSetPage() {
   const [error, setError] = useState(null);
   const [copying, setCopying] = useState(false);
   const [toast, setToast] = useState('');
+  const [toastType, setToastType] = useState('success');
 
   useEffect(() => {
     const fetchSharedSet = async () => {
@@ -277,20 +278,27 @@ export default function SharedSetPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      if (res.ok) {
-        const copied = await res.json();
-        setToast('Набор скопирован в вашу библиотеку!');
-        setTimeout(() => {
-          setToast('');
-          navigate(`/sets/${copied._id}`);
-        }, 1500);
-      } else {
-        const err = await res.json();
-        setToast(err.message || 'Ошибка копирования');
-        setTimeout(() => setToast(''), 2500);
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.message || 'Ошибка копирования набора');
       }
-    } catch {
-      setToast('Ошибка сети');
+
+      const copiedSet = payload?.data || payload;
+      setToastType('success');
+      setToast('Набор скопирован в вашу библиотеку!');
+      setTimeout(() => {
+        setToast('');
+        const targetId = copiedSet?._id;
+        if (targetId) {
+          navigate(`/sets/${targetId}`);
+        } else {
+          navigate('/dashboard');
+        }
+      }, 1500);
+    } catch (copyError) {
+      console.error('Copy set error:', copyError);
+      setToastType('error');
+      setToast(copyError.message || 'Ошибка сети');
       setTimeout(() => setToast(''), 2500);
     } finally {
       setCopying(false);
@@ -364,6 +372,9 @@ export default function SharedSetPage() {
           <SecondaryBtn onClick={handleStudy}>
             📖 Учить
           </SecondaryBtn>
+          <SecondaryBtn onClick={() => navigate(-1)}>
+            ⬅️ Назад
+          </SecondaryBtn>
         </ButtonRow>
 
         <CardsSection>
@@ -383,7 +394,7 @@ export default function SharedSetPage() {
         </CardsSection>
       </Container>
 
-      {toast && <Toast>{toast}</Toast>}
+      {toast && <Toast type={toastType}>{toast}</Toast>}
     </PageWrapper>
   );
 }
