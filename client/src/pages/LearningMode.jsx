@@ -255,6 +255,34 @@ const SetInfo = styled.div`
   }
 `;
 
+const FaceControls = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary, #4a5568);
+  font-weight: 600;
+  font-size: 0.9rem;
+`;
+
+const FaceButton = styled.button`
+  border: 2px solid ${({ active }) => active ? '#63b3ed' : 'var(--border-color, #e2e8f0)'};
+  background: ${({ active }) => active ? 'rgba(99, 179, 237, 0.15)' : 'var(--bg-secondary, #f1f5f9)'};
+  color: ${({ active }) => active ? '#1a202c' : 'var(--text-primary, #1a202c)'};
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+
+  &:hover {
+    border-color: #63b3ed;
+  }
+`;
+
 const Button = styled.button`
   background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
   color: white;
@@ -472,6 +500,7 @@ function LearningMode() {
   const [remainingCards, setRemainingCards] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [cardFaceMode, setCardFaceMode] = useState('term');
 
   // Загрузка набора
   useEffect(() => {
@@ -637,6 +666,11 @@ function LearningMode() {
     }
   };
 
+  const handleFaceModeChange = (mode) => {
+    setCardFaceMode(mode);
+    setFlipped(false);
+  };
+
   const handleSelectSet = (set) => {
     navigate(`/learn/flashcards?setId=${set._id}`);
   };
@@ -755,6 +789,31 @@ function LearningMode() {
 
   if (!currentCard && !isComplete) return null;
 
+  const renderTermContent = () => (
+    <>
+      <TermText>{currentCard.term}</TermText>
+      <AudioButton onClick={handleSpeak}>
+        🔊
+      </AudioButton>
+    </>
+  );
+
+  const renderDefinitionContent = () => (
+    <>
+      <DefinitionText>{currentCard.definition}</DefinitionText>
+      {currentCard.imageUrl && (
+        <CardImage
+          src={resolveImageUrl(currentCard.imageUrl)}
+          alt="Term illustration"
+        />
+      )}
+    </>
+  );
+
+  const nextSideLabel = !flipped
+    ? (cardFaceMode === 'term' ? 'определение' : 'термин')
+    : (cardFaceMode === 'term' ? 'термин' : 'определение');
+
   return (
     <Container>
       <Header>
@@ -776,6 +835,24 @@ function LearningMode() {
         <StatBadge type="remaining">⏳ Осталось: {remainingCards.length}</StatBadge>
       </ProgressStats>
 
+      <FaceControls>
+        <span>Лицевая сторона:</span>
+        <FaceButton
+          type="button"
+          active={cardFaceMode === 'term'}
+          onClick={() => handleFaceModeChange('term')}
+        >
+          Сначала термин
+        </FaceButton>
+        <FaceButton
+          type="button"
+          active={cardFaceMode === 'definition'}
+          onClick={() => handleFaceModeChange('definition')}
+        >
+          Сначала определение
+        </FaceButton>
+      </FaceControls>
+
       <ProgressBar>
         <ProgressFill progress={progress} />
       </ProgressBar>
@@ -783,25 +860,16 @@ function LearningMode() {
       <FlashcardContainer>
         <Flashcard flipped={flipped} onClick={() => setFlipped(!flipped)}>
           <TermSide>
-            <TermText>{currentCard.term}</TermText>
-            <AudioButton onClick={handleSpeak}>
-              🔊
-            </AudioButton>
+            {cardFaceMode === 'term' ? renderTermContent() : renderDefinitionContent()}
           </TermSide>
           <DefinitionSide>
-            <DefinitionText>{currentCard.definition}</DefinitionText>
-            {currentCard.imageUrl && (
-              <CardImage
-                src={resolveImageUrl(currentCard.imageUrl)}
-                alt="Term illustration"
-              />
-            )}
+            {cardFaceMode === 'term' ? renderDefinitionContent() : renderTermContent()}
           </DefinitionSide>
         </Flashcard>
       </FlashcardContainer>
 
       <FlipHint>
-        {flipped ? '👆 Кликните, чтобы увидеть термин' : '👆 Кликните, чтобы увидеть определение'}
+        👆 Кликните, чтобы увидеть {nextSideLabel}
       </FlipHint>
 
       <CardCounter>

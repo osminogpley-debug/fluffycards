@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
@@ -103,34 +103,6 @@ const RoundInfo = styled.div`
   gap: 2rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
-`;
-
-const FaceControls = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 0.9rem;
-`;
-
-const FaceButton = styled.button`
-  border: 2px solid ${({ active }) => active ? '#63b3ed' : 'var(--border-color)'};
-  background: ${({ active }) => active ? 'rgba(99, 179, 237, 0.15)' : 'var(--bg-secondary)'};
-  color: ${({ active }) => active ? '#1a202c' : 'var(--text-primary)'};
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-
-  &:hover {
-    border-color: #63b3ed;
-  }
 `;
 
 const RoundStat = styled.div`
@@ -471,7 +443,6 @@ function StudyMode() {
   const [masteredIds, setMasteredIds] = useState([]); // fully mastered
   const [currentCardId, setCurrentCardId] = useState(null);
   const [showTermSide, setShowTermSide] = useState(true); // true = show term ask def; false = show def ask term
-  const [cardFaceMode, setCardFaceMode] = useState('random'); // term | definition | random
 
   // Answer state
   const [options, setOptions] = useState([]);
@@ -495,12 +466,6 @@ function StudyMode() {
   useEffect(() => {
     if (setId) fetchSet(setId);
   }, [setId]);
-
-  const decideCardFace = useCallback(() => {
-    if (cardFaceMode === 'term') return true;
-    if (cardFaceMode === 'definition') return false;
-    return Math.random() > 0.5;
-  }, [cardFaceMode]);
 
   const fetchSet = async (id) => {
     try {
@@ -540,7 +505,7 @@ function StudyMode() {
     if (queue.length === 0) return;
     const nextId = queue[0];
     setCurrentCardId(nextId);
-    const nextFace = decideCardFace();
+    const nextFace = Math.random() > 0.5;
     setShowTermSide(nextFace);
     setSelectedOption(null);
     setInputValue('');
@@ -924,31 +889,6 @@ function StudyMode() {
           <p>{totalCards} карточек</p>
         </SetInfo>
       )}
-
-      <FaceControls>
-        <span>Сторона карточки:</span>
-        <FaceButton
-          type="button"
-          active={cardFaceMode === 'term'}
-          onClick={() => setCardFaceMode('term')}
-        >
-          Сначала термин
-        </FaceButton>
-        <FaceButton
-          type="button"
-          active={cardFaceMode === 'definition'}
-          onClick={() => setCardFaceMode('definition')}
-        >
-          Сначала определение
-        </FaceButton>
-        <FaceButton
-          type="button"
-          active={cardFaceMode === 'random'}
-          onClick={() => setCardFaceMode('random')}
-        >
-          Случайно
-        </FaceButton>
-      </FaceControls>
 
       <ProgressBar>
         <ProgressFill progress={progress} />
