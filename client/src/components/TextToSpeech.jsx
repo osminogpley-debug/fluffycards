@@ -4,7 +4,6 @@ const TextToSpeech = {
   initPromise: null,
 
   init: () => {
-    // Return existing promise if already initializing
     if (TextToSpeech.initPromise) {
       return TextToSpeech.initPromise;
     }
@@ -18,34 +17,68 @@ const TextToSpeech = {
       }
 
       const synth = window.speechSynthesis;
+      let intervalId = null;
+      let timeoutId = null;
 
-      const loadVoices = () => {
+      const cleanupListeners = () => {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (typeof synth.removeEventListener === 'function') {
+          synth.removeEventListener('voiceschanged', handleVoicesChanged);
+        } else if (synth.onvoiceschanged === handleVoicesChanged) {
+          synth.onvoiceschanged = null;
+        }
+      };
+
+      const finalizeInitialization = (voices = []) => {
+        if (TextToSpeech.isInitialized) return;
+        TextToSpeech.voices = voices;
+        TextToSpeech.isInitialized = true;
+        console.log('TextToSpeech: Voices loaded:', voices.length);
+        cleanupListeners();
+        resolve();
+      };
+
+      const tryLoadVoices = () => {
         const voices = synth.getVoices();
-        if (voices.length > 0) {
-          TextToSpeech.voices = voices;
-          TextToSpeech.isInitialized = true;
-          console.log('TextToSpeech: Voices loaded:', voices.length);
-          resolve();
+        if (voices && voices.length > 0) {
+          finalizeInitialization(voices);
+          return true;
         }
+        return false;
       };
 
-      // Handle voices loaded event
-      synth.onvoiceschanged = () => {
-        loadVoices();
-      };
-
-      // Try to load voices immediately (some browsers already have them)
-      loadVoices();
-
-      // Fallback: resolve after timeout even if voices aren't loaded
-      setTimeout(() => {
-        if (!TextToSpeech.isInitialized) {
-          TextToSpeech.voices = synth.getVoices();
-          TextToSpeech.isInitialized = true;
-          console.log('TextToSpeech: Initialization timeout, voices found:', TextToSpeech.voices.length);
-          resolve();
+      function handleVoicesChanged() {
+        if (tryLoadVoices()) {
+          cleanupListeners();
         }
-      }, 1000);
+      }
+
+      if (!tryLoadVoices()) {
+        if (typeof synth.addEventListener === 'function') {
+          synth.addEventListener('voiceschanged', handleVoicesChanged);
+        } else {
+          synth.onvoiceschanged = handleVoicesChanged;
+        }
+
+        intervalId = setInterval(() => {
+          if (tryLoadVoices()) {
+            cleanupListeners();
+          }
+        }, 200);
+
+        timeoutId = setTimeout(() => {
+          if (!TextToSpeech.isInitialized) {
+            finalizeInitialization(synth.getVoices());
+          }
+        }, 3000);
+      }
     });
 
     return TextToSpeech.initPromise;
@@ -104,6 +137,13 @@ const TextToSpeech = {
       const synth = window.speechSynthesis;
       
       // Cancel any ongoing speech
+      if (synth.paused) {
+        try {
+          synth.resume();
+        } catch (resumeError) {
+          console.warn('TextToSpeech: Unable to resume speech synthesis:', resumeError);
+        }
+      }
       synth.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
@@ -127,6 +167,7 @@ const TextToSpeech = {
       
       utterance.rate = 0.8;
       utterance.pitch = 1;
+      utterance.volume = 1;
 
       return new Promise((resolve) => {
         utterance.onerror = (event) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
@@ -349,12 +349,14 @@ const KnowButton = styled.button`
   border-radius: 16px;
   font-size: 1.1rem;
   font-weight: 600;
-  cursor: pointer;
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+  opacity: ${({ disabled }) => disabled ? 0.6 : 1};
+  pointer-events: ${({ disabled }) => disabled ? 'none' : 'auto'};
   
   &:hover {
     transform: translateY(-3px);
@@ -374,12 +376,14 @@ const DontKnowButton = styled.button`
   border-radius: 16px;
   font-size: 1.1rem;
   font-weight: 600;
-  cursor: pointer;
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   box-shadow: 0 4px 15px rgba(252, 129, 129, 0.4);
+  opacity: ${({ disabled }) => disabled ? 0.6 : 1};
+  pointer-events: ${({ disabled }) => disabled ? 'none' : 'auto'};
   
   &:hover {
     transform: translateY(-3px);
@@ -488,6 +492,7 @@ function LearningMode() {
   
   const [flipped, setFlipped] = useState(false);
   const [flashcards, setFlashcards] = useState([]);
+  const [originalCards, setOriginalCards] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -495,12 +500,26 @@ function LearningMode() {
   const [isComplete, setIsComplete] = useState(false);
   
   // New state for tracking
-  const [knownCards, setKnownCards] = useState([]);
-  const [unknownCards, setUnknownCards] = useState([]);
-  const [remainingCards, setRemainingCards] = useState([]);
+  const [cardStatuses, setCardStatuses] = useState({}); // pending | known | unknown
   const [showResults, setShowResults] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
   const [cardFaceMode, setCardFaceMode] = useState('term');
+
+  const initializeSession = (cards, options = {}) => {
+    const statusMap = cards.reduce((acc, card) => {
+      const cardId = card.id;
+      acc[cardId] = 'pending';
+      return acc;
+    }, {});
+    setCardStatuses(statusMap);
+    setCurrentIndex(0);
+    setFlipped(false);
+    setIsComplete(false);
+    setShowResults(false);
+    if (options.resetXp) {
+      setXpEarned(0);
+    }
+  };
 
   // Загрузка набора
   useEffect(() => {
@@ -509,12 +528,7 @@ function LearningMode() {
     }
   }, [setId]);
 
-  // Initialize remaining cards when flashcards are loaded
-  useEffect(() => {
-    if (flashcards.length > 0) {
-      setRemainingCards([...flashcards]);
-    }
-  }, [flashcards]);
+  // Initialize statuses when flashcards change is handled via helper
 
   const fetchSet = async (id) => {
     try {
@@ -535,7 +549,9 @@ function LearningMode() {
           ...card, 
           id: card._id || idx + 1 
         }));
+        setOriginalCards(cards);
         setFlashcards(cards);
+        initializeSession(cards, { resetXp: true });
       } else {
         setError('В этом наборе нет карточек');
       }
@@ -547,17 +563,59 @@ function LearningMode() {
     }
   };
 
-  const currentCard = remainingCards[currentIndex];
-  const sessionTotal = remainingCards.length + knownCards.length + unknownCards.length;
-  const processedCount = knownCards.length + unknownCards.length;
-  const currentPosition = processedCount + 1;
+  const knownCards = useMemo(
+    () => flashcards.filter(card => cardStatuses[card.id] === 'known'),
+    [flashcards, cardStatuses]
+  );
+  const unknownCards = useMemo(
+    () => flashcards.filter(card => cardStatuses[card.id] === 'unknown'),
+    [flashcards, cardStatuses]
+  );
+  const remainingCount = flashcards.length - knownCards.length - unknownCards.length;
+
+  const currentCard = flashcards[currentIndex];
+  const sessionTotal = flashcards.length;
+  const currentPosition = sessionTotal > 0 ? currentIndex + 1 : 0;
   const progress = sessionTotal > 0 
-    ? ((sessionTotal - remainingCards.length + (currentIndex < remainingCards.length ? 1 : 0)) / sessionTotal) * 100 
+    ? ((knownCards.length + unknownCards.length) / sessionTotal) * 100 
     : 0;
+  const currentStatus = currentCard ? cardStatuses[currentCard.id] : 'pending';
+  const actionsDisabled = !currentCard || currentStatus !== 'pending' || isComplete;
+
+  const advanceToNextPendingCard = (statuses) => {
+    if (flashcards.length === 0) return;
+    let nextIndex = null;
+    for (let offset = 1; offset <= flashcards.length; offset++) {
+      const candidateIndex = (currentIndex + offset) % flashcards.length;
+      const candidate = flashcards[candidateIndex];
+      if (candidate && statuses[candidate.id] === 'pending') {
+        nextIndex = candidateIndex;
+        break;
+      }
+    }
+    setFlipped(false);
+    if (nextIndex !== null) {
+      setCurrentIndex(nextIndex);
+    } else {
+      setIsComplete(true);
+      setShowResults(true);
+    }
+  };
+
+  const focusFirstPendingCard = (statuses) => {
+    const firstPendingIndex = flashcards.findIndex(card => statuses[card.id] === 'pending');
+    setCurrentIndex(firstPendingIndex === -1 ? 0 : firstPendingIndex);
+    setFlipped(false);
+  };
 
   const handleKnow = async () => {
     if (!currentCard) return;
-    
+    const currentState = cardStatuses[currentCard.id];
+    if (currentState !== 'pending') {
+      setFlipped(false);
+      return;
+    }
+
     // Track card study for gamification (non-blocking)
     try {
       const result = await trackCardsStudied(1);
@@ -567,53 +625,33 @@ function LearningMode() {
     } catch (error) {
       console.error('Error tracking card study:', error);
     }
-    
-    setKnownCards(prev => [...prev, currentCard]);
-    
-    // Remove current card from remaining
-    const newRemaining = remainingCards.filter((_, idx) => idx !== currentIndex);
-    setRemainingCards(newRemaining);
-    
-    setFlipped(false);
-    
-    // Check if all cards are done
-    if (newRemaining.length === 0) {
-      setIsComplete(true);
-      setShowResults(true);
-    } else {
-      // Stay at current index (next card will be at same index after removal)
-      // But if we're at the last index, go back to 0
-      if (currentIndex >= newRemaining.length) {
-        setCurrentIndex(0);
-      }
-    }
+
+    const updatedStatuses = {
+      ...cardStatuses,
+      [currentCard.id]: 'known'
+    };
+    setCardStatuses(updatedStatuses);
+    advanceToNextPendingCard(updatedStatuses);
   };
 
   const handleDontKnow = () => {
     if (!currentCard) return;
-    
-    setUnknownCards(prev => [...prev, currentCard]);
-    
-    // Remove current card from remaining
-    const newRemaining = remainingCards.filter((_, idx) => idx !== currentIndex);
-    setRemainingCards(newRemaining);
-    
-    setFlipped(false);
-    
-    // Check if all cards are done
-    if (newRemaining.length === 0) {
-      setIsComplete(true);
-      setShowResults(true);
-    } else {
-      // Stay at current index (next card will be at same index after removal)
-      if (currentIndex >= newRemaining.length) {
-        setCurrentIndex(0);
-      }
+    const currentState = cardStatuses[currentCard.id];
+    if (currentState !== 'pending') {
+      setFlipped(false);
+      return;
     }
+
+    const updatedStatuses = {
+      ...cardStatuses,
+      [currentCard.id]: 'unknown'
+    };
+    setCardStatuses(updatedStatuses);
+    advanceToNextPendingCard(updatedStatuses);
   };
 
   const handleNext = () => {
-    if (currentIndex < remainingCards.length - 1) {
+    if (currentIndex < flashcards.length - 1) {
       setFlipped(false);
       setTimeout(() => {
         setCurrentIndex(prev => prev + 1);
@@ -631,31 +669,32 @@ function LearningMode() {
   };
 
   const handleRestart = () => {
-    setCurrentIndex(0);
-    setFlipped(false);
-    setIsComplete(false);
-    setShowResults(false);
-    setKnownCards([]);
-    setUnknownCards([]);
-    setRemainingCards([...flashcards]);
+    if (originalCards.length === 0) return;
+    const fullDeck = [...originalCards];
+    setFlashcards(fullDeck);
+    initializeSession(fullDeck);
   };
 
   const handleRestartWithUnknown = () => {
     if (unknownCards.length === 0) return;
-    
-    setCurrentIndex(0);
-    setFlipped(false);
+
+    const updatedStatuses = flashcards.reduce((acc, card) => {
+      acc[card.id] = cardStatuses[card.id] === 'unknown' ? 'pending' : 'known';
+      return acc;
+    }, {});
+
+    setCardStatuses(updatedStatuses);
+    focusFirstPendingCard(updatedStatuses);
     setIsComplete(false);
     setShowResults(false);
-    setKnownCards([]);
-    setRemainingCards([...unknownCards]);
-    setUnknownCards([]);
   };
 
   const handleShuffle = () => {
-    const shuffled = [...remainingCards].sort(() => Math.random() - 0.5);
-    setRemainingCards(shuffled);
-    setCurrentIndex(0);
+    if (flashcards.length === 0) return;
+    const shuffled = [...flashcards].sort(() => Math.random() - 0.5);
+    setFlashcards(shuffled);
+    const firstPendingIndex = shuffled.findIndex(card => cardStatuses[card.id] === 'pending');
+    setCurrentIndex(firstPendingIndex === -1 ? 0 : firstPendingIndex);
     setFlipped(false);
   };
 
@@ -824,7 +863,7 @@ function LearningMode() {
       {currentSet && (
         <SetInfo>
           <h3>📚 {currentSet.title}</h3>
-          <p>Карточка {currentPosition} из {sessionTotal} (всего {flashcards.length})</p>
+          <p>Карточка {currentPosition} из {sessionTotal}</p>
         </SetInfo>
       )}
 
@@ -832,7 +871,7 @@ function LearningMode() {
       <ProgressStats>
         <StatBadge type="known">✅ Знаю: {knownCards.length}</StatBadge>
         <StatBadge type="unknown">❌ Не знаю: {unknownCards.length}</StatBadge>
-        <StatBadge type="remaining">⏳ Осталось: {remainingCards.length}</StatBadge>
+        <StatBadge type="remaining">⏳ Осталось: {remainingCount}</StatBadge>
       </ProgressStats>
 
       <FaceControls>
@@ -878,10 +917,10 @@ function LearningMode() {
 
       {/* Action Buttons for Know/Don't Know */}
       <ActionButtonsContainer>
-        <DontKnowButton onClick={handleDontKnow}>
+        <DontKnowButton onClick={handleDontKnow} disabled={actionsDisabled}>
           ❌ Не знаю
         </DontKnowButton>
-        <KnowButton onClick={handleKnow}>
+        <KnowButton onClick={handleKnow} disabled={actionsDisabled}>
           ✅ Знаю
         </KnowButton>
       </ActionButtonsContainer>
@@ -889,7 +928,7 @@ function LearningMode() {
       <ButtonGroup>
         <NavigationButton 
           onClick={handlePrev}
-          disabled={currentIndex === 0}
+          disabled={flashcards.length === 0 || currentIndex === 0}
         >
           ← Назад
         </NavigationButton>
@@ -900,7 +939,7 @@ function LearningMode() {
         
         <NavigationButton 
           onClick={handleNext}
-          disabled={currentIndex === remainingCards.length - 1}
+          disabled={flashcards.length === 0 || currentIndex === flashcards.length - 1}
         >
           Вперед →
         </NavigationButton>
