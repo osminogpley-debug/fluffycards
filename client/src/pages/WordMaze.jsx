@@ -93,8 +93,12 @@ const Cell = styled.button`
     &:hover { border-color: #059669; transform: scale(1.05); }
   `}
   ${p => p.$type === 'goal' && css`
-    background: #fef3c7; border-color: #fbbf24;
-    animation: ${playerBounce} 1.5s ease infinite;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-color: #f59e0b;
+    border-width: 3px;
+    animation: ${playerBounce} 1s ease infinite;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    font-size: 1.6rem;
   `}
   ${p => p.$type === 'start' && css`
     background: #dbeafe; border-color: #93c5fd;
@@ -469,6 +473,14 @@ export default function WordMaze() {
           })
         )}
       </MazeGrid>
+
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+        <span>🧭 Вы</span>
+        <span>🏆 Финиш</span>
+        <span>❓ Путь</span>
+        <span>🧱 Стена</span>
+        <span>✅ Открыто</span>
+      </div>
 
       <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
         Нажмите на ❓ рядом с 🧭 чтобы продвинуться

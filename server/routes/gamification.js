@@ -24,6 +24,9 @@ router.get('/', authMiddleware, async (req, res) => {
     gamification.generateWeeklyExam();
     await gamification.save();
     
+    // Award any achievements the user qualifies for but hasn't received yet
+    await gamification.checkAchievements();
+    
     // Calculate XP needed for next level
     const xpForNextLevel = UserGamification.getXpForLevel(gamification.level);
     
@@ -218,6 +221,9 @@ router.get('/achievements', authMiddleware, async (req, res) => {
       });
       await gamification.save();
     }
+    
+    // Award any achievements the user qualifies for but hasn't received yet
+    await gamification.checkAchievements();
     
     const achievementProgress = gamification.getAchievementProgress();
     

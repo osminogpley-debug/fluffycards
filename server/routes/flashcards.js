@@ -28,7 +28,7 @@ router.get('/public', async (req, res) => {
     
     // Фильтр по пользователю (для профиля)
     if (userId) {
-      query.userId = userId;
+      query.owner = userId;
     }
     
     console.log('[PUBLIC SETS] Query:', query);
