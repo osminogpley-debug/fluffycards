@@ -195,6 +195,15 @@ function generateMaze(size) {
   }
   grid[size - 1][size - 1] = 'goal';
 
+  // Mark all non-path cells as walls
+  for (let ri = 0; ri < size; ri++) {
+    for (let ci = 0; ci < size; ci++) {
+      if (grid[ri][ci] === 'unknown') {
+        grid[ri][ci] = 'wall';
+      }
+    }
+  }
+
   return { grid, path };
 }
 
@@ -312,9 +321,9 @@ export default function WordMaze() {
         const cellType = maze[r][c];
 
         setRevealed(prev => ({ ...prev, [`${r},${c}`]: true }));
-        setSteps(s => s + 1);
 
         if (cellType === 'goal' || cellType === 'path' || cellType === 'start') {
+          setSteps(s => s + 1);
           setPlayerPos([r, c]);
           if (cellType === 'goal') {
             confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
