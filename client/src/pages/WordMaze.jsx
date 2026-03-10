@@ -245,7 +245,10 @@ export default function WordMaze() {
     const m = generateMaze(SIZE);
     setMaze(m.grid);
     setPlayerPos([0, 0]);
-    setRevealed({ '0,0': true });
+    // Reveal start and goal from the beginning
+    const initRevealed = { '0,0': true };
+    initRevealed[`${SIZE - 1},${SIZE - 1}`] = true;
+    setRevealed(initRevealed);
     setScore(0); setCorrect(0); setMistakes(0); setSteps(0);
     setQuestion(null); setFinished(false); setGameStarted(true); setQIdx(0);
     sessionStart.current = Date.now();
@@ -264,10 +267,24 @@ export default function WordMaze() {
 
   const handleCellClick = (r, c) => {
     if (question || finished) return;
-    if (revealed[`${r},${c}`]) return;
     if (!isAdjacent(playerPos[0], playerPos[1], r, c)) return;
 
-    // Open question for this cell
+    // Allow moving through already-revealed path/start/goal cells without a question
+    if (revealed[`${r},${c}`]) {
+      const cellType = maze[r][c];
+      if (cellType === 'path' || cellType === 'start' || cellType === 'goal') {
+        setSteps(s => s + 1);
+        setPlayerPos([r, c]);
+        if (cellType === 'goal') {
+          confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+          setFinished(true);
+        }
+      }
+      return;
+    }
+
+    // Open question for unrevealed cell
+    if (flashcards.length === 0) return;
     const card = flashcards[qIdx % flashcards.length];
     setQuestion(card);
     setQOptions(genOptions(card));
@@ -435,7 +452,9 @@ export default function WordMaze() {
         {maze && maze.map((row, r) =>
           row.map((_, c) => {
             const type = getCellType(r, c);
-            const clickable = type === 'unknown' && isAdjacent(playerPos[0], playerPos[1], r, c);
+            const isAdj = isAdjacent(playerPos[0], playerPos[1], r, c);
+            const isRevealedPath = revealed[`${r},${c}`] && (maze[r][c] === 'path' || maze[r][c] === 'start' || maze[r][c] === 'goal');
+            const clickable = isAdj && (type === 'unknown' || isRevealedPath) && type !== 'player';
             return (
               <Cell
                 key={`${r},${c}`}

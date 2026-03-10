@@ -174,11 +174,31 @@ const setShareSchema = new mongoose.Schema({
   }
 });
 
+// Follow Schema
+const followSchema = new mongoose.Schema({
+  follower: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  following: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 // Create unique indexes
 friendRequestSchema.index({ from: 1, to: 1 }, { unique: true });
 friendshipSchema.index({ users: 1 }, { unique: true });
 ratingSchema.index({ setId: 1, userId: 1 }, { unique: true });
 setShareSchema.index({ shareLink: 1 });
+followSchema.index({ follower: 1, following: 1 }, { unique: true });
+followSchema.index({ following: 1 });
 
 // Generate share link
 setShareSchema.pre('save', function(next) {
@@ -195,3 +215,4 @@ export const Comment = mongoose.model('Comment', commentSchema);
 export const Rating = mongoose.model('Rating', ratingSchema);
 export const Challenge = mongoose.model('Challenge', challengeSchema);
 export const SetShare = mongoose.model('SetShare', setShareSchema);
+export const Follow = mongoose.model('Follow', followSchema);

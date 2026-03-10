@@ -232,7 +232,6 @@ userGamificationSchema.methods.checkAchievements = async function() {
   const newAchievements = [];
   const unlockedIds = this.achievements.map(a => a.achievementId);
   
-  // Ensure stats and streak exist
   if (!this.stats) {
     this.stats = { cardsStudied: 0, testsPassed: 0, gamesWon: 0, perfectScores: 0 };
   }
@@ -240,124 +239,33 @@ userGamificationSchema.methods.checkAchievements = async function() {
     this.streak = { current: 0, longest: 0, lastActive: null };
   }
   
-  // Define all achievements with rarity and reward
-  const allAchievements = [
-    {
-      id: 'first_steps',
-      name: 'Первые шаги',
-      description: 'Study 10 cards',
-      icon: '👣',
-      category: 'study',
-      rarity: 'common',
-      reward: 50,
-      condition: () => (this.stats?.cardsStudied || 0) >= 10
-    },
-    {
-      id: 'getting_started',
-      name: 'Начало пути',
-      description: 'Study 50 cards',
-      icon: '🚀',
-      category: 'study',
-      rarity: 'common',
-      reward: 100,
-      condition: () => (this.stats?.cardsStudied || 0) >= 50
-    },
-    {
-      id: 'card_master',
-      name: 'Мастер карточек',
-      description: 'Study 100 cards',
-      icon: '🃏',
-      category: 'study',
-      rarity: 'rare',
-      reward: 200,
-      condition: () => (this.stats?.cardsStudied || 0) >= 100
-    },
-    {
-      id: 'expert',
-      name: 'Эксперт',
-      description: 'Study 1000 cards',
-      icon: '📚',
-      category: 'study',
-      rarity: 'epic',
-      reward: 500,
-      condition: () => (this.stats?.cardsStudied || 0) >= 1000
-    },
-    {
-      id: 'week_warrior',
-      name: 'Марафонец',
-      description: '7 day streak',
-      icon: '🔥',
-      category: 'streak',
-      rarity: 'rare',
-      reward: 150,
-      condition: () => (this.streak?.current || 0) >= 7
-    },
-    {
-      id: 'month_master',
-      name: 'Мастер месяца',
-      description: '30 day streak',
-      icon: '📅',
-      category: 'streak',
-      rarity: 'epic',
-      reward: 500,
-      condition: () => (this.streak?.current || 0) >= 30
-    },
-    {
-      id: 'test_rookie',
-      name: 'Новичок тестов',
-      description: 'Pass 5 tests',
-      icon: '📝',
-      category: 'test',
-      rarity: 'common',
-      reward: 100,
-      condition: () => (this.stats?.testsPassed || 0) >= 5
-    },
-    {
-      id: 'test_champion',
-      name: 'Чемпион тестов',
-      description: 'Pass 50 tests',
-      icon: '🏅',
-      category: 'test',
-      rarity: 'epic',
-      reward: 500,
-      condition: () => (this.stats?.testsPassed || 0) >= 50
-    },
-    {
-      id: 'game_winner',
-      name: 'Победитель',
-      description: 'Win 10 games',
-      icon: '🎮',
-      category: 'game',
-      rarity: 'epic',
-      reward: 300,
-      condition: () => (this.stats?.gamesWon || 0) >= 10
-    },
-    {
-      id: 'perfectionist',
-      name: 'Перфекционист',
-      description: 'Get 100% on a test',
-      icon: '💎',
-      category: 'test',
-      rarity: 'legendary',
-      reward: 1000,
-      condition: () => (this.stats?.perfectScores || 0) >= 1
+  const getProgress = (id) => {
+    const def = ACHIEVEMENT_DEFINITIONS.find(d => d.id === id);
+    if (!def) return 0;
+    switch (def.category) {
+      case 'study': return this.stats?.cardsStudied || 0;
+      case 'streak': return this.streak?.current || 0;
+      case 'test':
+        if (id.startsWith('perfect')) return this.stats?.perfectScores || 0;
+        return this.stats?.testsPassed || 0;
+      case 'game': return this.stats?.gamesWon || 0;
+      default: return 0;
     }
-  ];
+  };
   
-  // Check each achievement
-  for (const ach of allAchievements) {
-    if (!unlockedIds.includes(ach.id) && ach.condition()) {
+  for (const def of ACHIEVEMENT_DEFINITIONS) {
+    if (!unlockedIds.includes(def.id) && getProgress(def.id) >= def.target) {
       this.achievements.push({
-        achievementId: ach.id,
-        name: ach.name,
-        description: ach.description,
-        icon: ach.icon,
-        category: ach.category,
-        rarity: ach.rarity,
-        reward: ach.reward,
+        achievementId: def.id,
+        name: def.name,
+        description: def.description,
+        icon: def.icon,
+        category: def.category,
+        rarity: def.rarity,
+        reward: def.reward,
         unlockedAt: new Date()
       });
-      newAchievements.push(ach);
+      newAchievements.push(def);
     }
   }
   
@@ -664,113 +572,54 @@ userGamificationSchema.methods.updateStreak = async function() {
   return this.streak;
 };
 
-// Achievement definitions with rarity and rewards
+// Achievement definitions with rarity and rewards — tiered progression
 const ACHIEVEMENT_DEFINITIONS = [
-  {
-    id: 'first_steps',
-    name: 'Первые шаги',
-    description: 'Study 10 cards',
-    icon: '👣',
-    category: 'study',
-    rarity: 'common',
-    reward: 50,
-    target: 10
-  },
-  {
-    id: 'getting_started',
-    name: 'Начало пути',
-    description: 'Study 50 cards',
-    icon: '🚀',
-    category: 'study',
-    rarity: 'common',
-    reward: 100,
-    target: 50
-  },
-  {
-    id: 'card_master',
-    name: 'Мастер карточек',
-    description: 'Study 100 cards',
-    icon: '🃏',
-    category: 'study',
-    rarity: 'rare',
-    reward: 200,
-    target: 100
-  },
-  {
-    id: 'expert',
-    name: 'Эксперт',
-    description: 'Study 1000 cards',
-    icon: '📚',
-    category: 'study',
-    rarity: 'epic',
-    reward: 500,
-    target: 1000
-  },
-  {
-    id: 'week_warrior',
-    name: 'Марафонец',
-    description: '7 day streak',
-    icon: '🔥',
-    category: 'streak',
-    rarity: 'rare',
-    reward: 150,
-    target: 7
-  },
-  {
-    id: 'month_master',
-    name: 'Мастер месяца',
-    description: '30 day streak',
-    icon: '📅',
-    category: 'streak',
-    rarity: 'epic',
-    reward: 500,
-    target: 30
-  },
-  {
-    id: 'test_rookie',
-    name: 'Новичок тестов',
-    description: 'Pass 5 tests',
-    icon: '📝',
-    category: 'test',
-    rarity: 'common',
-    reward: 100,
-    target: 5
-  },
-  {
-    id: 'test_champion',
-    name: 'Чемпион тестов',
-    description: 'Pass 50 tests',
-    icon: '🏅',
-    category: 'test',
-    rarity: 'epic',
-    reward: 500,
-    target: 50
-  },
-  {
-    id: 'game_winner',
-    name: 'Победитель',
-    description: 'Win 10 games',
-    icon: '🎮',
-    category: 'game',
-    rarity: 'epic',
-    reward: 300,
-    target: 10
-  },
-  {
-    id: 'perfectionist',
-    name: 'Перфекционист',
-    description: 'Get 100% on a test',
-    icon: '💎',
-    category: 'test',
-    rarity: 'legendary',
-    reward: 1000,
-    target: 1
-  }
+  // ═══ STUDY: Cards Studied ═══
+  { id: 'study_1', name: 'Любопытный', description: 'Изучить первую карточку', icon: '🌱', category: 'study', rarity: 'common', reward: 10, target: 1 },
+  { id: 'first_steps', name: 'Первые шаги', description: 'Изучить 10 карточек', icon: '👣', category: 'study', rarity: 'common', reward: 50, target: 10 },
+  { id: 'getting_started', name: 'Начало пути', description: 'Изучить 50 карточек', icon: '🚀', category: 'study', rarity: 'common', reward: 100, target: 50 },
+  { id: 'card_master', name: 'Мастер карточек', description: 'Изучить 100 карточек', icon: '🃏', category: 'study', rarity: 'rare', reward: 200, target: 100 },
+  { id: 'study_250', name: 'Прилежный ученик', description: 'Изучить 250 карточек', icon: '📖', category: 'study', rarity: 'rare', reward: 300, target: 250 },
+  { id: 'study_500', name: 'Знаток', description: 'Изучить 500 карточек', icon: '🧠', category: 'study', rarity: 'epic', reward: 400, target: 500 },
+  { id: 'expert', name: 'Эксперт', description: 'Изучить 1000 карточек', icon: '📚', category: 'study', rarity: 'epic', reward: 500, target: 1000 },
+  { id: 'study_2500', name: 'Мудрец', description: 'Изучить 2500 карточек', icon: '🦉', category: 'study', rarity: 'epic', reward: 750, target: 2500 },
+  { id: 'study_5000', name: 'Энциклопедист', description: 'Изучить 5000 карточек', icon: '📜', category: 'study', rarity: 'legendary', reward: 1000, target: 5000 },
+  { id: 'study_10000', name: 'Легенда знаний', description: 'Изучить 10000 карточек', icon: '👑', category: 'study', rarity: 'legendary', reward: 2000, target: 10000 },
+
+  // ═══ STREAK: Days in a Row ═══
+  { id: 'streak_3', name: 'Первая серия', description: 'Серия 3 дня подряд', icon: '🔥', category: 'streak', rarity: 'common', reward: 50, target: 3 },
+  { id: 'week_warrior', name: 'Марафонец', description: 'Серия 7 дней подряд', icon: '🔥', category: 'streak', rarity: 'rare', reward: 150, target: 7 },
+  { id: 'streak_14', name: 'Двухнедельная серия', description: 'Серия 14 дней подряд', icon: '⚡', category: 'streak', rarity: 'rare', reward: 250, target: 14 },
+  { id: 'month_master', name: 'Мастер месяца', description: 'Серия 30 дней подряд', icon: '📅', category: 'streak', rarity: 'epic', reward: 500, target: 30 },
+  { id: 'streak_60', name: 'Несгибаемый', description: 'Серия 60 дней подряд', icon: '💪', category: 'streak', rarity: 'epic', reward: 800, target: 60 },
+  { id: 'streak_100', name: 'Железная воля', description: 'Серия 100 дней подряд', icon: '🏔️', category: 'streak', rarity: 'legendary', reward: 1500, target: 100 },
+  { id: 'streak_365', name: 'Год без перерыва', description: 'Серия 365 дней подряд', icon: '🌍', category: 'streak', rarity: 'legendary', reward: 5000, target: 365 },
+
+  // ═══ TESTS: Tests Passed ═══
+  { id: 'test_first', name: 'Первый тест', description: 'Пройти первый тест', icon: '✏️', category: 'test', rarity: 'common', reward: 30, target: 1 },
+  { id: 'test_rookie', name: 'Новичок тестов', description: 'Пройти 5 тестов', icon: '📝', category: 'test', rarity: 'common', reward: 100, target: 5 },
+  { id: 'test_10', name: 'Тестировщик', description: 'Пройти 10 тестов', icon: '📋', category: 'test', rarity: 'rare', reward: 200, target: 10 },
+  { id: 'test_25', name: 'Экзаменатор', description: 'Пройти 25 тестов', icon: '🎓', category: 'test', rarity: 'rare', reward: 300, target: 25 },
+  { id: 'test_champion', name: 'Чемпион тестов', description: 'Пройти 50 тестов', icon: '🏅', category: 'test', rarity: 'epic', reward: 500, target: 50 },
+  { id: 'test_100', name: 'Мастер экзаменов', description: 'Пройти 100 тестов', icon: '🎖️', category: 'test', rarity: 'legendary', reward: 1000, target: 100 },
+
+  // ═══ GAMES: Games Won ═══
+  { id: 'game_first', name: 'Первая победа', description: 'Выиграть первую игру', icon: '🎯', category: 'game', rarity: 'common', reward: 30, target: 1 },
+  { id: 'game_5', name: 'Игрок', description: 'Выиграть 5 игр', icon: '🕹️', category: 'game', rarity: 'common', reward: 100, target: 5 },
+  { id: 'game_winner', name: 'Победитель', description: 'Выиграть 10 игр', icon: '🎮', category: 'game', rarity: 'rare', reward: 300, target: 10 },
+  { id: 'game_25', name: 'Геймер', description: 'Выиграть 25 игр', icon: '🏆', category: 'game', rarity: 'rare', reward: 400, target: 25 },
+  { id: 'game_50', name: 'Чемпион игр', description: 'Выиграть 50 игр', icon: '👾', category: 'game', rarity: 'epic', reward: 600, target: 50 },
+  { id: 'game_100', name: 'Легенда аркад', description: 'Выиграть 100 игр', icon: '🕹️', category: 'game', rarity: 'legendary', reward: 1000, target: 100 },
+
+  // ═══ PERFECT SCORES ═══
+  { id: 'perfectionist', name: 'Перфекционист', description: 'Получить 100% на тесте', icon: '💎', category: 'test', rarity: 'rare', reward: 200, target: 1 },
+  { id: 'perfect_5', name: 'Безупречный', description: '5 идеальных результатов', icon: '✨', category: 'test', rarity: 'epic', reward: 500, target: 5 },
+  { id: 'perfect_10', name: 'Абсолютное совершенство', description: '10 идеальных результатов', icon: '🌟', category: 'test', rarity: 'epic', reward: 800, target: 10 },
+  { id: 'perfect_25', name: 'Бриллиантовый ум', description: '25 идеальных результатов', icon: '💠', category: 'test', rarity: 'legendary', reward: 1500, target: 25 },
 ];
 
 // Method to get progress towards achievements
 userGamificationSchema.methods.getAchievementProgress = function() {
-  // Ensure stats and streak exist
   if (!this.stats) {
     this.stats = { cardsStudied: 0, testsPassed: 0, gamesWon: 0, perfectScores: 0 };
   }
@@ -782,24 +631,20 @@ userGamificationSchema.methods.getAchievementProgress = function() {
   const streak = this.streak;
   const userAchievements = this.achievements || [];
   
-  const getCurrentProgress = (id) => {
-    switch (id) {
-      case 'first_steps': return stats.cardsStudied || 0;
-      case 'getting_started': return stats.cardsStudied || 0;
-      case 'card_master': return stats.cardsStudied || 0;
-      case 'expert': return stats.cardsStudied || 0;
-      case 'week_warrior': return streak.current || 0;
-      case 'month_master': return streak.current || 0;
-      case 'test_rookie': return stats.testsPassed || 0;
-      case 'test_champion': return stats.testsPassed || 0;
-      case 'game_winner': return stats.gamesWon || 0;
-      case 'perfectionist': return stats.perfectScores || 0;
+  const getCurrentProgress = (def) => {
+    switch (def.category) {
+      case 'study': return stats.cardsStudied || 0;
+      case 'streak': return streak.current || 0;
+      case 'test':
+        if (def.id.startsWith('perfect')) return stats.perfectScores || 0;
+        return stats.testsPassed || 0;
+      case 'game': return stats.gamesWon || 0;
       default: return 0;
     }
   };
   
   return ACHIEVEMENT_DEFINITIONS.map(def => {
-    const current = getCurrentProgress(def.id);
+    const current = getCurrentProgress(def);
     const unlockedAchievement = userAchievements.find(a => a.achievementId === def.id);
     
     return {

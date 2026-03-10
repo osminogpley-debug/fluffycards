@@ -840,6 +840,7 @@ const LiveGame = () => {
     
     const questions = roomData?.questions || DEFAULT_QUESTIONS;
     setSelectedAnswer(index);
+    if (!questions[currentQuestion]) return;
     const correct = index === questions[currentQuestion].correct;
     setIsCorrect(correct);
     

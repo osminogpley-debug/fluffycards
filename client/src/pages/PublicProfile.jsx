@@ -244,6 +244,111 @@ const AchBadge = styled.div`
   .name { font-weight: 600; color: var(--text-primary); }
 `;
 
+const FollowButton = styled.button`
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid ${p => p.$following ? '#e2e8f0' : '#4299e1'};
+  background: ${p => p.$following ? 'var(--bg-secondary, #f7fafc)' : 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)'};
+  color: ${p => p.$following ? 'var(--text-secondary)' : 'white'};
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+  }
+  &:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+`;
+
+const FollowStats = styled.div`
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+`;
+
+const FollowStat = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  &:hover { color: #4299e1; }
+  strong { color: var(--text-primary); font-weight: 700; }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+`;
+
+const ModalCard = styled.div`
+  background: var(--card-bg, #fff);
+  border-radius: 20px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+`;
+
+const FollowerItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  cursor: pointer;
+  &:hover { opacity: 0.8; }
+  &:last-child { border-bottom: none; }
+`;
+
+const FollowerAvatar = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #63b3ed, #4299e1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  img { width: 100%; height: 100%; object-fit: cover; }
+`;
+
+const FollowerName = styled.div`
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+`;
+
+const CloseBtn = styled.button`
+  background: var(--bg-secondary, #f0f0f0);
+  border: none;
+  padding: 8px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1rem;
+  width: 100%;
+  &:hover { opacity: 0.8; }
+`;
+
 const Toast = styled.div`
   position: fixed;
   bottom: 2rem;
@@ -270,6 +375,12 @@ function PublicProfile() {
   const [isProfilePublic, setIsProfilePublic] = useState(true);
   const [savingSet, setSavingSet] = useState({});
   const [toast, setToast] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(null); // 'followers' | 'following' | null
+  const [followersList, setFollowersList] = useState([]);
 
   const DEFAULT_PROFILE_IMAGE = 'https://fluffycards.com/default-avatar.png';
 
@@ -284,7 +395,7 @@ function PublicProfile() {
     return url;
   };
 
-  useEffect(() => { fetchUserProfile(); }, [userId]);
+  useEffect(() => { fetchUserProfile(); fetchFollowStatus(); }, [userId]);
 
   const fetchUserProfile = async () => {
     try {
@@ -343,6 +454,45 @@ function PublicProfile() {
     finally { setSavingSet(prev => ({ ...prev, [setId]: false })); }
   };
 
+  const fetchFollowStatus = async () => {
+    try {
+      const res = await authFetch(`${API_ROUTES.SOCIAL}/follow/${userId}/status`);
+      if (res.ok) {
+        const data = await res.json();
+        setIsFollowing(data.data.isFollowing);
+        setFollowersCount(data.data.followersCount);
+        setFollowingCount(data.data.followingCount);
+      }
+    } catch (e) { /* ignore */ }
+  };
+
+  const handleFollow = async () => {
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await authFetch(`${API_ROUTES.SOCIAL}/follow/${userId}`, { method: 'DELETE' });
+        setIsFollowing(false);
+        setFollowersCount(c => c - 1);
+      } else {
+        await authFetch(`${API_ROUTES.SOCIAL}/follow/${userId}`, { method: 'POST' });
+        setIsFollowing(true);
+        setFollowersCount(c => c + 1);
+      }
+    } catch(e) { console.error(e); }
+    finally { setFollowLoading(false); }
+  };
+
+  const openFollowModal = async (type) => {
+    setShowFollowersModal(type);
+    try {
+      const res = await authFetch(`${API_ROUTES.SOCIAL}/follow/${userId}/${type}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFollowersList(data.data || []);
+      }
+    } catch(e) { setFollowersList([]); }
+  };
+
   const level = gamification?.level || user?.level || 1;
   const xp = gamification?.xp || 0;
   const totalXp = gamification?.totalXp || user?.totalXp || 0;
@@ -377,6 +527,14 @@ function PublicProfile() {
             <UserRole $role={user.role}>
               {user.role === 'teacher' ? '👨‍🏫 Учитель' : '👨‍🎓 Ученик'}
             </UserRole>
+            <FollowStats>
+              <FollowStat onClick={() => openFollowModal('followers')}>
+                <strong>{followersCount}</strong> подписчиков
+              </FollowStat>
+              <FollowStat onClick={() => openFollowModal('following')}>
+                <strong>{followingCount}</strong> подписок
+              </FollowStat>
+            </FollowStats>
             {isProfilePublic && (
               <XpBarContainer>
                 <XpBarBg><XpBarFill $pct={xpPct} /></XpBarBg>
@@ -384,6 +542,9 @@ function PublicProfile() {
               </XpBarContainer>
             )}
           </AvatarInfo>
+          <FollowButton $following={isFollowing} onClick={handleFollow} disabled={followLoading}>
+            {isFollowing ? '✓ Подписан' : '+ Подписаться'}
+          </FollowButton>
         </AvatarSection>
       </ProfileCard>
 
@@ -466,6 +627,34 @@ function PublicProfile() {
       )}
 
       {toast && <Toast>{toast}</Toast>}
+
+      {showFollowersModal && (
+        <ModalOverlay onClick={() => setShowFollowersModal(null)}>
+          <ModalCard onClick={e => e.stopPropagation()}>
+            <ModalTitle>
+              {showFollowersModal === 'followers' ? `Подписчики (${followersCount})` : `Подписки (${followingCount})`}
+            </ModalTitle>
+            {followersList.length > 0 ? followersList.map(u => (
+              <FollowerItem key={u._id} onClick={() => { setShowFollowersModal(null); navigate(`/profile/${u._id}`); }}>
+                <FollowerAvatar>
+                  {isCustomProfileImage(u.profileImage) ? (
+                    <img src={resolveProfileImage(u.profileImage)} alt="" />
+                  ) : u.username?.[0]?.toUpperCase() || '👤'}
+                </FollowerAvatar>
+                <div>
+                  <FollowerName>{u.username}</FollowerName>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>⭐ Ур. {u.level || 1}</div>
+                </div>
+              </FollowerItem>
+            )) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                {showFollowersModal === 'followers' ? 'Пока нет подписчиков' : 'Пока нет подписок'}
+              </div>
+            )}
+            <CloseBtn onClick={() => setShowFollowersModal(null)}>Закрыть</CloseBtn>
+          </ModalCard>
+        </ModalOverlay>
+      )}
     </Container>
   );
 }

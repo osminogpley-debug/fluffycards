@@ -6,7 +6,8 @@ import {
   Comment, 
   Rating, 
   Challenge, 
-  SetShare 
+  SetShare,
+  Follow 
 } from '../models/Social.js';
 import User from '../models/User.js';
 import FlashcardSet from '../models/FlashcardSet.js';
@@ -597,6 +598,84 @@ router.post('/sets/shared/:shareLink/copy', authMiddleware, async (req, res) => 
   } catch (error) {
     console.error('Error copying set:', error);
     res.status(500).json({ success: false, message: 'Failed to copy set' });
+  }
+});
+
+// ==================== FOLLOW / SUBSCRIBE ====================
+
+// Follow a user
+router.post('/follow/:userId', authMiddleware, async (req, res) => {
+  try {
+    const targetUserId = req.params.userId;
+    if (targetUserId === req.user._id.toString()) {
+      return res.status(400).json({ success: false, message: 'Cannot follow yourself' });
+    }
+    const existing = await Follow.findOne({ follower: req.user._id, following: targetUserId });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Already following' });
+    }
+    await new Follow({ follower: req.user._id, following: targetUserId }).save();
+    res.json({ success: true, message: 'Followed successfully' });
+  } catch (error) {
+    console.error('Error following user:', error);
+    res.status(500).json({ success: false, message: 'Failed to follow user' });
+  }
+});
+
+// Unfollow a user
+router.delete('/follow/:userId', authMiddleware, async (req, res) => {
+  try {
+    await Follow.findOneAndDelete({ follower: req.user._id, following: req.params.userId });
+    res.json({ success: true, message: 'Unfollowed successfully' });
+  } catch (error) {
+    console.error('Error unfollowing user:', error);
+    res.status(500).json({ success: false, message: 'Failed to unfollow user' });
+  }
+});
+
+// Get follow status for a user
+router.get('/follow/:userId/status', authMiddleware, async (req, res) => {
+  try {
+    const [isFollowing, followersCount, followingCount] = await Promise.all([
+      Follow.findOne({ follower: req.user._id, following: req.params.userId }),
+      Follow.countDocuments({ following: req.params.userId }),
+      Follow.countDocuments({ follower: req.params.userId })
+    ]);
+    res.json({
+      success: true,
+      data: { isFollowing: !!isFollowing, followersCount, followingCount }
+    });
+  } catch (error) {
+    console.error('Error fetching follow status:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch follow status' });
+  }
+});
+
+// Get followers of a user
+router.get('/follow/:userId/followers', authMiddleware, async (req, res) => {
+  try {
+    const follows = await Follow.find({ following: req.params.userId })
+      .populate('follower', 'username profileImage level totalXp')
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json({ success: true, data: follows.map(f => f.follower) });
+  } catch (error) {
+    console.error('Error fetching followers:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch followers' });
+  }
+});
+
+// Get who a user is following
+router.get('/follow/:userId/following', authMiddleware, async (req, res) => {
+  try {
+    const follows = await Follow.find({ follower: req.params.userId })
+      .populate('following', 'username profileImage level totalXp')
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json({ success: true, data: follows.map(f => f.following) });
+  } catch (error) {
+    console.error('Error fetching following:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch following' });
   }
 });
 

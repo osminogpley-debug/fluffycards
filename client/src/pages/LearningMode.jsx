@@ -663,7 +663,7 @@ function LearningMode() {
     if (currentIndex > 0) {
       setFlipped(false);
       setTimeout(() => {
-        setCurrentIndex(prev => prev - 1);
+        setCurrentIndex(prev => Math.max(0, prev - 1));
       }, 200);
     }
   };

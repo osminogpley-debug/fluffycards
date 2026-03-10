@@ -498,7 +498,7 @@ function ScrambleGame() {
     setStreak(0);
     const newQueue = [...queue.filter(id => id !== currentCardId), currentCardId];
     setQueue(newQueue);
-    setupCard(newQueue[0]);
+    if (newQueue.length > 0) setupCard(newQueue[0]);
   };
 
   const handleClearAnswer = () => {
