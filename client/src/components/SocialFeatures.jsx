@@ -293,7 +293,7 @@ function SocialFeatures({ setId, isOwner, user }) {
 
       {shareLink && (
         <ShareSection>
-          <h4>Ссылка для sharing:</h4>
+          <h4>Ссылка на набор</h4>
           <ShareLink>
             <LinkInput value={shareLink} readOnly />
             <SecondaryButton onClick={copyToClipboard}>

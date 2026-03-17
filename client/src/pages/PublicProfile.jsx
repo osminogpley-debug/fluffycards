@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
+import { shareContent } from '../utils/share';
 
 const Container = styled.div`
   max-width: 900px;
@@ -261,6 +262,26 @@ const FollowButton = styled.button`
   &:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 `;
 
+const ProfileActions = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
+const ShareButton = styled.button`
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid #90cdf4;
+  background: #ebf8ff;
+  color: #2b6cb0;
+  &:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2); }
+`;
+
 const FollowStats = styled.div`
   display: flex;
   gap: 1.5rem;
@@ -493,6 +514,19 @@ function PublicProfile() {
     } catch(e) { setFollowersList([]); }
   };
 
+  const handleShareProfile = async () => {
+    const result = await shareContent({
+      title: `Профиль ${user.username} во FluffyCards`,
+      text: `Посмотри профиль ${user.username}: уровень ${level}, серия ${streak} дней, публичные наборы ${userSets.length}.`,
+      url: `${window.location.origin}/users/${userId}`
+    });
+
+    if (result.method === 'clipboard') {
+      setToast('Ссылка на профиль скопирована');
+      setTimeout(() => setToast(null), 2500);
+    }
+  };
+
   const level = gamification?.level || user?.level || 1;
   const xp = gamification?.xp || 0;
   const totalXp = gamification?.totalXp || user?.totalXp || 0;
@@ -542,9 +576,12 @@ function PublicProfile() {
               </XpBarContainer>
             )}
           </AvatarInfo>
-          <FollowButton $following={isFollowing} onClick={handleFollow} disabled={followLoading}>
-            {isFollowing ? '✓ Подписан' : '+ Подписаться'}
-          </FollowButton>
+          <ProfileActions>
+            <ShareButton onClick={handleShareProfile}>🔗 Поделиться</ShareButton>
+            <FollowButton $following={isFollowing} onClick={handleFollow} disabled={followLoading}>
+              {isFollowing ? '✓ Подписан' : '+ Подписаться'}
+            </FollowButton>
+          </ProfileActions>
         </AvatarSection>
       </ProfileCard>
 
@@ -599,7 +636,7 @@ function PublicProfile() {
             {userSets.length > 0 ? (
               <SetsGrid>
                 {userSets.map(set => (
-                  <SetCard key={set._id} onClick={() => navigate(`/set/${set._id}`)}>
+                  <SetCard key={set._id} onClick={() => navigate(`/sets/${set._id}`)}>
                     <h4>{set.title}</h4>
                     <div className="meta">
                       <span>📝 {set.flashcards?.length || set.cards?.length || 0} терминов</span>
@@ -635,7 +672,7 @@ function PublicProfile() {
               {showFollowersModal === 'followers' ? `Подписчики (${followersCount})` : `Подписки (${followingCount})`}
             </ModalTitle>
             {followersList.length > 0 ? followersList.map(u => (
-              <FollowerItem key={u._id} onClick={() => { setShowFollowersModal(null); navigate(`/profile/${u._id}`); }}>
+              <FollowerItem key={u._id} onClick={() => { setShowFollowersModal(null); navigate(`/users/${u._id}`); }}>
                 <FollowerAvatar>
                   {isCustomProfileImage(u.profileImage) ? (
                     <img src={resolveProfileImage(u.profileImage)} alt="" />

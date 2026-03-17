@@ -327,6 +327,10 @@ function SetCard({ set, isPopular = false, onSave, showSaveButton = true }) {
     ? `${FILE_BASE_URL}${set.coverImage}`
     : set.coverImage;
 
+  const authorProfileImage = set.owner?.profileImage?.startsWith('/uploads/')
+    ? `${FILE_BASE_URL}${set.owner.profileImage}`
+    : set.owner?.profileImage;
+
   const handleSave = async (e) => {
     console.log('[SetCard] Save button clicked!');
     
@@ -467,9 +471,9 @@ function SetCard({ set, isPopular = false, onSave, showSaveButton = true }) {
       <CardFooter>
         <AuthorInfo onClick={handleAuthorClick} title="Перейти в профиль">
           <Avatar>
-            {set.owner?.profileImage ? (
+            {authorProfileImage ? (
               <img 
-                src={set.owner.profileImage} 
+                src={authorProfileImage} 
                 alt="avatar" 
                 style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
               />

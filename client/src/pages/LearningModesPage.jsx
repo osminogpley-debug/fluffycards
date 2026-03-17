@@ -308,15 +308,6 @@ const learningModes = [
     difficulty: 'easy',
     features: ['Быстрые ответы', 'Развитие интуиции', 'Минимум кликов'],
     path: '/games/true-false'
-  },
-  {
-    id: 'memory',
-    icon: '🧠',
-    title: 'Память',
-    description: 'Найди пары термин — определение',
-    difficulty: 'medium',
-    features: ['Парные карточки', 'Тренировка памяти', 'Счёт ходов'],
-    path: '/games/memory'
   }
 ];
 

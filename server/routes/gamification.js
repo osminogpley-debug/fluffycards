@@ -2,9 +2,40 @@ import express from 'express';
 import authMiddleware from '../middleware/auth.js';
 import UserGamification from '../models/UserGamification.js';
 import User from '../models/User.js';
-import { Challenge } from '../models/Social.js';
+import { Activity, Challenge, Notification } from '../models/Social.js';
 
 const router = express.Router();
+
+const createNotification = async ({ userId, type, title, message, link = '', payload = {} }) => {
+  try {
+    await Notification.create({
+      user: userId,
+      type,
+      title,
+      message,
+      link,
+      payload
+    });
+  } catch (error) {
+    console.error('Error creating gamification notification:', error);
+  }
+};
+
+const createActivity = async ({ actorId, type, title, message, link = '', visibility = 'followers', payload = {} }) => {
+  try {
+    await Activity.create({
+      actor: actorId,
+      type,
+      title,
+      message,
+      link,
+      visibility,
+      payload
+    });
+  } catch (error) {
+    console.error('Error creating gamification activity:', error);
+  }
+};
 
 // Get user's gamification data
 router.get('/', authMiddleware, async (req, res) => {
@@ -93,6 +124,30 @@ router.post('/xp', authMiddleware, async (req, res) => {
     
     // Check for new achievements after adding XP
     const newAchievements = await gamification.checkAchievements();
+
+    if (newAchievements.length > 0) {
+      await Promise.all(
+        newAchievements.flatMap((achievement) => ([
+          createNotification({
+            userId: req.user._id,
+            type: 'achievement_unlocked',
+            title: 'Новое достижение',
+            message: `Вы открыли достижение «${achievement.name}» и получили ${achievement.reward || 0} XP`,
+            link: '/dashboard',
+            payload: { achievementId: achievement.id }
+          }),
+          createActivity({
+            actorId: req.user._id,
+            type: 'achievement_unlocked',
+            title: 'Новое достижение',
+            message: `${req.user.username} открыл(а) достижение «${achievement.name}»`,
+            link: `/users/${req.user._id}`,
+            visibility: 'followers',
+            payload: { achievementId: achievement.id }
+          })
+        ]))
+      );
+    }
     
     res.json({
       success: true,
@@ -157,6 +212,15 @@ router.post('/quest/:questId/complete', authMiddleware, async (req, res) => {
     
     // Add XP for completing the quest
     const xpResult = await gamification.addXp(quest.reward, `quest_${questId}`);
+
+    await createNotification({
+      userId: req.user._id,
+      type: 'quest_completed',
+      title: 'Квест выполнен',
+      message: `Вы завершили квест «${quest.name}» и получили ${quest.reward} XP`,
+      link: '/dashboard',
+      payload: { questId: quest.questId }
+    });
     
     res.json({
       success: true,
@@ -305,6 +369,30 @@ router.post('/stats', authMiddleware, async (req, res) => {
     
     // Check for new achievements
     const newAchievements = await gamification.checkAchievements();
+
+    if (newAchievements.length > 0) {
+      await Promise.all(
+        newAchievements.flatMap((achievement) => ([
+          createNotification({
+            userId: req.user._id,
+            type: 'achievement_unlocked',
+            title: 'Новое достижение',
+            message: `Вы открыли достижение «${achievement.name}» и получили ${achievement.reward || 0} XP`,
+            link: '/dashboard',
+            payload: { achievementId: achievement.id }
+          }),
+          createActivity({
+            actorId: req.user._id,
+            type: 'achievement_unlocked',
+            title: 'Новое достижение',
+            message: `${req.user.username} открыл(а) достижение «${achievement.name}»`,
+            link: `/users/${req.user._id}`,
+            visibility: 'followers',
+            payload: { achievementId: achievement.id }
+          })
+        ]))
+      );
+    }
     
     // Update challenge progress for active challenges
     let challengeUpdates = [];
@@ -376,6 +464,19 @@ router.post('/stats', authMiddleware, async (req, res) => {
       const perfectQuestResult = await gamification.updateQuestProgress('perfect_score', 1);
       questResults.xpEarned += perfectQuestResult.xpEarned;
       questResults.completedQuests.push(...perfectQuestResult.completedQuests);
+    }
+
+    if (questResults.completedQuests.length > 0) {
+      await Promise.all(
+        questResults.completedQuests.map((quest) => createNotification({
+          userId: req.user._id,
+          type: 'quest_completed',
+          title: 'Квест выполнен',
+          message: `Вы завершили квест «${quest.name}» и получили ${quest.reward} XP`,
+          link: '/dashboard',
+          payload: { questId: quest.questId }
+        }))
+      );
     }
 
     // Update weekly exam progress

@@ -7,13 +7,52 @@ import {
   Rating, 
   Challenge, 
   SetShare,
-  Follow 
+  Follow,
+  Notification,
+  Activity
 } from '../models/Social.js';
 import User from '../models/User.js';
 import FlashcardSet from '../models/FlashcardSet.js';
 import Message from '../models/Message.js';
 
 const router = express.Router();
+
+const createNotification = async ({ userId, actorId, type, title, message, link = '', payload = {} }) => {
+  if (!userId) return;
+  if (actorId && userId.toString() === actorId.toString()) return;
+
+  try {
+    await Notification.create({
+      user: userId,
+      actor: actorId,
+      type,
+      title,
+      message,
+      link,
+      payload
+    });
+  } catch (error) {
+    console.error('Error creating notification:', error);
+  }
+};
+
+const createActivity = async ({ actorId, type, title, message, link = '', visibility = 'followers', payload = {} }) => {
+  if (!actorId) return;
+
+  try {
+    await Activity.create({
+      actor: actorId,
+      type,
+      title,
+      message,
+      link,
+      visibility,
+      payload
+    });
+  } catch (error) {
+    console.error('Error creating activity:', error);
+  }
+};
 
 // ==================== FRIENDS ====================
 
@@ -189,6 +228,15 @@ router.post('/friends/request', authMiddleware, async (req, res) => {
     });
     
     await request.save();
+    await createNotification({
+      userId,
+      actorId: req.user._id,
+      type: 'friend_request',
+      title: 'Новая заявка в друзья',
+      message: `${req.user.username} отправил(а) вам заявку в друзья`,
+      link: '/dashboard',
+      payload: { requestId: request._id }
+    });
     
     res.json({ success: true, message: 'Friend request sent' });
   } catch (error) {
@@ -219,6 +267,26 @@ router.put('/friends/request/:requestId', authMiddleware, async (req, res) => {
         users: [request.from, request.to]
       });
       await friendship.save();
+
+      await createNotification({
+        userId: request.from,
+        actorId: req.user._id,
+        type: 'friend_accept',
+        title: 'Заявка принята',
+        message: `${req.user.username} принял(а) вашу заявку в друзья`,
+        link: '/dashboard',
+        payload: { friendshipId: friendship._id }
+      });
+
+      await createActivity({
+        actorId: req.user._id,
+        type: 'friend_accept',
+        title: 'Новая дружба',
+        message: `${req.user.username} добавил(а) нового друга`,
+        link: `/users/${req.user._id}`,
+        visibility: 'friends',
+        payload: { friendId: request.from }
+      });
     }
     
     res.json({ success: true, message: `Request ${status}` });
@@ -266,14 +334,15 @@ router.delete('/friends/:friendId', authMiddleware, async (req, res) => {
 
 // ==================== NOTIFICATIONS ====================
 
-// Get notification counts (unread messages + pending friend requests)
+// Get notification counts (messages + action notifications)
 router.get('/notifications/count', authMiddleware, async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const [unreadMessages, pendingRequests] = await Promise.all([
+    const [unreadMessages, pendingRequests, unreadNotifications] = await Promise.all([
       Message.countDocuments({ to: userId, read: false }),
-      FriendRequest.countDocuments({ to: userId, status: 'pending' })
+      FriendRequest.countDocuments({ to: userId, status: 'pending' }),
+      Notification.countDocuments({ user: userId, read: false })
     ]);
 
     res.json({
@@ -281,12 +350,91 @@ router.get('/notifications/count', authMiddleware, async (req, res) => {
       data: {
         unreadMessages,
         pendingRequests,
-        total: unreadMessages + pendingRequests
+        unreadNotifications,
+        total: unreadMessages + unreadNotifications
       }
     });
   } catch (error) {
     console.error('Error fetching notification count:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch notifications' });
+  }
+});
+
+router.get('/notifications', authMiddleware, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
+    const notifications = await Notification.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate('actor', 'username profileImage level totalXp');
+
+    res.json({ success: true, data: notifications });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch notifications list' });
+  }
+});
+
+router.put('/notifications/read-all', authMiddleware, async (req, res) => {
+  try {
+    await Notification.updateMany({ user: req.user._id, read: false }, { $set: { read: true } });
+    res.json({ success: true, message: 'Notifications marked as read' });
+  } catch (error) {
+    console.error('Error marking notifications as read:', error);
+    res.status(500).json({ success: false, message: 'Failed to update notifications' });
+  }
+});
+
+router.put('/notifications/:notificationId/read', authMiddleware, async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.notificationId, user: req.user._id },
+      { $set: { read: true } },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+
+    res.json({ success: true, data: notification });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ success: false, message: 'Failed to update notification' });
+  }
+});
+
+router.get('/activity/feed', authMiddleware, async (req, res) => {
+  try {
+    const friendships = await Friendship.find({ users: req.user._id }).select('users');
+    const friendIds = friendships
+      .flatMap((item) => item.users.map((id) => id.toString()))
+      .filter((id) => id !== req.user._id.toString());
+
+    const follows = await Follow.find({ follower: req.user._id }).select('following');
+    const followingIds = follows.map((item) => item.following.toString());
+
+    const actorIds = Array.from(new Set([...friendIds, ...followingIds]));
+    if (actorIds.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const activities = await Activity.find({ actor: { $in: actorIds } })
+      .sort({ createdAt: -1 })
+      .limit(25)
+      .populate('actor', 'username profileImage level totalXp');
+
+    const filteredActivities = activities.filter((activity) => {
+      const actorId = activity.actor?._id?.toString?.() || activity.actor?.toString?.();
+      if (activity.visibility === 'public') return true;
+      if (activity.visibility === 'friends') return friendIds.includes(actorId);
+      return followingIds.includes(actorId) || friendIds.includes(actorId);
+    });
+
+    res.json({ success: true, data: filteredActivities });
+  } catch (error) {
+    console.error('Error fetching activity feed:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch activity feed' });
   }
 });
 
@@ -436,6 +584,16 @@ router.post('/challenges', authMiddleware, async (req, res) => {
     
     await challenge.save();
     await challenge.populate('creator', 'username');
+
+    await createActivity({
+      actorId: req.user._id,
+      type: 'challenge_created',
+      title: 'Новый челлендж',
+      message: `${req.user.username} создал(а) челлендж «${challenge.title}»`,
+      link: `/dashboard?tab=friends&challenge=${challenge._id}`,
+      visibility: challenge.isPublic ? 'public' : 'followers',
+      payload: { challengeId: challenge._id }
+    });
     
     res.json({ success: true, data: challenge });
   } catch (error) {
@@ -463,6 +621,26 @@ router.post('/challenges/:challengeId/join', authMiddleware, async (req, res) =>
     
     challenge.participants.push({ user: req.user._id });
     await challenge.save();
+
+    await createNotification({
+      userId: challenge.creator,
+      actorId: req.user._id,
+      type: 'challenge_join',
+      title: 'Новый участник челленджа',
+      message: `${req.user.username} присоединился(ась) к вашему челленджу «${challenge.title}»`,
+      link: '/dashboard',
+      payload: { challengeId: challenge._id }
+    });
+
+    await createActivity({
+      actorId: req.user._id,
+      type: 'challenge_joined',
+      title: 'Участие в челлендже',
+      message: `${req.user.username} присоединился(ась) к челленджу «${challenge.title}»`,
+      link: `/dashboard?tab=friends&challenge=${challenge._id}`,
+      visibility: 'followers',
+      payload: { challengeId: challenge._id }
+    });
     
     res.json({ success: true, message: 'Joined challenge' });
   } catch (error) {
@@ -532,7 +710,7 @@ router.post('/sets/share', authMiddleware, async (req, res) => {
     res.json({ 
       success: true, 
       data: {
-        shareLink: `${process.env.CLIENT_URL || 'http://localhost:3000'}/sets/shared/${share.shareLink}`,
+        shareLink: `${process.env.CLIENT_URL || 'http://localhost:3000'}/share/${setId}`,
         isPublic: share.isPublic
       }
     });
@@ -581,7 +759,7 @@ router.post('/sets/shared/:shareLink/copy', authMiddleware, async (req, res) => 
     
     // Create copy
     const newSet = new FlashcardSet({
-      userId: req.user._id,
+      owner: req.user._id,
       title: originalSet.title + ' (копия)',
       description: originalSet.description,
       flashcards: originalSet.flashcards,
@@ -615,6 +793,25 @@ router.post('/follow/:userId', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Already following' });
     }
     await new Follow({ follower: req.user._id, following: targetUserId }).save();
+    await createNotification({
+      userId: targetUserId,
+      actorId: req.user._id,
+      type: 'follow',
+      title: 'Новый подписчик',
+      message: `${req.user.username} подписался(ась) на вас`,
+      link: `/users/${req.user._id}`,
+      payload: { followerId: req.user._id }
+    });
+
+    await createActivity({
+      actorId: req.user._id,
+      type: 'follow',
+      title: 'Новая подписка',
+      message: `${req.user.username} подписался(ась) на автора`,
+      link: `/users/${targetUserId}`,
+      visibility: 'followers',
+      payload: { targetUserId }
+    });
     res.json({ success: true, message: 'Followed successfully' });
   } catch (error) {
     console.error('Error following user:', error);

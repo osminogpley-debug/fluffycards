@@ -3,8 +3,54 @@ import FlashcardSet from '../models/FlashcardSet.js';
 import User from '../models/User.js';
 import authMiddleware from '../middleware/auth.js';
 import { unsplash } from '../services/unsplash.js';
+import { Activity, Follow, Rating } from '../models/Social.js';
 
 const router = express.Router();
+
+const createActivity = async ({ actorId, type, title, message, link = '', visibility = 'public', payload = {} }) => {
+  try {
+    await Activity.create({
+      actor: actorId,
+      type,
+      title,
+      message,
+      link,
+      visibility,
+      payload
+    });
+  } catch (error) {
+    console.error('Error creating set activity:', error);
+  }
+};
+
+const attachRatings = async (sets) => {
+  const setIds = sets.map((set) => set._id.toString());
+  if (setIds.length === 0) return [];
+
+  const ratings = await Rating.find({ setId: { $in: setIds } });
+  const ratingsMap = {};
+
+  ratings.forEach((rating) => {
+    const setId = rating.setId.toString();
+    if (!ratingsMap[setId]) ratingsMap[setId] = [];
+    ratingsMap[setId].push(rating.rating);
+  });
+
+  return sets.map((set) => {
+    const setObject = set.toObject();
+    const setRatings = ratingsMap[set._id.toString()] || [];
+    const averageRating = setRatings.length > 0
+      ? setRatings.reduce((sum, value) => sum + value, 0) / setRatings.length
+      : 0;
+
+    return {
+      ...setObject,
+      averageRating,
+      ratingsCount: setRatings.length,
+      popularity: Math.min(100, Math.round(((setObject.studyStats?.totalViews || 0) * 0.7) + (averageRating * 10) + setRatings.length))
+    };
+  });
+};
 
 // Получение публичных наборов (для библиотеки)
 router.get('/public', async (req, res) => {
@@ -84,7 +130,7 @@ router.get('/public', async (req, res) => {
     let sortOption = {};
     switch (sort) {
       case 'popular':
-        sortOption = { views: -1 };
+        sortOption = { 'studyStats.totalViews': -1, updatedAt: -1 };
         break;
       case 'alphabetical':
         sortOption = { title: 1 };
@@ -103,30 +149,7 @@ router.get('/public', async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit))
       .populate('owner', 'username profileImage');
-    
-    // Получаем рейтинги для всех наборов
-    const { Rating } = await import('../models/Social.js');
-    const setIds = sets.map(s => s._id.toString());
-    const ratings = await Rating.find({ setId: { $in: setIds } });
-    
-    // Группируем рейтинги по setId
-    const ratingsMap = {};
-    ratings.forEach(r => {
-      const sid = r.setId.toString();
-      if (!ratingsMap[sid]) ratingsMap[sid] = [];
-      ratingsMap[sid].push(r.rating);
-    });
-    
-    // Добавляем средний рейтинг к каждому набору
-    const setsWithRatings = sets.map(set => {
-      const setObj = set.toObject();
-      const setRatings = ratingsMap[set._id.toString()] || [];
-      setObj.averageRating = setRatings.length > 0 
-        ? setRatings.reduce((a, b) => a + b, 0) / setRatings.length 
-        : 0;
-      setObj.ratingsCount = setRatings.length;
-      return setObj;
-    });
+    const setsWithRatings = await attachRatings(sets);
     
     // Общее количество для пагинации
     const total = await FlashcardSet.countDocuments(query);
@@ -144,6 +167,89 @@ router.get('/public', async (req, res) => {
   } catch (error) {
     console.error('Error fetching public sets:', error);
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/discover', authMiddleware, async (req, res) => {
+  try {
+    const [ownSets, followLinks] = await Promise.all([
+      FlashcardSet.find({ owner: req.user._id }).sort({ lastStudied: -1, updatedAt: -1 }).limit(24),
+      Follow.find({ follower: req.user._id }).select('following')
+    ]);
+
+    const followedAuthorIds = followLinks.map((item) => item.following);
+    const favoriteTags = Array.from(new Set(
+      ownSets
+        .flatMap((set) => set.tags || [])
+        .map((tag) => tag?.trim())
+        .filter(Boolean)
+    )).slice(0, 6);
+
+    const tagRegexes = favoriteTags.map((tag) => new RegExp(`^${tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'));
+
+    const [continueLearningSets, followingSets, recommendedSets, trendingSets] = await Promise.all([
+      FlashcardSet.find({ owner: req.user._id })
+        .sort({ lastStudied: -1, updatedAt: -1 })
+        .limit(4)
+        .populate('owner', 'username profileImage'),
+      followedAuthorIds.length > 0
+        ? FlashcardSet.find({ isPublic: true, owner: { $in: followedAuthorIds } })
+          .sort({ updatedAt: -1 })
+          .limit(6)
+          .populate('owner', 'username profileImage')
+        : Promise.resolve([]),
+      tagRegexes.length > 0
+        ? FlashcardSet.find({
+          isPublic: true,
+          owner: { $ne: req.user._id },
+          tags: { $in: tagRegexes }
+        })
+          .sort({ 'studyStats.totalViews': -1, updatedAt: -1 })
+          .limit(6)
+          .populate('owner', 'username profileImage')
+        : Promise.resolve([]),
+      FlashcardSet.find({ isPublic: true, owner: { $ne: req.user._id } })
+        .sort({ 'studyStats.totalViews': -1, updatedAt: -1 })
+        .limit(6)
+        .populate('owner', 'username profileImage')
+    ]);
+
+    const dedupe = (items) => {
+      const seen = new Set();
+      return items.filter((item) => {
+        const id = item._id.toString();
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+    };
+
+    const [continueLearning, fromFollowing, recommended, trending] = await Promise.all([
+      attachRatings(dedupe(continueLearningSets)),
+      attachRatings(dedupe(followingSets)),
+      attachRatings(dedupe(recommendedSets)),
+      attachRatings(dedupe(trendingSets))
+    ]);
+
+    const reviewQueue = continueLearning
+      .filter((set) => set.flashcards?.length > 0)
+      .sort((a, b) => new Date(a.lastStudied || 0) - new Date(b.lastStudied || 0))
+      .slice(0, 3);
+
+    res.json({
+      success: true,
+      data: {
+        continueLearning,
+        reviewQueue,
+        fromFollowing,
+        recommended,
+        trending,
+        favoriteTags
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching discover feed:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch discover feed' });
   }
 });
 
@@ -335,6 +441,10 @@ router.get('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Набор не найден' });
     }
 
+    set.studyStats = set.studyStats || { totalViews: 0, masteryLevel: 0 };
+    set.studyStats.totalViews += 1;
+    await set.save();
+
     res.json(set);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -369,6 +479,19 @@ router.post('/', authMiddleware, async (req, res) => {
     
     await set.save();
     console.log('[Create Set] Saved with isPublic:', set.isPublic);
+
+    if (set.isPublic) {
+      await createActivity({
+        actorId: req.user._id,
+        type: 'public_set_created',
+        title: 'Новый публичный набор',
+        message: `${req.user.username} опубликовал(а) набор «${set.title}»`,
+        link: `/sets/${set._id}`,
+        visibility: 'public',
+        payload: { setId: set._id }
+      });
+    }
+
     res.status(201).json(set);
   } catch (error) {
     console.error('[Create Set] Error:', error);
@@ -391,6 +514,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (!set) {
       return res.status(404).json({ message: 'Набор не найден' });
     }
+
+    const wasPublic = Boolean(set.isPublic);
     
     if (title !== undefined) set.title = title;
     if (description !== undefined) set.description = description;
@@ -410,6 +535,19 @@ router.put('/:id', authMiddleware, async (req, res) => {
     
     await set.save();
     console.log('[Update Set] Saved with isPublic:', set.isPublic);
+
+    if (!wasPublic && set.isPublic) {
+      await createActivity({
+        actorId: req.user._id,
+        type: 'public_set_created',
+        title: 'Опубликован набор',
+        message: `${req.user.username} сделал(а) набор «${set.title}» публичным`,
+        link: `/sets/${set._id}`,
+        visibility: 'public',
+        payload: { setId: set._id }
+      });
+    }
+
     res.json(set);
   } catch (error) {
     console.error('[Update Set] Error:', error);

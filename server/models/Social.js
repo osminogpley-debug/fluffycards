@@ -192,6 +192,97 @@ const followSchema = new mongoose.Schema({
   }
 });
 
+const notificationSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  actor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  type: {
+    type: String,
+    enum: ['friend_request', 'friend_accept', 'follow', 'challenge_join', 'achievement_unlocked', 'quest_completed'],
+    required: true
+  },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 120
+  },
+  message: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 400
+  },
+  link: {
+    type: String,
+    default: ''
+  },
+  read: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  payload: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const activitySchema = new mongoose.Schema({
+  actor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  type: {
+    type: String,
+    enum: ['follow', 'friend_accept', 'challenge_created', 'challenge_joined', 'achievement_unlocked', 'public_set_created'],
+    required: true
+  },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 120
+  },
+  message: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 400
+  },
+  link: {
+    type: String,
+    default: ''
+  },
+  visibility: {
+    type: String,
+    enum: ['public', 'followers', 'friends'],
+    default: 'followers'
+  },
+  payload: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    index: true
+  }
+});
+
 // Create unique indexes
 friendRequestSchema.index({ from: 1, to: 1 }, { unique: true });
 friendshipSchema.index({ users: 1 }, { unique: true });
@@ -199,6 +290,9 @@ ratingSchema.index({ setId: 1, userId: 1 }, { unique: true });
 setShareSchema.index({ shareLink: 1 });
 followSchema.index({ follower: 1, following: 1 }, { unique: true });
 followSchema.index({ following: 1 });
+notificationSchema.index({ user: 1, read: 1, createdAt: -1 });
+activitySchema.index({ actor: 1, createdAt: -1 });
+activitySchema.index({ visibility: 1, createdAt: -1 });
 
 // Generate share link
 setShareSchema.pre('save', function(next) {
@@ -216,3 +310,5 @@ export const Rating = mongoose.model('Rating', ratingSchema);
 export const Challenge = mongoose.model('Challenge', challengeSchema);
 export const SetShare = mongoose.model('SetShare', setShareSchema);
 export const Follow = mongoose.model('Follow', followSchema);
+export const Notification = mongoose.model('Notification', notificationSchema);
+export const Activity = mongoose.model('Activity', activitySchema);

@@ -32,7 +32,6 @@ import QuizBlitz from './pages/QuizBlitz';
 import logoImage from './assets/logo.png';
 import CreateClassPage from './pages/CreateClassPage';
 import TrueFalseGame from './pages/TrueFalseGame';
-import MemoryGame from './pages/MemoryGame';
 import TreasureIsland from './pages/TreasureIsland';
 import ChainGame from './pages/ChainGame';
 import TowerGame from './pages/TowerGame';
@@ -140,6 +139,7 @@ const GlobalStyle = createGlobalStyle`
     0% { transform: translateX(0) translateY(0); opacity: 1; }
     100% { transform: translateX(-200px) translateY(200px); opacity: 0; }
   }
+
 `;
 
 const CosmicStarsOverlay = styled.div`
@@ -739,16 +739,6 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <TrueFalseGame />
-                  ) : (
-                    <Navigate to="/login" />
-                  )
-                }
-              />
-              <Route
-                path="/games/memory"
-                element={
-                  authState.isAuthenticated ? (
-                    <MemoryGame />
                   ) : (
                     <Navigate to="/login" />
                   )

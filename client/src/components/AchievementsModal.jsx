@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { API_ROUTES, authFetch } from '../constants/api';
 import LevelBadge from './LevelBadge';
+import { shareContent } from '../utils/share';
 
 const Overlay = styled.div`
   position: fixed;
@@ -82,6 +83,27 @@ const CloseButton = styled.button`
   &:hover {
     background: ${props => props.$isDark ? '#4b5563' : '#d1d5db'};
     transform: rotate(90deg);
+  }
+`;
+
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ShareButton = styled.button`
+  border: none;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-1px);
   }
 `;
 
@@ -486,6 +508,18 @@ function AchievementsModal({ isOpen, onClose, isDark = false }) {
     return achievements.filter(a => a.category === categoryId).length;
   };
 
+  const handleShareAchievement = async (achievement) => {
+    const result = await shareContent({
+      title: `Достижение во FluffyCards: ${achievement.name}`,
+      text: `Я открыл(а) достижение «${achievement.name}» во FluffyCards. ${achievement.description}`,
+      url: `${window.location.origin}/dashboard`
+    });
+
+    if (result.method === 'clipboard') {
+      window.alert('Текст для шаринга скопирован');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -499,7 +533,17 @@ function AchievementsModal({ isOpen, onClose, isDark = false }) {
               <p>Разблокируйте все награды и станьте легендой!</p>
             </div>
           </HeaderTitle>
-          <CloseButton $isDark={isDark} onClick={onClose}>×</CloseButton>
+          <HeaderActions>
+            <ShareButton
+              onClick={() => handleShareAchievement({
+                name: `Мой прогресс: ${stats.unlocked || 0}/${stats.total || 0}`,
+                description: `У меня уже ${stats.unlocked || 0} разблокированных достижений.`
+              })}
+            >
+              🔗 Поделиться
+            </ShareButton>
+            <CloseButton $isDark={isDark} onClick={onClose}>×</CloseButton>
+          </HeaderActions>
         </ModalHeader>
 
         <ProgressSummary $isDark={isDark}>
@@ -595,6 +639,13 @@ function AchievementsModal({ isOpen, onClose, isDark = false }) {
                             {new Date(achievement.unlockedAt).toLocaleDateString()}
                           </span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => handleShareAchievement(achievement)}
+                          style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', fontWeight: 700 }}
+                        >
+                          🔗
+                        </button>
                       </UnlockedBadge>
                     ) : (
                       <>

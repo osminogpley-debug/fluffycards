@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from './UI/Buttons';
 import { getChallenges, createChallenge, joinChallenge } from '../services/socialService';
+import { shareContent } from '../utils/share';
 
 
 
@@ -47,11 +48,56 @@ const ChallengeCard = styled.div`
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
+  border: 2px solid ${props => props.$highlighted ? '#2563eb' : 'transparent'};
+  box-shadow: ${props => props.$highlighted ? '0 0 0 4px rgba(37, 99, 235, 0.14)' : 'none'};
   
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
+`;
+
+const CardActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
+`;
+
+const SmallActionButton = styled.button`
+  border: none;
+  border-radius: 10px;
+  padding: 0.45rem 0.75rem;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+`;
+
+const InlineHint = styled.div`
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  color: #1d4ed8;
+  font-weight: 700;
+`;
+
+const Toast = styled.div`
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  z-index: 1100;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
 `;
 
 const ChallengeHeader = styled.div`
@@ -247,10 +293,11 @@ const ButtonGroup = styled.div`
   margin-top: 1.5rem;
 `;
 
-function Challenges({ user }) {
+function Challenges({ user, highlightChallengeId = null }) {
   const [challenges, setChallenges] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -280,6 +327,23 @@ function Challenges({ user }) {
   const handleJoin = async (challengeId) => {
     await joinChallenge(challengeId);
     loadChallenges();
+  };
+
+  const showToastMessage = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(''), 2500);
+  };
+
+  const handleShare = async (challenge, e) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/dashboard?tab=friends&challenge=${challenge._id}`;
+    const result = await shareContent({
+      title: `Челлендж: ${challenge.title}`,
+      text: `Присоединяйся к челленджу во FluffyCards: ${challenge.title}`,
+      url
+    });
+
+    showToastMessage(result.method === 'clipboard' ? 'Ссылка на челлендж скопирована' : 'Челлендж готов к отправке');
   };
 
   const getChallengeTypeLabel = (type) => {
@@ -325,6 +389,7 @@ function Challenges({ user }) {
                 <ChallengeCard 
                   key={challenge._id}
                   $type={challenge.type}
+                  $highlighted={highlightChallengeId === challenge._id}
                   onClick={() => !isParticipant && handleJoin(challenge._id)}
                 >
                   <ChallengeHeader>
@@ -360,6 +425,21 @@ function Challenges({ user }) {
                   </Participants>
 
                   <TimeLeft>{getTimeLeft(challenge.endDate)}</TimeLeft>
+
+                  {highlightChallengeId === challenge._id && (
+                    <InlineHint>Этот челлендж открыт по приглашению. Можно сразу вступить или переслать ссылку дальше.</InlineHint>
+                  )}
+
+                  <CardActions>
+                    {!isParticipant && (
+                      <SmallActionButton onClick={(e) => { e.stopPropagation(); handleJoin(challenge._id); }}>
+                        ➕ Вступить
+                      </SmallActionButton>
+                    )}
+                    <SmallActionButton onClick={(e) => handleShare(challenge, e)}>
+                      🔗 Пригласить
+                    </SmallActionButton>
+                  </CardActions>
                 </ChallengeCard>
               );
             })
@@ -446,6 +526,8 @@ function Challenges({ user }) {
           </ModalContent>
         </Modal>
       )}
+
+      {toast && <Toast>{toast}</Toast>}
     </>
   );
 }

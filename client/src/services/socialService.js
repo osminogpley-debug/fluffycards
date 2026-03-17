@@ -294,5 +294,72 @@ export const getNotificationCount = async () => {
   } catch (error) {
     console.error('Error fetching notification count:', error);
   }
-  return { unreadMessages: 0, pendingRequests: 0, total: 0 };
+  return { unreadMessages: 0, pendingRequests: 0, unreadNotifications: 0, total: 0 };
+};
+
+export const getNotifications = async (limit = 20) => {
+  try {
+    const response = await authFetch(`${SOCIAL_API}/notifications?limit=${limit}`);
+    if (response.ok) {
+      const result = await response.json();
+      return result.data || [];
+    }
+  } catch (error) {
+    console.error('Error fetching notifications list:', error);
+  }
+  return [];
+};
+
+export const markNotificationRead = async (notificationId) => {
+  try {
+    const response = await authFetch(`${SOCIAL_API}/notifications/${notificationId}/read`, {
+      method: 'PUT'
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+  }
+  return null;
+};
+
+export const markAllNotificationsRead = async () => {
+  try {
+    const response = await authFetch(`${SOCIAL_API}/notifications/read-all`, {
+      method: 'PUT'
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+  }
+  return null;
+};
+
+export const getDiscoveryFeed = async () => {
+  try {
+    const response = await authFetch(`${API_ROUTES.DATA.SETS}/discover`);
+    if (response.ok) {
+      const result = await response.json();
+      return result.data || null;
+    }
+  } catch (error) {
+    console.error('Error fetching discovery feed:', error);
+  }
+  return null;
+};
+
+export const getActivityFeed = async () => {
+  try {
+    const response = await authFetch(`${SOCIAL_API}/activity/feed`);
+    if (response.ok) {
+      const result = await response.json();
+      return result.data || [];
+    }
+  } catch (error) {
+    console.error('Error fetching activity feed:', error);
+  }
+  return [];
 };

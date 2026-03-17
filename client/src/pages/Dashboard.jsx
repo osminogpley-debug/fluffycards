@@ -1,19 +1,20 @@
 import React, { useEffect, useState, useCallback, useRef, useContext } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import { useTheme, avatars } from '../contexts/ThemeContext';
 import GamificationPanel from '../components/GamificationPanel';
-import SocialFeatures from '../components/SocialFeatures';
 import Challenges from '../components/Challenges';
 import FriendsList from '../components/FriendsList';
 import AchievementsModal from '../components/AchievementsModal';
 import LeaderboardModal from '../components/LeaderboardModal';
-import LevelBadge from '../components/LevelBadge';
 import ChatModal from '../components/ChatModal';
 import MergeSetsModal from '../components/Library/MergeSetsModal';
-import { getNotificationCount } from '../services/socialService';
+import ActivityFeed from '../components/ActivityFeed';
+import NotificationCenter from '../components/NotificationCenter';
+import SmartStudyPanel from '../components/SmartStudyPanel';
+import { getDiscoveryFeed, getNotificationCount } from '../services/socialService';
 
 // ===== СТИЛИ =====
 const DashboardContainer = styled.div`
@@ -199,7 +200,6 @@ const GamificationButton = styled.button`
   box-shadow: 0 4px 12px ${props => props.$variant === 'leaderboard' 
     ? 'rgba(251, 191, 36, 0.3)' 
     : 'rgba(139, 92, 246, 0.3)'};
-  
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px ${props => props.$variant === 'leaderboard' 
@@ -1017,12 +1017,13 @@ const FOLDER_COLORS = [
 // ===== КОМПОНЕНТ =====
 function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { authState } = useContext(AuthContext);
   const { avatar, themeData } = useTheme();
   const user = authState?.user;
   const userRole = user?.role || 'student';
   const isDark = themeData?.name === 'Темная' || themeData?.name === 'Космическая';
-  const [activeTab, setActiveTab] = useState('sets');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'sets');
   const [stats, setStats] = useState(null);
   const [userSets, setUserSets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1042,7 +1043,8 @@ function Dashboard() {
   const [showChat, setShowChat] = useState(false);
   
   // State для уведомлений (друзья + сообщения)
-  const [notificationCount, setNotificationCount] = useState({ unreadMessages: 0, pendingRequests: 0, total: 0 });
+  const [notificationCount, setNotificationCount] = useState({ unreadMessages: 0, pendingRequests: 0, unreadNotifications: 0, total: 0 });
+  const [discoveryFeed, setDiscoveryFeed] = useState(null);
 
   const isSameData = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -1132,8 +1134,10 @@ function Dashboard() {
         return res.json();
       }).catch(() => null);
 
-      const [statsData, setsData, foldersData, gamificationRes] = await Promise.all([
-        statsPromise, setsPromise, foldersPromise, gamificationPromise
+      const discoveryPromise = getDiscoveryFeed().catch(() => null);
+
+      const [statsData, setsData, foldersData, gamificationRes, discoveryRes] = await Promise.all([
+        statsPromise, setsPromise, foldersPromise, gamificationPromise, discoveryPromise
       ]);
       
       clearTimeout(timeoutId);
@@ -1147,6 +1151,7 @@ function Dashboard() {
       setUserSets(prev => (isSameData(prev, setsData) ? prev : setsData));
       setGamificationData(prev => (isSameData(prev, gamificationRes) ? prev : gamificationRes));
       setFolders(prev => (isSameData(prev, foldersData) ? prev : foldersData));
+      setDiscoveryFeed(prev => (isSameData(prev, discoveryRes) ? prev : discoveryRes));
       
       // Извлекаем популярные теги из наборов
       const tagCounts = {};
@@ -1174,6 +1179,20 @@ function Dashboard() {
     return () => clearInterval(intervalId);
   }, [fetchData]);
 
+  useEffect(() => {
+    const tabFromQuery = searchParams.get('tab');
+    if (tabFromQuery && tabFromQuery !== activeTab) {
+      setActiveTab(tabFromQuery);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', tabId);
+    setSearchParams(next, { replace: true });
+  };
+
   // Загрузка и polling уведомлений (заявки в друзья + непрочитанные сообщения)
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -1184,6 +1203,11 @@ function Dashboard() {
     const notifInterval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(notifInterval);
   }, []);
+
+  const refreshNotifications = async () => {
+    const data = await getNotificationCount();
+    setNotificationCount(prev => (isSameData(prev, data) ? prev : data));
+  };
 
   // API вызовы
   const fetchFolders = async () => {
@@ -2057,20 +2081,20 @@ function Dashboard() {
       <TabNavigation>
         <Tab 
           active={activeTab === 'sets'} 
-          onClick={() => setActiveTab('sets')}
+          onClick={() => handleTabChange('sets')}
         >
           📚 {userRole === 'teacher' ? 'Мои наборы' : 'Мои наборы'}
         </Tab>
         <Tab 
           active={activeTab === 'folders'} 
-          onClick={() => setActiveTab('folders')}
+          onClick={() => handleTabChange('folders')}
         >
           📁 Папки
         </Tab>
         {userRole === 'student' && (
           <Tab 
             active={activeTab === 'games'} 
-            onClick={() => setActiveTab('games')}
+            onClick={() => handleTabChange('games')}
           >
             🎮 Игры
           </Tab>
@@ -2078,7 +2102,7 @@ function Dashboard() {
         {userRole === 'teacher' && (
           <Tab 
             active={activeTab === 'classes'} 
-            onClick={() => setActiveTab('classes')}
+            onClick={() => handleTabChange('classes')}
           >
             🎓 Классы
           </Tab>
@@ -2093,14 +2117,14 @@ function Dashboard() {
         )}
         <Tab 
           active={activeTab === 'stats'} 
-          onClick={() => setActiveTab('stats')}
+          onClick={() => handleTabChange('stats')}
         >
           📊 {userRole === 'teacher' ? 'Аналитика' : 'Статистика'}
         </Tab>
 
         <Tab 
           active={activeTab === 'friends'} 
-          onClick={() => setActiveTab('friends')}
+          onClick={() => handleTabChange('friends')}
         >
           👥 Друзья
           {notificationCount.total > 0 && (
@@ -2114,6 +2138,18 @@ function Dashboard() {
       {/* Основной контент */}
       <MainContent>
         <ContentArea>
+          <SmartStudyPanel
+            userRole={userRole}
+            stats={stats}
+            gamificationData={gamificationData}
+            discoveryFeed={discoveryFeed}
+            onOpenSet={(setId) => navigate(`/sets/${setId}`)}
+            onOpenLibrary={() => navigate('/library')}
+            onCreateSet={() => navigate('/sets/create')}
+            onOpenGames={() => handleTabChange('games')}
+            onOpenClasses={() => handleTabChange('classes')}
+          />
+
           {activeTab === 'sets' && renderSetsTab()}
           {activeTab === 'folders' && renderFoldersTab()}
           {activeTab === 'games' && renderGamesTab()}
@@ -2132,13 +2168,20 @@ function Dashboard() {
           {activeTab === 'friends' && (
             <div style={{ display: 'grid', gap: '1.5rem' }}>
               <FriendsList user={user} />
-              <Challenges user={user} />
+              <Challenges user={user} highlightChallengeId={searchParams.get('challenge')} />
             </div>
           )}
         </ContentArea>
 
         {/* Боковая панель */}
         <Sidebar>
+          <NotificationCenter
+            unreadCount={notificationCount.unreadNotifications}
+            onUnreadChange={refreshNotifications}
+          />
+
+          <ActivityFeed />
+
           <SidebarCard>
             <h3>👤 Профиль</h3>
             <SidebarMenu>

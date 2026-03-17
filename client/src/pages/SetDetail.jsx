@@ -1005,13 +1005,6 @@ function SetDetail() {
                 <span className="game-icon">✅</span> Да/Нет
               </GameButton>
               <GameButton 
-                gradient="#fb923c, #f97316"
-                onClick={() => navigateToGame('memory')}
-                disabled={flashcards.length === 0}
-              >
-                <span className="game-icon">🧠</span> Память
-              </GameButton>
-              <GameButton 
                 gradient="#fcd34d, #f59e0b"
                 onClick={() => navigateToGame('treasure-island')}
                 disabled={flashcards.length === 0}

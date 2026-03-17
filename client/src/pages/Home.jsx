@@ -127,7 +127,6 @@ function Home() {
         }
       </HeroSubtitle>
 
-      {/* Кнопки навигации вверху */}
       {authState.loading ? (
         <div>Загрузка...</div>
       ) : authState.isAuthenticated ? (

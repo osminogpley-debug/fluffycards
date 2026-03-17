@@ -409,6 +409,63 @@ const Toast = styled.div`
   z-index: 1000;
 `;
 
+const DiscoverSection = styled.section`
+  max-width: 1400px;
+  margin: 0 auto 2rem;
+`;
+
+const DiscoverHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: var(--text-primary);
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+  }
+`;
+
+const DiscoverPill = styled.div`
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+`;
+
+const DiscoverGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.2rem;
+`;
+
+const HelperBar = styled.div`
+  max-width: 1400px;
+  margin: 0 auto 1.5rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+`;
+
 // Categories list
 const categories = ['Все', 'Языки', 'Наука', 'История', 'Математика', 'Искусство', 'Технологии', 'Литература'];
 const languageOptions = ['Все', 'Английский', 'Испанский', 'Французский', 'Немецкий', 'Китайский', 'Японский', 'Корейский', 'Русский', 'Итальянский'];
@@ -435,9 +492,11 @@ function PublicLibrary() {
   const [toastMessage, setToastMessage] = useState('');
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [userSets, setUserSets] = useState([]);
+  const [discoveryFeed, setDiscoveryFeed] = useState(null);
   
   const itemsPerPage = 6;
   const loaderRef = useRef(null);
+  const FILTERS_STORAGE_KEY = 'public-library-filters-v1';
 
   // Вычисляем статистику на основе реальных данных
   const stats = React.useMemo(() => {
@@ -447,6 +506,36 @@ function PublicLibrary() {
   }, [sets]);
 
   // Debounce tag input to avoid excessive requests
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY) || '{}');
+      if (saved.searchQuery) setSearchQuery(saved.searchQuery);
+      if (saved.selectedCategory) setSelectedCategory(saved.selectedCategory);
+      if (saved.selectedLanguage) setSelectedLanguage(saved.selectedLanguage);
+      if (saved.selectedLevel) setSelectedLevel(saved.selectedLevel);
+      if (saved.selectedExam) setSelectedExam(saved.selectedExam);
+      if (saved.selectedTag) {
+        setSelectedTag(saved.selectedTag);
+        setTagInput(saved.selectedTag);
+      }
+      if (saved.sortBy) setSortBy(saved.sortBy);
+    } catch (error) {
+      console.error('Error restoring library filters:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify({
+      searchQuery,
+      selectedCategory,
+      selectedLanguage,
+      selectedLevel,
+      selectedExam,
+      selectedTag,
+      sortBy
+    }));
+  }, [searchQuery, selectedCategory, selectedLanguage, selectedLevel, selectedExam, selectedTag, sortBy]);
+
   useEffect(() => {
     const handle = setTimeout(() => {
       setSelectedTag(tagInput.trim());
@@ -513,10 +602,31 @@ function PublicLibrary() {
     }
   }, [user]);
 
+  const loadDiscoveryFeed = useCallback(async () => {
+    if (!user) {
+      setDiscoveryFeed(null);
+      return;
+    }
+
+    try {
+      const res = await authFetch(`${API_ROUTES.DATA.SETS}/discover`);
+      if (!res.ok) throw new Error('Не удалось загрузить рекомендации');
+      const result = await res.json();
+      setDiscoveryFeed(result.data || null);
+    } catch (error) {
+      console.error('Error loading discovery feed:', error);
+      setDiscoveryFeed(null);
+    }
+  }, [user]);
+
   // Load public sets from API
   useEffect(() => {
     loadSets();
   }, [loadSets]);
+
+  useEffect(() => {
+    loadDiscoveryFeed();
+  }, [loadDiscoveryFeed]);
 
   useEffect(() => {
     if (isMergeModalOpen) {
@@ -570,6 +680,33 @@ function PublicLibrary() {
     setSelectedExam('Все');
     setTagInput('');
     setSelectedTag('');
+  };
+
+  const renderDiscoverySection = (title, description, items, pill) => {
+    if (!items || items.length === 0) return null;
+
+    return (
+      <DiscoverSection>
+        <DiscoverHeader>
+          <div>
+            <h2>{title}</h2>
+            <p>{description}</p>
+          </div>
+          {pill ? <DiscoverPill>{pill}</DiscoverPill> : null}
+        </DiscoverHeader>
+        <DiscoverGrid>
+          {items.map((set, index) => (
+            <SetCard
+              key={`${title}-${set._id || set.id}-${index}`}
+              set={set}
+              isPopular={title.includes('Популяр') && index < 3}
+              onSave={handleSaveSet}
+              showSaveButton={!!user}
+            />
+          ))}
+        </DiscoverGrid>
+      </DiscoverSection>
+    );
   };
 
   // Empty library state
@@ -774,6 +911,56 @@ function PublicLibrary() {
         )}
       </ControlsContainer>
 
+      {!hasActiveFilters && currentPage === 1 && user && discoveryFeed && (
+        <>
+          <HelperBar>
+            <span>
+              ✨ Библиотека подстраивается под ваши последние наборы, теги и авторов, на которых вы подписаны.
+            </span>
+            {discoveryFeed.favoriteTags?.length > 0 && (
+              <span>
+                Любимые темы: {discoveryFeed.favoriteTags.slice(0, 3).join(', ')}
+              </span>
+            )}
+          </HelperBar>
+
+          {renderDiscoverySection(
+            'Продолжить с того места, где остановились',
+            'Быстрый вход обратно в учебный ритм через знакомые наборы.',
+            discoveryFeed.continueLearning,
+            'Ваши наборы'
+          )}
+
+          {renderDiscoverySection(
+            'Стоит повторить сегодня',
+            'Это хорошие кандидаты на короткую сессию повторения без лишнего переключения.',
+            discoveryFeed.reviewQueue,
+            'Короткая сессия 5–10 мин'
+          )}
+
+          {renderDiscoverySection(
+            'От авторов, на которых вы подписаны',
+            'Новые публичные наборы из уже знакомого вам круга.',
+            discoveryFeed.fromFollowing,
+            'Социальная лента'
+          )}
+
+          {renderDiscoverySection(
+            'Похоже на то, что вы уже учите',
+            'Подборка по вашим частым тегам и темам.',
+            discoveryFeed.recommended,
+            'Персонально для вас'
+          )}
+
+          {renderDiscoverySection(
+            'Популярное сейчас',
+            'Рабочий способ быстро найти качественные публичные наборы.',
+            discoveryFeed.trending,
+            'Тренды сообщества'
+          )}
+        </>
+      )}
+
       {loading ? (
         <LoadingContainer>
           <LoadingSpinner />
@@ -791,7 +978,7 @@ function PublicLibrary() {
                   set={set}
                   isPopular={set.popularity > 90 && index < 3}
                   onSave={handleSaveSet}
-                  showSaveButton={true}
+                  showSaveButton={!!user}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 />
               ))
