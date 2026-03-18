@@ -466,6 +466,29 @@ const HelperBar = styled.div`
   font-size: 0.92rem;
 `;
 
+const DiscoveryTabs = styled.div`
+  max-width: 1400px;
+  margin: 0 auto 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+`;
+
+const DiscoveryTabButton = styled.button`
+  background: ${props => props.$active ? 'linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)' : 'var(--bg-secondary)'};
+  color: ${props => props.$active ? 'white' : 'var(--text-primary)'};
+  border: 2px solid ${props => props.$active ? '#63b3ed' : 'var(--border-color)'};
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+`;
+
 // Categories list
 const categories = ['Все', 'Языки', 'Наука', 'История', 'Математика', 'Искусство', 'Технологии', 'Литература'];
 const languageOptions = ['Все', 'Английский', 'Испанский', 'Французский', 'Немецкий', 'Китайский', 'Японский', 'Корейский', 'Русский', 'Итальянский'];
@@ -493,6 +516,7 @@ function PublicLibrary() {
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [userSets, setUserSets] = useState([]);
   const [discoveryFeed, setDiscoveryFeed] = useState(null);
+  const [activeDiscoveryTab, setActiveDiscoveryTab] = useState('continueLearning');
   
   const itemsPerPage = 6;
   const loaderRef = useRef(null);
@@ -924,21 +948,42 @@ function PublicLibrary() {
             )}
           </HelperBar>
 
-          {renderDiscoverySection(
+          <DiscoveryTabs>
+            <DiscoveryTabButton
+              $active={activeDiscoveryTab === 'continueLearning'}
+              onClick={() => setActiveDiscoveryTab('continueLearning')}
+            >
+              Продолжить
+            </DiscoveryTabButton>
+            <DiscoveryTabButton
+              $active={activeDiscoveryTab === 'reviewQueue'}
+              onClick={() => setActiveDiscoveryTab('reviewQueue')}
+            >
+              Повторить сегодня
+            </DiscoveryTabButton>
+            <DiscoveryTabButton
+              $active={activeDiscoveryTab === 'fromFollowing'}
+              onClick={() => setActiveDiscoveryTab('fromFollowing')}
+            >
+              От подписок
+            </DiscoveryTabButton>
+          </DiscoveryTabs>
+
+          {activeDiscoveryTab === 'continueLearning' && renderDiscoverySection(
             'Продолжить с того места, где остановились',
             'Быстрый вход обратно в учебный ритм через знакомые наборы.',
             discoveryFeed.continueLearning,
             'Ваши наборы'
           )}
 
-          {renderDiscoverySection(
+          {activeDiscoveryTab === 'reviewQueue' && renderDiscoverySection(
             'Стоит повторить сегодня',
             'Это хорошие кандидаты на короткую сессию повторения без лишнего переключения.',
             discoveryFeed.reviewQueue,
             'Короткая сессия 5–10 мин'
           )}
 
-          {renderDiscoverySection(
+          {activeDiscoveryTab === 'fromFollowing' && renderDiscoverySection(
             'От авторов, на которых вы подписаны',
             'Новые публичные наборы из уже знакомого вам круга.',
             discoveryFeed.fromFollowing,

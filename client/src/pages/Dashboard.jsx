@@ -13,8 +13,7 @@ import ChatModal from '../components/ChatModal';
 import MergeSetsModal from '../components/Library/MergeSetsModal';
 import ActivityFeed from '../components/ActivityFeed';
 import NotificationCenter from '../components/NotificationCenter';
-import SmartStudyPanel from '../components/SmartStudyPanel';
-import { getDiscoveryFeed, getNotificationCount } from '../services/socialService';
+import { getNotificationCount } from '../services/socialService';
 
 // ===== СТИЛИ =====
 const DashboardContainer = styled.div`
@@ -1044,7 +1043,6 @@ function Dashboard() {
   
   // State для уведомлений (друзья + сообщения)
   const [notificationCount, setNotificationCount] = useState({ unreadMessages: 0, pendingRequests: 0, unreadNotifications: 0, total: 0 });
-  const [discoveryFeed, setDiscoveryFeed] = useState(null);
 
   const isSameData = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -1134,10 +1132,8 @@ function Dashboard() {
         return res.json();
       }).catch(() => null);
 
-      const discoveryPromise = getDiscoveryFeed().catch(() => null);
-
-      const [statsData, setsData, foldersData, gamificationRes, discoveryRes] = await Promise.all([
-        statsPromise, setsPromise, foldersPromise, gamificationPromise, discoveryPromise
+      const [statsData, setsData, foldersData, gamificationRes] = await Promise.all([
+        statsPromise, setsPromise, foldersPromise, gamificationPromise
       ]);
       
       clearTimeout(timeoutId);
@@ -1151,7 +1147,6 @@ function Dashboard() {
       setUserSets(prev => (isSameData(prev, setsData) ? prev : setsData));
       setGamificationData(prev => (isSameData(prev, gamificationRes) ? prev : gamificationRes));
       setFolders(prev => (isSameData(prev, foldersData) ? prev : foldersData));
-      setDiscoveryFeed(prev => (isSameData(prev, discoveryRes) ? prev : discoveryRes));
       
       // Извлекаем популярные теги из наборов
       const tagCounts = {};
@@ -2138,18 +2133,6 @@ function Dashboard() {
       {/* Основной контент */}
       <MainContent>
         <ContentArea>
-          <SmartStudyPanel
-            userRole={userRole}
-            stats={stats}
-            gamificationData={gamificationData}
-            discoveryFeed={discoveryFeed}
-            onOpenSet={(setId) => navigate(`/sets/${setId}`)}
-            onOpenLibrary={() => navigate('/library')}
-            onCreateSet={() => navigate('/sets/create')}
-            onOpenGames={() => handleTabChange('games')}
-            onOpenClasses={() => handleTabChange('classes')}
-          />
-
           {activeTab === 'sets' && renderSetsTab()}
           {activeTab === 'folders' && renderFoldersTab()}
           {activeTab === 'games' && renderGamesTab()}
