@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
@@ -22,6 +22,23 @@ const float = keyframes`
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 `;
+
+const countChineseChars = (text = '') => (text.match(/[\u4e00-\u9fff]/g) || []).length;
+
+const countSyllables = (text = '') => {
+  const normalized = text.toLowerCase().replace(/[^a-zа-яё\u4e00-\u9fff]/gi, '');
+  const groups = normalized.match(/[aeiouyаеёиоуыэюя]+/g);
+  return groups ? groups.length : 0;
+};
+
+const isScrambleEligible = (term = '') => {
+  if (!term.trim()) return false;
+  const hanCount = countChineseChars(term);
+  if (hanCount > 0) {
+    return hanCount >= 2;
+  }
+  return countSyllables(term) >= 2;
+};
 
 const Container = styled.div`
   max-width: 800px;
@@ -353,7 +370,6 @@ function ScrambleGame() {
   const setId = searchParams.get('setId');
 
   const [flashcards, setFlashcards] = useState([]);
-  const [currentSet, setCurrentSet] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -386,7 +402,6 @@ function ScrambleGame() {
       const response = await authFetch(`${API_ROUTES.DATA.SETS}/${id}`);
       if (!response.ok) throw new Error('Не удалось загрузить набор');
       const setData = await response.json();
-      setCurrentSet(setData);
       sessionStartRef.current = Date.now();
       statsRecordedRef.current = false;
       
@@ -394,7 +409,14 @@ function ScrambleGame() {
         const cards = setData.flashcards.map((card, idx) => ({
           ...card,
           id: card._id || idx + 1
-        }));
+        })).filter(card => isScrambleEligible(card.term));
+
+        if (cards.length === 0) {
+          setFlashcards([]);
+          setError('Для Скрэмбла нужны слова минимум из 2 слогов или 2 иероглифов.');
+          return;
+        }
+
         setFlashcards(cards);
         const ids = shuffleArray(cards.map(c => c.id));
         setQueue(ids);
@@ -446,9 +468,6 @@ function ScrambleGame() {
 
   const handleAnswerTileClick = (answerIndex) => {
     if (showFeedback) return;
-    // Remove letter from answer and put it back
-    const removedLetter = answerLetters[answerIndex];
-    const scrIdx = selectedIndices.find((si, i) => i === answerIndex);
     setSelectedIndices(prev => prev.filter((_, i) => i !== answerIndex));
     setAnswerLetters(prev => prev.filter((_, i) => i !== answerIndex));
   };

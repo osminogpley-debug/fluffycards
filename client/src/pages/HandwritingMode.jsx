@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { API_ROUTES, authFetch } from '../constants/api';
 import SetSelector from '../components/SetSelector';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Container = styled.div`
   max-width: 800px;
@@ -284,8 +285,8 @@ function computeSimilarity(userCanvas, refChar, canvasSize) {
           const idx = (y * canvasSize + x) * 4;
           // Reference: black text on white → ink if dark
           if (refData[idx] < 128) refInk++;
-          // User: drawn strokes → check alpha or dark pixels
-          if (userData[idx + 3] > 30 && userData[idx] < 128) userInk++;
+          // User strokes can be dark or light depending on theme, so rely on alpha.
+          if (userData[idx + 3] > 30) userInk++;
           count++;
         }
       }
@@ -322,10 +323,10 @@ function computeSimilarity(userCanvas, refChar, canvasSize) {
 function HandwritingMode() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const setId = searchParams.get('setId');
 
   const [set, setSet] = useState(null);
-  const [cards, setCards] = useState([]);
   const [charQueue, setCharQueue] = useState([]);  // [{char, pinyin, definition, term}]
   const [currentIndex, setCurrentIndex] = useState(0);
   const [results, setResults] = useState([]);       // [{char, score, correct}]
@@ -339,6 +340,15 @@ function HandwritingMode() {
   const wrapperRef = useRef(null);
 
   const canvasSize = 320;
+  const drawColor = theme === 'dark' || theme === 'cosmic' ? '#f8fafc' : '#111827';
+
+  const clearCanvas = useCallback(() => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, canvasSize, canvasSize);
+  }, []);
 
   // Load set
   useEffect(() => {
@@ -353,12 +363,10 @@ function HandwritingMode() {
           const allCards = s.flashcards || s.cards || [];
           const chineseCards = allCards.filter(c => isChinese(c.term) || c.pinyin || c.isChinese);
           if (chineseCards.length === 0) {
-            setCards([]);
             setCharQueue([]);
             setPhase('practice');
             return;
           }
-          setCards(chineseCards);
           // Build char queue
           const queue = [];
           chineseCards.forEach(card => {
@@ -391,15 +399,7 @@ function HandwritingMode() {
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
     clearCanvas();
-  }, [phase, currentIndex]);
-
-  const clearCanvas = useCallback(() => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, canvasSize, canvasSize);
-  }, []);
+  }, [clearCanvas, currentIndex, phase]);
 
   const getPos = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
@@ -429,7 +429,7 @@ function HandwritingMode() {
     ctx.lineWidth = 6;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#1a202c';
+    ctx.strokeStyle = drawColor;
   };
 
   const draw = (e) => {
@@ -491,7 +491,7 @@ function HandwritingMode() {
     return (
       <Container>
         <Header>
-          <Title>✍️ Написание иероглифов</Title>
+          <Title>汉字 Тренажёр иероглифов</Title>
           <Subtitle>Выберите набор с китайскими карточками</Subtitle>
         </Header>
         <SetSelector onSelect={handleSetSelect} />
@@ -503,7 +503,7 @@ function HandwritingMode() {
     return (
       <Container>
         <Header>
-          <Title>✍️ Написание иероглифов</Title>
+          <Title>汉字 Тренажёр иероглифов</Title>
           <Subtitle>Загрузка...</Subtitle>
         </Header>
       </Container>
@@ -515,11 +515,11 @@ function HandwritingMode() {
     return (
       <Container>
         <Header>
-          <Title>✍️ Написание иероглифов</Title>
+          <Title>汉字 Тренажёр иероглифов</Title>
           <Subtitle>В этом наборе нет китайских иероглифов.</Subtitle>
         </Header>
         <Card style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>🈚</p>
+          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>汉</p>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
             Этот режим работает только с карточками, содержащими китайские иероглифы.
             Создайте набор с иероглифами или выберите другой набор.
@@ -543,7 +543,7 @@ function HandwritingMode() {
     return (
       <Container>
         <Header>
-          <Title>✍️ Результаты</Title>
+          <Title>汉字 Результаты</Title>
         </Header>
         <ResultsCard>
           <h2>{pct >= 80 ? '🎉 Отлично!' : pct >= 50 ? '👍 Хорошо!' : '💪 Нужно практиковаться'}</h2>
@@ -589,7 +589,7 @@ function HandwritingMode() {
   return (
     <Container>
       <Header>
-        <Title>✍️ Написание иероглифов</Title>
+        <Title>汉字 Тренажёр иероглифов</Title>
         <Subtitle>{set?.title || 'Практика написания'}</Subtitle>
       </Header>
 

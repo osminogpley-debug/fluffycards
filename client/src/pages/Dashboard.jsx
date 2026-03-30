@@ -1712,16 +1712,6 @@ function Dashboard() {
           </div>
         </SetCard>
 
-        <SetCard onClick={() => navigate('/games/gravity')}>
-          <div className="preview" style={{ background: 'linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%)' }}>
-            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🌌</div>
-          </div>
-          <h3>Гравитация</h3>
-          <div className="meta">
-            <span>Ловите падающие термины</span>
-          </div>
-        </SetCard>
-
         <SetCard onClick={() => navigate('/live')}>
           <div className="preview" style={{ background: 'linear-gradient(135deg, #fce7f3 0%, #f43f5e 100%)' }}>
             <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>⚡</div>
@@ -1729,16 +1719,6 @@ function Dashboard() {
           <h3>Live игра</h3>
           <div className="meta">
             <span>Соревнуйтесь с друзьями онлайн</span>
-          </div>
-        </SetCard>
-
-        <SetCard onClick={() => navigate('/games/treasure-island')}>
-          <div className="preview" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)' }}>
-            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🏝️</div>
-          </div>
-          <h3>Остров сокровищ</h3>
-          <div className="meta">
-            <span>Пройдите карту и найдите сокровище</span>
           </div>
         </SetCard>
 
@@ -1769,26 +1749,6 @@ function Dashboard() {
           <h3>Ракетный док</h3>
           <div className="meta">
             <span>Заправляйте ракету знаниями и летите в космос</span>
-          </div>
-        </SetCard>
-
-        <SetCard onClick={() => navigate('/games/maze')}>
-          <div className="preview" style={{ background: 'linear-gradient(135deg, #d1fae5 0%, #059669 100%)' }}>
-            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🌀</div>
-          </div>
-          <h3>Лабиринт слов</h3>
-          <div className="meta">
-            <span>Найдите выход из лабиринта, отвечая на вопросы</span>
-          </div>
-        </SetCard>
-
-        <SetCard onClick={() => navigate('/games/train')}>
-          <div className="preview" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #b45309 100%)' }}>
-            <div className="preview-term" style={{ fontSize: '32px', textAlign: 'center' }}>🚂</div>
-          </div>
-          <h3>Поезд слов</h3>
-          <div className="meta">
-            <span>Собери поезд из 10 вагонов правильных ответов</span>
           </div>
         </SetCard>
 
@@ -2212,10 +2172,6 @@ function Dashboard() {
                   <SidebarItem onClick={() => navigate('/learn/study')}>
                     <span className="icon">🎓</span>
                     Режим заучивания
-                  </SidebarItem>
-                  <SidebarItem onClick={() => navigate('/learn/write')}>
-                    <span className="icon">✍️</span>
-                    Режим письма
                   </SidebarItem>
                 </>
               ) : (

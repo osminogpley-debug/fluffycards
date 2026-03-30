@@ -10,11 +10,9 @@ import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import LearningMode from './pages/LearningMode';
 import StudyMode from './pages/StudyMode';
-import WriteMode from './pages/WriteMode';
 import SpellMode from './pages/SpellMode';
 import LiveGame from './pages/LiveGame';
 import MatchGamePage from './pages/MatchGamePage';
-import GravityGamePage from './pages/GravityGamePage';
 import PublicLibrary from './pages/PublicLibrary';
 import SetBuilder from './pages/SetBuilder';
 import SetDetail from './pages/SetDetail';
@@ -28,16 +26,11 @@ import AdminPage from './pages/AdminPage';
 import HelpPage from './pages/HelpPage';
 import ContactsPage from './pages/ContactsPage';
 import ScrambleGame from './pages/ScrambleGame';
-import QuizBlitz from './pages/QuizBlitz';
 import logoImage from './assets/logo.png';
 import CreateClassPage from './pages/CreateClassPage';
-import TrueFalseGame from './pages/TrueFalseGame';
-import TreasureIsland from './pages/TreasureIsland';
 import ChainGame from './pages/ChainGame';
 import TowerGame from './pages/TowerGame';
 import RocketDock from './pages/RocketDock';
-import WordMaze from './pages/WordMaze';
-import WordTrain from './pages/WordTrain';
 import HoneycombGame from './pages/HoneycombGame';
 import FillBlanksGame from './pages/FillBlanksGame';
 import HandwritingMode from './pages/HandwritingMode';
@@ -678,7 +671,7 @@ function App() {
                 path="/learn/write"
                 element={
                   authState.isAuthenticated ? (
-                    <WriteMode />
+                    <Navigate to="/learn" replace />
                   ) : (
                     <Navigate to="/login" />
                   )
@@ -719,7 +712,7 @@ function App() {
                 path="/games/gravity"
                 element={
                   authState.isAuthenticated ? (
-                    <GravityGamePage />
+                    <Navigate to="/dashboard?tab=games" replace />
                   ) : (
                     <Navigate to="/login" />
                   )
@@ -739,7 +732,7 @@ function App() {
                 path="/games/quiz-blitz"
                 element={
                   authState.isAuthenticated ? (
-                    <QuizBlitz />
+                    <Navigate to="/dashboard?tab=games" replace />
                   ) : (
                     <Navigate to="/login" />
                   )
@@ -749,7 +742,7 @@ function App() {
                 path="/games/true-false"
                 element={
                   authState.isAuthenticated ? (
-                    <TrueFalseGame />
+                    <Navigate to="/dashboard?tab=games" replace />
                   ) : (
                     <Navigate to="/login" />
                   )
@@ -759,7 +752,7 @@ function App() {
                 path="/games/treasure-island"
                 element={
                   authState.isAuthenticated ? (
-                    <TreasureIsland />
+                    <Navigate to="/dashboard?tab=games" replace />
                   ) : (
                     <Navigate to="/login" />
                   )
@@ -799,7 +792,7 @@ function App() {
                 path="/games/maze"
                 element={
                   authState.isAuthenticated ? (
-                    <WordMaze />
+                    <Navigate to="/dashboard?tab=games" replace />
                   ) : (
                     <Navigate to="/login" />
                   )
@@ -809,7 +802,7 @@ function App() {
                 path="/games/train"
                 element={
                   authState.isAuthenticated ? (
-                    <WordTrain />
+                    <Navigate to="/dashboard?tab=games" replace />
                   ) : (
                     <Navigate to="/login" />
                   )

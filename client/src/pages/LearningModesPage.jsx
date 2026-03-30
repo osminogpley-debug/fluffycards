@@ -229,15 +229,6 @@ const learningModes = [
     path: '/learn/study'
   },
   {
-    id: 'write',
-    icon: '✍️',
-    title: 'Письмо',
-    description: 'Пишите ответы вручную для лучшего запоминания',
-    difficulty: 'medium',
-    features: ['Проверка орфографии', 'Подсказки', 'Повторение ошибок'],
-    path: '/learn/write'
-  },
-  {
     id: 'spell',
     icon: '🔊',
     title: 'Правописание',
@@ -265,24 +256,6 @@ const learningModes = [
     path: '/games/match'
   },
   {
-    id: 'gravity',
-    icon: '🌌',
-    title: 'Гравитация',
-    description: 'Ловите падающие термины, вводя определения',
-    difficulty: 'hard',
-    features: ['Аркада', 'Уровни сложности', 'Быстрая реакция'],
-    path: '/games/gravity'
-  },
-  {
-    id: 'intervals',
-    icon: '⏰',
-    title: 'Интервальное повторение',
-    description: 'Умная система повторения на основе ваших ответов',
-    difficulty: 'medium',
-    features: ['Алгоритм SM-2', 'Оптимальные интервалы', 'Долгосрочная память'],
-    path: '/learn/flashcards?mode=interval'
-  },
-  {
     id: 'scramble',
     icon: '🔤',
     title: 'Собери слово',
@@ -292,28 +265,10 @@ const learningModes = [
     path: '/games/scramble'
   },
   {
-    id: 'quiz-blitz',
-    icon: '⚡',
-    title: 'Блиц-викторина',
-    description: 'Ответь на максимум вопросов за ограниченное время!',
-    difficulty: 'hard',
-    features: ['+2 сек за верный ответ', '-3 сек за ошибку', 'Серии и бонусы'],
-    path: '/games/quiz-blitz'
-  },
-  {
-    id: 'true-false',
-    icon: '✅',
-    title: 'Верно или Неверно',
-    description: 'Определи, соответствует ли термин определению',
-    difficulty: 'easy',
-    features: ['Быстрые ответы', 'Развитие интуиции', 'Минимум кликов'],
-    path: '/games/true-false'
-  },
-  {
     id: 'handwriting',
-    icon: '✍️',
-    title: 'Написание иероглифов',
-    description: 'Рисуйте китайские иероглифы и проверяйте правильность написания',
+    icon: '汉',
+    title: 'Иероглифы',
+    description: 'Рисуйте китайские иероглифы и проверяйте точность написания',
     difficulty: 'hard',
     features: ['Практика написания', 'Оценка точности', 'Подсказка-призрак'],
     path: '/learn/handwriting'
