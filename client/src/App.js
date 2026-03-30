@@ -40,6 +40,7 @@ import WordMaze from './pages/WordMaze';
 import WordTrain from './pages/WordTrain';
 import HoneycombGame from './pages/HoneycombGame';
 import FillBlanksGame from './pages/FillBlanksGame';
+import HandwritingMode from './pages/HandwritingMode';
 import FolderDetail from './pages/FolderDetail';
 import AttendancePage from './pages/AttendancePage';
 import SharedSetPage from './pages/SharedSetPage';
@@ -688,6 +689,16 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <SpellMode />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/learn/handwriting"
+                element={
+                  authState.isAuthenticated ? (
+                    <HandwritingMode />
                   ) : (
                     <Navigate to="/login" />
                   )

@@ -955,6 +955,14 @@ function SetDetail() {
               >
                 🔊 Правописание
               </StudyModeButton>
+              {flashcards.some(c => isChinese(c.term) || c.pinyin || c.isChinese) && (
+                <StudyModeButton
+                  onClick={() => navigateToLearn('handwriting')}
+                  disabled={flashcards.length === 0}
+                >
+                  ✍️ Иероглифы
+                </StudyModeButton>
+              )}
               <StudyModeButton 
                 $highlight
                 onClick={() => navigateToLearn('modes')}

@@ -516,7 +516,7 @@ function PublicLibrary() {
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [userSets, setUserSets] = useState([]);
   const [discoveryFeed, setDiscoveryFeed] = useState(null);
-  const [activeDiscoveryTab, setActiveDiscoveryTab] = useState('continueLearning');
+  const [activeDiscoveryTab, setActiveDiscoveryTab] = useState('fromFollowing');
   
   const itemsPerPage = 6;
   const loaderRef = useRef(null);
@@ -950,38 +950,18 @@ function PublicLibrary() {
 
           <DiscoveryTabs>
             <DiscoveryTabButton
-              $active={activeDiscoveryTab === 'continueLearning'}
-              onClick={() => setActiveDiscoveryTab('continueLearning')}
-            >
-              Продолжить
-            </DiscoveryTabButton>
-            <DiscoveryTabButton
-              $active={activeDiscoveryTab === 'reviewQueue'}
-              onClick={() => setActiveDiscoveryTab('reviewQueue')}
-            >
-              Повторить сегодня
-            </DiscoveryTabButton>
-            <DiscoveryTabButton
               $active={activeDiscoveryTab === 'fromFollowing'}
               onClick={() => setActiveDiscoveryTab('fromFollowing')}
             >
               От подписок
             </DiscoveryTabButton>
+            <DiscoveryTabButton
+              $active={activeDiscoveryTab === 'trending'}
+              onClick={() => setActiveDiscoveryTab('trending')}
+            >
+              Новые наборы
+            </DiscoveryTabButton>
           </DiscoveryTabs>
-
-          {activeDiscoveryTab === 'continueLearning' && renderDiscoverySection(
-            'Продолжить с того места, где остановились',
-            'Быстрый вход обратно в учебный ритм через знакомые наборы.',
-            discoveryFeed.continueLearning,
-            'Ваши наборы'
-          )}
-
-          {activeDiscoveryTab === 'reviewQueue' && renderDiscoverySection(
-            'Стоит повторить сегодня',
-            'Это хорошие кандидаты на короткую сессию повторения без лишнего переключения.',
-            discoveryFeed.reviewQueue,
-            'Короткая сессия 5–10 мин'
-          )}
 
           {activeDiscoveryTab === 'fromFollowing' && renderDiscoverySection(
             'От авторов, на которых вы подписаны',
@@ -990,15 +970,8 @@ function PublicLibrary() {
             'Социальная лента'
           )}
 
-          {renderDiscoverySection(
-            'Похоже на то, что вы уже учите',
-            'Подборка по вашим частым тегам и темам.',
-            discoveryFeed.recommended,
-            'Персонально для вас'
-          )}
-
-          {renderDiscoverySection(
-            'Популярное сейчас',
+          {activeDiscoveryTab === 'trending' && renderDiscoverySection(
+            'Новые и популярные наборы',
             'Рабочий способ быстро найти качественные публичные наборы.',
             discoveryFeed.trending,
             'Тренды сообщества'

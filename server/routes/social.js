@@ -78,10 +78,46 @@ router.get('/friends', authMiddleware, async (req, res) => {
   }
 });
 
+// Search users (must be before /users/:userId to avoid route conflict)
+router.get('/users/search', authMiddleware, async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query || query.length < 2) {
+      return res.json({ success: true, data: [] });
+    }
+    
+    let searchQuery = {
+      _id: { $ne: req.user._id }
+    };
+    
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(query);
+    
+    if (isObjectId) {
+      searchQuery._id = { $eq: query, $ne: req.user._id };
+    } else {
+      searchQuery.username = { $regex: query, $options: 'i' };
+    }
+    
+    const users = await User.find(searchQuery)
+      .select('username profileImage level totalXp')
+      .limit(10);
+    
+    res.json({ success: true, data: users });
+  } catch (error) {
+    console.error('[Search Users] Error:', error);
+    res.status(500).json({ success: false, message: 'Search failed' });
+  }
+});
+
 // Get user by ID
 router.get('/users/:userId', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId)
+    const { userId } = req.params;
+    if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    const user = await User.findById(userId)
       .select('username profileImage level totalXp role isProfilePublic');
     
     if (!user) {
@@ -98,18 +134,16 @@ router.get('/users/:userId', authMiddleware, async (req, res) => {
 // Get user stats
 router.get('/users/:userId/stats', authMiddleware, async (req, res) => {
   try {
+    const { userId } = req.params;
+    if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
     const UserGamification = (await import('../models/UserGamification.js')).default;
-    const FlashcardSet = (await import('../models/FlashcardSet.js')).default;
-    
-    console.log('[Stats] Fetching stats for user:', req.params.userId);
     
     const [gamification, setsCount] = await Promise.all([
-      UserGamification.findOne({ userId: req.params.userId }),
-      FlashcardSet.countDocuments({ owner: req.params.userId })
+      UserGamification.findOne({ userId }),
+      FlashcardSet.countDocuments({ owner: userId })
     ]);
-    
-    console.log('[Stats] Gamification:', gamification);
-    console.log('[Stats] Sets count:', setsCount);
     
     const result = {
       setsCreated: setsCount || 0,
@@ -117,8 +151,6 @@ router.get('/users/:userId/stats', authMiddleware, async (req, res) => {
       testsPassed: gamification?.stats?.testsPassed || 0,
       streakDays: gamification?.streak?.current || 0
     };
-    
-    console.log('[Stats] Result:', result);
     
     res.json({
       success: true,
@@ -133,8 +165,12 @@ router.get('/users/:userId/stats', authMiddleware, async (req, res) => {
 // Get user gamification data (public)
 router.get('/users/:userId/gamification', authMiddleware, async (req, res) => {
   try {
+    const { userId } = req.params;
+    if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
     const UserGamification = (await import('../models/UserGamification.js')).default;
-    const gam = await UserGamification.findOne({ userId: req.params.userId });
+    const gam = await UserGamification.findOne({ userId });
     
     if (!gam) {
       return res.json({ success: true, data: { level: 1, xp: 0, totalXp: 0, xpForNextLevel: 100, achievements: [], streak: { current: 0 } } });
@@ -154,46 +190,6 @@ router.get('/users/:userId/gamification', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error fetching user gamification:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch gamification' });
-  }
-});
-
-// Search users
-router.get('/users/search', authMiddleware, async (req, res) => {
-  try {
-    const { query } = req.query;
-    
-    console.log(`[Search Users] Query: "${query}" from user: ${req.user._id}`);
-    
-    if (!query || query.length < 2) {
-      console.log('[Search Users] Query too short, returning empty');
-      return res.json({ success: true, data: [] });
-    }
-    
-    let searchQuery = {
-      _id: { $ne: req.user._id }
-    };
-    
-    // Check if query looks like ObjectId (24 hex chars)
-    const isObjectId = /^[0-9a-fA-F]{24}$/.test(query);
-    
-    if (isObjectId) {
-      // Search by ID
-      searchQuery._id = { $eq: query, $ne: req.user._id };
-    } else {
-      // Search by username
-      searchQuery.username = { $regex: query, $options: 'i' };
-    }
-    
-    const users = await User.find(searchQuery)
-      .select('username profileImage level totalXp')
-      .limit(10);
-    
-    console.log(`[Search Users] Found ${users.length} users`);
-    
-    res.json({ success: true, data: users });
-  } catch (error) {
-    console.error('[Search Users] Error:', error);
-    res.status(500).json({ success: false, message: 'Search failed' });
   }
 });
 
@@ -710,7 +706,7 @@ router.post('/sets/share', authMiddleware, async (req, res) => {
     res.json({ 
       success: true, 
       data: {
-        shareLink: `${process.env.CLIENT_URL || 'http://localhost:3000'}/share/${setId}`,
+        shareLink: `${process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000'}/share/${setId}`,
         isPublic: share.isPublic
       }
     });

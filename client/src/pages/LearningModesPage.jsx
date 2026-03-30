@@ -308,6 +308,15 @@ const learningModes = [
     difficulty: 'easy',
     features: ['Быстрые ответы', 'Развитие интуиции', 'Минимум кликов'],
     path: '/games/true-false'
+  },
+  {
+    id: 'handwriting',
+    icon: '✍️',
+    title: 'Написание иероглифов',
+    description: 'Рисуйте китайские иероглифы и проверяйте правильность написания',
+    difficulty: 'hard',
+    features: ['Практика написания', 'Оценка точности', 'Подсказка-призрак'],
+    path: '/learn/handwriting'
   }
 ];
 

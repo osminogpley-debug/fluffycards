@@ -2276,7 +2276,7 @@ function Dashboard() {
       />
       {showChat && (
         <ChatModal 
-          onClose={() => setShowChat(false)}
+          onClose={() => { setShowChat(false); refreshNotifications(); }}
           userId={user?._id || user?.id}
         />
       )}

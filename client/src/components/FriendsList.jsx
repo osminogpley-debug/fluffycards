@@ -10,6 +10,7 @@ import {
   handleFriendRequest,
   removeFriend
 } from '../services/socialService';
+import { FILE_BASE_URL } from '../constants/api';
 
 
 
@@ -127,6 +128,14 @@ const Avatar = styled.div`
   font-weight: 600;
   position: relative;
   flex-shrink: 0;
+  overflow: hidden;
+`;
+
+const AvatarImg = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 `;
 
 const OnlineDot = styled.span`
@@ -189,6 +198,13 @@ const EmptyState = styled.div`
   padding: 2rem;
   color: #a0aec0;
 `;
+
+const DEFAULT_AVATAR = 'https://fluffycards.com/default-avatar.png';
+const resolveAvatar = (url) => {
+  if (!url || url.includes('default-avatar.png') || url === DEFAULT_AVATAR) return '';
+  if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+  return url;
+};
 
 const areFriendsEqual = (next, current) => {
   if (!Array.isArray(next) || !Array.isArray(current)) return false;
@@ -390,7 +406,7 @@ function FriendsList({ user }) {
               <UserCard key={friend._id}>
                 <UserInfo onClick={() => handleUserClick(friend._id || friend.userId)}>
                   <Avatar>
-                    {friend.username[0]}
+                    {resolveAvatar(friend.profileImage) ? <AvatarImg src={resolveAvatar(friend.profileImage)} alt="" /> : friend.username[0]}
                     <OnlineDot $online={isOnline(friend.lastSeen)} title={isOnline(friend.lastSeen) ? 'Онлайн' : 'Офлайн'} />
                   </Avatar>
                   <UserDetails>
@@ -424,7 +440,9 @@ function FriendsList({ user }) {
             requests.map(request => (
               <UserCard key={request._id}>
                 <UserInfo onClick={() => handleUserClick(request.from?._id)}>
-                  <Avatar>{request.from?.username?.[0] || '?'}</Avatar>
+                  <Avatar>
+                    {resolveAvatar(request.from?.profileImage) ? <AvatarImg src={resolveAvatar(request.from?.profileImage)} alt="" /> : (request.from?.username?.[0] || '?')}
+                  </Avatar>
                   <UserDetails>
                     <UserName>{request.from?.username || 'Пользователь'}</UserName>
                     <UserMeta>Хочет добавить вас в друзья</UserMeta>
@@ -456,7 +474,9 @@ function FriendsList({ user }) {
           {searchResults.map(result => (
             <UserCard key={result._id}>
               <UserInfo>
-                <Avatar>{result.username[0]}</Avatar>
+                <Avatar>
+                  {resolveAvatar(result.profileImage) ? <AvatarImg src={resolveAvatar(result.profileImage)} alt="" /> : result.username[0]}
+                </Avatar>
                 <UserDetails>
                   <UserName>{result.username}</UserName>
                   <UserMeta>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
-import { authFetch } from '../constants/api';
+import { authFetch, FILE_BASE_URL } from '../constants/api';
 
 const isSameData = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -98,6 +98,14 @@ const ConvAvatar = styled.div`
   color: white;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 `;
 
 const ConvInfo = styled.div`
@@ -295,6 +303,13 @@ const EmptyChat = styled.div`
   .icon { font-size: 3rem; margin-bottom: 1rem; }
 `;
 
+const DEFAULT_AVATAR = 'https://fluffycards.com/default-avatar.png';
+const resolveAvatar = (url) => {
+  if (!url || url.includes('default-avatar.png') || url === DEFAULT_AVATAR) return '';
+  if (url.startsWith('/uploads/')) return `${FILE_BASE_URL}${url}`;
+  return url;
+};
+
 function ChatModal({ onClose, userId }) {
   const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
@@ -413,7 +428,7 @@ function ChatModal({ onClose, userId }) {
                   onClick={() => setActiveChat(conv.friend)}
                 >
                   <ConvAvatar>
-                    {conv.friend.username?.[0]?.toUpperCase() || '?'}
+                    {resolveAvatar(conv.friend.profileImage) ? <img src={resolveAvatar(conv.friend.profileImage)} alt="" /> : (conv.friend.username?.[0]?.toUpperCase() || '?')}
                   </ConvAvatar>
                   <ConvInfo>
                     <ConvName>{conv.friend.username}</ConvName>
@@ -436,7 +451,7 @@ function ChatModal({ onClose, userId }) {
               <ChatHeader>
                 <BackBtn onClick={() => setActiveChat(null)}>←</BackBtn>
                 <ConvAvatar style={{ width: 32, height: 32, fontSize: 14 }}>
-                  {activeChat.username?.[0]?.toUpperCase() || '?'}
+                  {resolveAvatar(activeChat.profileImage) ? <img src={resolveAvatar(activeChat.profileImage)} alt="" /> : (activeChat.username?.[0]?.toUpperCase() || '?')}
                 </ConvAvatar>
                 <h4>{activeChat.username}</h4>
               </ChatHeader>
