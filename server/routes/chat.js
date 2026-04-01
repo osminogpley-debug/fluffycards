@@ -1,5 +1,6 @@
 import express from 'express';
 import Message from '../models/Message.js';
+import FlashcardSet from '../models/FlashcardSet.js';
 import { Friendship } from '../models/Social.js';
 import authMiddleware from '../middleware/auth.js';
 
@@ -76,13 +77,37 @@ router.get('/:friendId', authMiddleware, async (req, res) => {
       .populate('to', 'username')
       .lean();
 
+    // Populate set info for set_share messages
+    const setIds = messages.filter(m => m.type === 'set_share' && m.setId).map(m => m.setId);
+    let setsMap = {};
+    if (setIds.length > 0) {
+      const sets = await FlashcardSet.find({ _id: { $in: setIds } })
+        .populate('owner', 'username')
+        .lean();
+      sets.forEach(s => {
+        setsMap[s._id.toString()] = {
+          _id: s._id,
+          title: s.title,
+          cardCount: s.flashcards?.length || 0,
+          owner: s.owner
+        };
+      });
+    }
+
+    const enriched = messages.map(m => {
+      if (m.type === 'set_share' && m.setId) {
+        m.set = setsMap[m.setId.toString()] || null;
+      }
+      return m;
+    });
+
     // Mark friend's messages as read
     await Message.updateMany(
       { from: friendId, to: userId, read: false },
       { read: true }
     );
 
-    res.json(messages.reverse());
+    res.json(enriched.reverse());
   } catch (error) {
     console.error('Error fetching messages:', error);
     res.status(500).json({ message: 'Ошибка при загрузке сообщений' });
@@ -94,7 +119,7 @@ router.post('/:friendId', authMiddleware, async (req, res) => {
   try {
     const userId = req.user._id;
     const friendId = req.params.friendId;
-    const { text } = req.body;
+    const { text, type, setId } = req.body;
 
     if (!text || !text.trim()) {
       return res.status(400).json({ message: 'Сообщение не может быть пустым' });
@@ -109,18 +134,42 @@ router.post('/:friendId', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Вы можете писать только друзьям' });
     }
 
-    const message = new Message({
+    const msgData = {
       from: userId,
       to: friendId,
       text: text.trim()
-    });
+    };
 
+    // If sharing a set, validate it exists
+    if (type === 'set_share' && setId) {
+      const set = await FlashcardSet.findById(setId);
+      if (!set) {
+        return res.status(404).json({ message: 'Набор не найден' });
+      }
+      msgData.type = 'set_share';
+      msgData.setId = setId;
+    }
+
+    const message = new Message(msgData);
     await message.save();
 
-    const populated = await Message.findById(message._id)
+    let populated = await Message.findById(message._id)
       .populate('from', 'username')
       .populate('to', 'username')
       .lean();
+
+    // Populate set info for set_share messages
+    if (populated.type === 'set_share' && populated.setId) {
+      const set = await FlashcardSet.findById(populated.setId)
+        .populate('owner', 'username')
+        .lean();
+      populated.set = set ? {
+        _id: set._id,
+        title: set.title,
+        cardCount: set.flashcards?.length || 0,
+        owner: set.owner
+      } : null;
+    }
 
     res.status(201).json(populated);
   } catch (error) {

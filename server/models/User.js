@@ -54,6 +54,10 @@ const userSchema = new mongoose.Schema({
   flashcardsSets: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'FlashcardSet'
+  }],
+  savedSets: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'FlashcardSet'
   }]
 }, { timestamps: true });
 

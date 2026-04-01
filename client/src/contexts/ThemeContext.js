@@ -60,6 +60,90 @@ const themes = {
     border: '#6b46c1',
     buttonGradient: 'linear-gradient(135deg, #9f7aea 0%, #805ad5 100%)',
     font: "'Nunito', 'Poppins', sans-serif"
+  },
+  sunrise: {
+    name: 'Рассвет',
+    primary: '#f6ad55',
+    secondary: '#ed8936',
+    background: 'linear-gradient(135deg, #fffaf0 0%, #feebc8 25%, #fbd38d 50%, #f6ad55 75%, #ed8936 100%)',
+    cardBg: '#fffaf0',
+    text: '#7b341e',
+    textMuted: '#9c4221',
+    border: '#fbd38d',
+    buttonGradient: 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)',
+    font: "'Nunito', 'Poppins', sans-serif"
+  },
+  ocean: {
+    name: 'Океан',
+    primary: '#4fd1c5',
+    secondary: '#38b2ac',
+    background: 'linear-gradient(135deg, #e6fffa 0%, #b2f5ea 25%, #81e6d9 50%, #4fd1c5 75%, #38b2ac 100%)',
+    cardBg: '#f0ffff',
+    text: '#234e52',
+    textMuted: '#2c7a7b',
+    border: '#81e6d9',
+    buttonGradient: 'linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%)',
+    font: "'Nunito', 'Poppins', sans-serif"
+  },
+  forest: {
+    name: 'Лес',
+    primary: '#68d391',
+    secondary: '#276749',
+    background: 'linear-gradient(135deg, #1a332a 0%, #22543d 25%, #276749 50%, #2f855a 75%, #22543d 100%)',
+    cardBg: 'rgba(34, 84, 61, 0.85)',
+    text: '#c6f6d5',
+    textMuted: '#9ae6b4',
+    border: '#2f855a',
+    buttonGradient: 'linear-gradient(135deg, #68d391 0%, #48bb78 100%)',
+    font: "'Nunito', 'Poppins', sans-serif"
+  },
+  lavender: {
+    name: 'Лавандовая',
+    primary: '#b794f6',
+    secondary: '#9f7aea',
+    background: 'linear-gradient(135deg, #faf5ff 0%, #e9d8fd 25%, #d6bcfa 50%, #e9d8fd 75%, #faf5ff 100%)',
+    cardBg: '#ffffff',
+    text: '#44337a',
+    textMuted: '#6b46c1',
+    border: '#d6bcfa',
+    buttonGradient: 'linear-gradient(135deg, #b794f6 0%, #9f7aea 100%)',
+    font: "'Nunito', 'Poppins', sans-serif"
+  },
+  sunset: {
+    name: 'Закат',
+    primary: '#fc8181',
+    secondary: '#f56565',
+    background: 'linear-gradient(135deg, #fff5f5 0%, #fed7d7 20%, #fbb6ce 40%, #f687b3 60%, #d6bcfa 80%, #b794f6 100%)',
+    cardBg: '#fff5f5',
+    text: '#742a2a',
+    textMuted: '#9b2c2c',
+    border: '#feb2b2',
+    buttonGradient: 'linear-gradient(135deg, #fc8181 0%, #f56565 100%)',
+    font: "'Nunito', 'Poppins', sans-serif"
+  },
+  neon: {
+    name: 'Неоновая',
+    primary: '#0bc5ea',
+    secondary: '#00b5d8',
+    background: 'linear-gradient(135deg, #0a0e1a 0%, #111827 25%, #1a1a2e 50%, #111827 75%, #0a0e1a 100%)',
+    cardBg: 'rgba(26, 26, 46, 0.9)',
+    text: '#e0f7fa',
+    textMuted: '#76e4f7',
+    border: '#1a3a4a',
+    buttonGradient: 'linear-gradient(135deg, #0bc5ea 0%, #00b5d8 100%)',
+    font: "'Nunito', 'Poppins', sans-serif"
+  },
+  cherry: {
+    name: 'Сакура',
+    primary: '#ed64a6',
+    secondary: '#d53f8c',
+    background: 'linear-gradient(135deg, #fff0f5 0%, #ffe4ef 25%, #ffd1e8 50%, #ffb8d9 75%, #ffd1e8 100%)',
+    cardBg: '#fff5f8',
+    text: '#702459',
+    textMuted: '#97266d',
+    border: '#fbb6ce',
+    buttonGradient: 'linear-gradient(135deg, #ed64a6 0%, #d53f8c 100%)',
+    font: "'Nunito', 'Poppins', sans-serif"
   }
 };
 

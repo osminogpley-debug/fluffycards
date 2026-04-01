@@ -272,6 +272,15 @@ const learningModes = [
     difficulty: 'hard',
     features: ['Практика написания', 'Оценка точности', 'Подсказка-призрак'],
     path: '/learn/handwriting'
+  },
+  {
+    id: 'laoshi',
+    icon: '🐼',
+    title: 'Лаоши',
+    description: 'Комплексный режим: карточки → соединение → тест → написание (раунды по 10)',
+    difficulty: 'medium',
+    features: ['Раунды по 10 карточек', 'Соединение пар', 'Тест с вариантами', 'Написание иероглифов'],
+    path: '/learn/laoshi'
   }
 ];
 

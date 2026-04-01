@@ -108,15 +108,33 @@ router.post('/', authMiddleware, async (req, res) => {
     const yandexKey = process.env.YANDEX_TRANSLATE_API_KEY;
     const yandexFolderId = process.env.YANDEX_FOLDER_ID;
 
+    // Detect source language for better routing
+    const detectedSource = (source === 'auto' || !source) ? detectSourceLang(trimmed) : source;
+    const effectiveSource = detectedSource || source;
+
     let translated = '';
     let provider = '';
 
     // Try providers in order: Google > Yandex > MyMemory > LibreTranslate
     const providers = [];
-    if (googleKey) providers.push({ name: 'google', fn: () => translateWithGoogle(trimmed, source, target, googleKey) });
-    if (yandexKey && yandexFolderId) providers.push({ name: 'yandex', fn: () => translateWithYandex(trimmed, source, target, yandexKey, yandexFolderId) });
-    providers.push({ name: 'mymemory', fn: () => translateWithMyMemory(trimmed, source, target) });
-    providers.push({ name: 'libre', fn: () => translateWithLibre(trimmed, source, target) });
+    if (googleKey) providers.push({ name: 'google', fn: () => translateWithGoogle(trimmed, effectiveSource, target, googleKey) });
+    if (yandexKey && yandexFolderId) providers.push({ name: 'yandex', fn: () => translateWithYandex(trimmed, effectiveSource, target, yandexKey, yandexFolderId) });
+    providers.push({ name: 'mymemory', fn: () => translateWithMyMemory(trimmed, effectiveSource, target) });
+    providers.push({ name: 'libre', fn: () => translateWithLibre(trimmed, effectiveSource, target) });
+
+    // For Chinese→Russian, also try two-step: zh→en then en→ru as fallback
+    if (detectedSource === 'zh' && target === 'ru') {
+      providers.push({
+        name: 'mymemory-2step',
+        fn: async () => {
+          const enText = await translateWithMyMemory(trimmed, 'zh', 'en');
+          if (!enText || enText === trimmed) throw new Error('Step 1 failed');
+          const ruText = await translateWithMyMemory(enText, 'en', 'ru');
+          if (!ruText) throw new Error('Step 2 failed');
+          return ruText;
+        }
+      });
+    }
 
     for (const p of providers) {
       try {

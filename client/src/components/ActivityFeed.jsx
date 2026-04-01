@@ -131,7 +131,7 @@ function ActivityFeed() {
         <Empty>Подпишитесь на авторов или добавьте друзей, чтобы видеть их активность здесь.</Empty>
       ) : (
         <List>
-          {items.map((item) => {
+          {items.slice(0, 3).map((item) => {
             const actorImage = item.actor?.profileImage?.startsWith('/uploads/')
               ? `${FILE_BASE_URL}${item.actor.profileImage}`
               : item.actor?.profileImage;

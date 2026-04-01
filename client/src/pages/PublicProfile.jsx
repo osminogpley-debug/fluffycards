@@ -468,7 +468,7 @@ function PublicProfile() {
     e.stopPropagation();
     setSavingSet(prev => ({ ...prev, [setId]: true }));
     try {
-      const res = await authFetch(`${API_ROUTES.DATA.SETS}/${setId}/clone`, { method: 'POST' });
+      const res = await authFetch(`${API_ROUTES.DATA.SETS}/${setId}/copy`, { method: 'POST' });
       setToast(res.ok ? 'Набор сохранён в вашу библиотеку! ✅' : 'Набор добавлен ✅');
       setTimeout(() => setToast(null), 3000);
     } catch(err) { console.error(err); }

@@ -17,6 +17,15 @@ const messageSchema = new mongoose.Schema({
     trim: true,
     maxlength: 1000
   },
+  type: {
+    type: String,
+    enum: ['text', 'set_share'],
+    default: 'text'
+  },
+  setId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'FlashcardSet'
+  },
   read: {
     type: Boolean,
     default: false

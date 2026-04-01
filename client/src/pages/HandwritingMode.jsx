@@ -340,7 +340,7 @@ function HandwritingMode() {
   const wrapperRef = useRef(null);
 
   const canvasSize = 320;
-  const drawColor = theme === 'dark' || theme === 'cosmic' ? '#f8fafc' : '#111827';
+  const drawColor = ['dark', 'cosmic', 'forest', 'neon'].includes(theme) ? '#f8fafc' : '#111827';
 
   const clearCanvas = useCallback(() => {
     if (!canvasRef.current) return;

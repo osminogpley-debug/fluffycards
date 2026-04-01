@@ -34,6 +34,7 @@ import RocketDock from './pages/RocketDock';
 import HoneycombGame from './pages/HoneycombGame';
 import FillBlanksGame from './pages/FillBlanksGame';
 import HandwritingMode from './pages/HandwritingMode';
+import LaoshiMode from './pages/LaoshiMode';
 import FolderDetail from './pages/FolderDetail';
 import AttendancePage from './pages/AttendancePage';
 import SharedSetPage from './pages/SharedSetPage';
@@ -398,7 +399,7 @@ function HeaderComponent({ authState, logout }) {
   const { themeData } = useTheme();
   
   return (
-    <Header $isDark={themeData?.name === 'Темная' || themeData?.name === 'Космическая'}>
+    <Header $isDark={['Темная', 'Космическая', 'Лес', 'Неоновая'].includes(themeData?.name)}>
       <Logo onClick={() => navigate('/')}
         aria-label="FluffyCards — на главную"
         title="FluffyCards"
@@ -550,7 +551,7 @@ function App() {
       <HelmetProvider>
         <Router>
           <GlobalStyle 
-            $isDark={themeData?.name === 'Темная' || themeData?.name === 'Космическая'}
+            $isDark={['Темная', 'Космическая', 'Лес', 'Неоновая'].includes(themeData?.name)}
             $themeText={themeData?.text}
             $themePrimary={themeData?.primary}
             $cardBg={themeData?.cardBg}
@@ -692,6 +693,16 @@ function App() {
                 element={
                   authState.isAuthenticated ? (
                     <HandwritingMode />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+              <Route
+                path="/learn/laoshi"
+                element={
+                  authState.isAuthenticated ? (
+                    <LaoshiMode />
                   ) : (
                     <Navigate to="/login" />
                   )

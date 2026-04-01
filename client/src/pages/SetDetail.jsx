@@ -623,6 +623,125 @@ const ShareToast = styled.div`
   }
 `;
 
+const ShareModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ShareModalBox = styled.div`
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow: hidden;
+`;
+
+const ShareModalHeader = styled.div`
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  h3 { margin: 0; font-size: 1.1rem; color: var(--text-primary); }
+`;
+
+const ShareModalClose = styled.button`
+  background: none; border: none; font-size: 1.3rem;
+  cursor: pointer; color: var(--text-secondary);
+  &:hover { color: var(--text-primary); }
+`;
+
+const ShareModalBody = styled.div`
+  padding: 16px 24px;
+  overflow-y: auto;
+  flex: 1;
+`;
+
+const ShareCopyRow = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+`;
+
+const ShareLinkInput = styled.input`
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+`;
+
+const ShareCopyBtn = styled.button`
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { opacity: 0.9; }
+`;
+
+const ShareFriendLabel = styled.div`
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+`;
+
+const ShareFriendItem = styled.button`
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: ${p => p.$sent ? 'var(--bg-tertiary)' : 'var(--bg-secondary)'};
+  cursor: ${p => p.$sent ? 'default' : 'pointer'};
+  margin-bottom: 8px;
+  transition: all 0.15s;
+  &:hover { background: var(--bg-tertiary); }
+`;
+
+const ShareFriendAvatar = styled.div`
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: white; font-weight: 700; flex-shrink: 0;
+  overflow: hidden;
+  img { width: 100%; height: 100%; object-fit: cover; }
+`;
+
+const ShareFriendName = styled.div`
+  flex: 1; font-weight: 600; font-size: 0.9rem; color: var(--text-primary);
+`;
+
+const ShareFriendStatus = styled.div`
+  font-size: 0.8rem; color: #22c55e; font-weight: 600;
+`;
+
+const ShareEmptyFriends = styled.div`
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+`;
+
 const ModalButton = styled.button`
   flex: 1;
   padding: 12px 24px;
@@ -652,14 +771,25 @@ function SetDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareFriends, setShareFriends] = useState([]);
+  const [sentToFriends, setSentToFriends] = useState({});
 
   const handleShare = () => {
+    setShowShareModal(true);
+    // Fetch friends list
+    authFetch('/api/chat/conversations')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setShareFriends(data || []))
+      .catch(() => setShareFriends([]));
+  };
+
+  const handleCopyLink = () => {
     const shareUrl = `${window.location.origin}/share/${id}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       setShowShareToast(true);
       setTimeout(() => setShowShareToast(false), 2500);
     }).catch(() => {
-      // Fallback for older browsers
       const input = document.createElement('input');
       input.value = shareUrl;
       document.body.appendChild(input);
@@ -669,6 +799,26 @@ function SetDetail() {
       setShowShareToast(true);
       setTimeout(() => setShowShareToast(false), 2500);
     });
+  };
+
+  const handleShareToFriend = async (friendId) => {
+    try {
+      const setTitle = setData?.title || 'Набор';
+      const res = await authFetch(`/api/chat/${friendId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `📚 ${setTitle}`,
+          type: 'set_share',
+          setId: id
+        })
+      });
+      if (res.ok) {
+        setSentToFriends(prev => ({ ...prev, [friendId]: true }));
+      }
+    } catch (err) {
+      console.error('Error sharing set to friend:', err);
+    }
   };
 
   // Загрузка данных набора
@@ -951,6 +1101,12 @@ function SetDetail() {
                 🎯 Заучивание
               </StudyModeButton>
               <StudyModeButton 
+                onClick={() => navigateToLearn('laoshi')}
+                disabled={flashcards.length < 2}
+              >
+                🐼 Лаоши
+              </StudyModeButton>
+              <StudyModeButton 
                 onClick={() => navigateToLearn('spell')}
                 disabled={flashcards.length === 0}
               >
@@ -1086,6 +1242,49 @@ function SetDetail() {
             </ModalButtons>
           </ModalContent>
         </ModalOverlay>
+      )}
+
+      {/* Модальное окно «Поделиться» */}
+      {showShareModal && (
+        <ShareModalOverlay onClick={() => setShowShareModal(false)}>
+          <ShareModalBox onClick={e => e.stopPropagation()}>
+            <ShareModalHeader>
+              <h3>🔗 Поделиться набором</h3>
+              <ShareModalClose onClick={() => setShowShareModal(false)}>✕</ShareModalClose>
+            </ShareModalHeader>
+            <ShareModalBody>
+              <ShareCopyRow>
+                <ShareLinkInput readOnly value={`${window.location.origin}/share/${id}`} />
+                <ShareCopyBtn onClick={handleCopyLink}>📋 Копировать</ShareCopyBtn>
+              </ShareCopyRow>
+              <ShareFriendLabel>Отправить другу:</ShareFriendLabel>
+              {shareFriends.length === 0 ? (
+                <ShareEmptyFriends>У вас пока нет друзей для отправки</ShareEmptyFriends>
+              ) : (
+                shareFriends.map(conv => {
+                  const f = conv.friend;
+                  const avatar = f.profileImage && !f.profileImage.includes('default-avatar')
+                    ? (f.profileImage.startsWith('/uploads/') ? `${FILE_BASE_URL}${f.profileImage}` : f.profileImage)
+                    : '';
+                  const isSent = sentToFriends[f._id];
+                  return (
+                    <ShareFriendItem key={f._id} $sent={isSent} onClick={() => !isSent && handleShareToFriend(f._id)}>
+                      <ShareFriendAvatar>
+                        {avatar ? <img src={avatar} alt="" /> : (f.username?.[0]?.toUpperCase() || '?')}
+                      </ShareFriendAvatar>
+                      <ShareFriendName>{f.username}</ShareFriendName>
+                      {isSent ? (
+                        <ShareFriendStatus>✓ Отправлено</ShareFriendStatus>
+                      ) : (
+                        <span style={{ fontSize: '1.1rem' }}>➤</span>
+                      )}
+                    </ShareFriendItem>
+                  );
+                })
+              )}
+            </ShareModalBody>
+          </ShareModalBox>
+        </ShareModalOverlay>
       )}
     </PageContainer>
   );

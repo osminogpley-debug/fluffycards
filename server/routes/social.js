@@ -738,7 +738,7 @@ router.get('/sets/shared/:shareLink', async (req, res) => {
   }
 });
 
-// Copy shared set to user's library
+// Add shared set to user's library (no copy)
 router.post('/sets/shared/:shareLink/copy', authMiddleware, async (req, res) => {
   try {
     const share = await SetShare.findOne({ shareLink: req.params.shareLink });
@@ -747,31 +747,24 @@ router.post('/sets/shared/:shareLink/copy', authMiddleware, async (req, res) => 
       return res.status(404).json({ success: false, message: 'Set not found' });
     }
     
-    const originalSet = await FlashcardSet.findById(share.setId);
+    const originalSet = await FlashcardSet.findById(share.setId).populate('owner', 'username profileImage');
     
     if (!originalSet) {
       return res.status(404).json({ success: false, message: 'Set not found' });
     }
     
-    // Create copy
-    const newSet = new FlashcardSet({
-      owner: req.user._id,
-      title: originalSet.title + ' (копия)',
-      description: originalSet.description,
-      flashcards: originalSet.flashcards,
-      isPublic: false,
-      tags: originalSet.tags
+    // Add to savedSets
+    await User.findByIdAndUpdate(req.user._id, {
+      $addToSet: { savedSets: originalSet._id }
     });
-    
-    await newSet.save();
     
     share.copies += 1;
     await share.save();
     
-    res.json({ success: true, data: newSet });
+    res.json({ success: true, data: originalSet });
   } catch (error) {
-    console.error('Error copying set:', error);
-    res.status(500).json({ success: false, message: 'Failed to copy set' });
+    console.error('Error saving set:', error);
+    res.status(500).json({ success: false, message: 'Failed to save set' });
   }
 });
 

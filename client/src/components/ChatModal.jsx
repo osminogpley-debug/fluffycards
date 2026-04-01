@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { authFetch, FILE_BASE_URL } from '../constants/api';
 
 const isSameData = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -203,6 +204,49 @@ const MessageTime = styled.div`
   margin-top: 2px;
 `;
 
+const SetShareCard = styled.div`
+  max-width: 250px;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s;
+  align-self: ${p => p.$mine ? 'flex-end' : 'flex-start'};
+  background: ${p => p.$mine ? 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)' : 'var(--bg-tertiary)'};
+  border: 1px solid ${p => p.$mine ? 'transparent' : 'var(--border-color)'};
+  &:hover { transform: scale(1.02); }
+`;
+
+const SetShareBody = styled.div`
+  padding: 12px 14px;
+`;
+
+const SetShareIcon = styled.div`
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+`;
+
+const SetShareTitle = styled.div`
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: ${p => p.$mine ? 'white' : 'var(--text-primary)'};
+  margin-bottom: 4px;
+  line-height: 1.3;
+`;
+
+const SetShareMeta = styled.div`
+  font-size: 0.75rem;
+  color: ${p => p.$mine ? 'rgba(255,255,255,0.8)' : 'var(--text-secondary)'};
+`;
+
+const SetShareBtn = styled.div`
+  padding: 8px 14px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: ${p => p.$mine ? 'rgba(255,255,255,0.9)' : '#4299e1'};
+  border-top: 1px solid ${p => p.$mine ? 'rgba(255,255,255,0.15)' : 'var(--border-color)'};
+`;
+
 const InputArea = styled.form`
   padding: 12px 16px;
   border-top: 1px solid var(--border-color);
@@ -311,6 +355,7 @@ const resolveAvatar = (url) => {
 };
 
 function ChatModal({ onClose, userId }) {
+  const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -458,6 +503,32 @@ function ChatModal({ onClose, userId }) {
               <MessagesArea>
                 {messages.map((msg, i) => {
                   const mine = msg.from?._id === userId || msg.from === userId;
+
+                  if (msg.type === 'set_share' && msg.set) {
+                    return (
+                      <div key={msg._id || i}>
+                        <SetShareCard
+                          $mine={mine}
+                          onClick={() => {
+                            onClose();
+                            navigate(`/sets/${msg.set._id}`);
+                          }}
+                        >
+                          <SetShareBody>
+                            <SetShareIcon>📚</SetShareIcon>
+                            <SetShareTitle $mine={mine}>{msg.set.title}</SetShareTitle>
+                            <SetShareMeta $mine={mine}>
+                              {msg.set.cardCount} {msg.set.cardCount === 1 ? 'карточка' : msg.set.cardCount < 5 ? 'карточки' : 'карточек'}
+                              {msg.set.owner?.username ? ` · ${msg.set.owner.username}` : ''}
+                            </SetShareMeta>
+                          </SetShareBody>
+                          <SetShareBtn $mine={mine}>Открыть набор →</SetShareBtn>
+                        </SetShareCard>
+                        <MessageTime $mine={mine}>{formatTime(msg.createdAt)}</MessageTime>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={msg._id || i}>
                       <MessageBubble $mine={mine}>

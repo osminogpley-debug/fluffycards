@@ -253,13 +253,16 @@ router.get('/discover', authMiddleware, async (req, res) => {
   }
 });
 
-// Получение всех наборов текущего пользователя
-// Получить наборы пользователя с фильтрацией по тегам
+// Получение всех наборов текущего пользователя (свои + сохранённые)
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const { tag, search } = req.query;
     
-    let query = { owner: req.user._id };
+    // Получаем savedSets пользователя
+    const user = await User.findById(req.user._id).select('savedSets');
+    const savedSetIds = user?.savedSets || [];
+
+    let query = { $or: [{ owner: req.user._id }, { _id: { $in: savedSetIds } }] };
     
     // Фильтр по тегу
     if (tag) {
@@ -268,14 +271,19 @@ router.get('/', authMiddleware, async (req, res) => {
     
     // Поиск по названию/описанию/тегам
     if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
+      query.$and = [
+        { $or: [{ owner: req.user._id }, { _id: { $in: savedSetIds } }] },
+        { $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { tags: { $in: [new RegExp(search, 'i')] } }
+        ]}
       ];
+      delete query.$or;
     }
     
     const sets = await FlashcardSet.find(query)
+      .populate('owner', 'username profileImage')
       .sort({ createdAt: -1 });
     
     res.json(sets);
@@ -309,49 +317,43 @@ router.get('/tags/popular', authMiddleware, async (req, res) => {
   }
 });
 
-// Копирование публичного набора в свою библиотеку
+// Добавление публичного набора в свою библиотеку (без копирования)
 router.post('/:id/copy', authMiddleware, async (req, res) => {
   try {
-    console.log('[Copy Set] Request received for set:', req.params.id, 'by user:', req.user._id);
-    
-    const originalSet = await FlashcardSet.findById(req.params.id);
+    const originalSet = await FlashcardSet.findById(req.params.id).populate('owner', 'username profileImage');
     
     if (!originalSet) {
-      console.log('[Copy Set] Set not found:', req.params.id);
       return res.status(404).json({ success: false, message: 'Набор не найден' });
     }
     
-    console.log('[Copy Set] Found set:', originalSet.title, 'isPublic:', originalSet.isPublic);
-    
     // Проверяем что набор публичный
     if (!originalSet.isPublic) {
-      console.log('[Copy Set] Set is not public');
       return res.status(403).json({ success: false, message: 'Набор не является публичным' });
     }
-    
-    // Создаем копию
-    const newSet = new FlashcardSet({
-      title: originalSet.title + ' (копия)',
-      description: originalSet.description,
-      coverImage: originalSet.coverImage,
-      flashcards: originalSet.flashcards,
-      clozeText: originalSet.clozeText || '',
-      clozeBlanks: originalSet.clozeBlanks || [],
-      isPublic: false, // Копия по умолчанию приватная
-      owner: req.user._id,
-      tags: originalSet.tags
+
+    // Нельзя сохранить свой же набор
+    if (originalSet.owner._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ success: false, message: 'Это ваш набор' });
+    }
+
+    // Проверяем, не сохранён ли уже
+    const user = await User.findById(req.user._id);
+    if (user.savedSets && user.savedSets.map(s => s.toString()).includes(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Набор уже в вашей библиотеке' });
+    }
+
+    // Добавляем в savedSets
+    await User.findByIdAndUpdate(req.user._id, {
+      $addToSet: { savedSets: originalSet._id }
     });
-    
-    await newSet.save();
-    console.log('[Copy Set] Set copied successfully:', newSet._id);
     
     res.json({
       success: true,
-      message: 'Набор успешно сохранен в вашу библиотеку',
-      data: newSet
+      message: 'Набор добавлен в вашу библиотеку',
+      data: originalSet
     });
   } catch (error) {
-    console.error('[Copy Set] Error:', error);
+    console.error('[Save Set] Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
