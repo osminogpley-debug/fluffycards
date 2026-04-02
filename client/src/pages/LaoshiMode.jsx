@@ -225,13 +225,35 @@ const HandwritingArea = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 24px;
+  gap: 10px;
+`;
+
+const HandwritingPrompt = styled.div`
+  text-align: center;
+  max-width: 420px;
+`;
+
+const HandwritingTarget = styled.div`
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-top: 4px;
+`;
+
+const HandwritingMeaning = styled.div`
+  font-size: 0.98rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
 `;
 
 const CanvasWrapper = styled.div`
   position: relative;
-  width: 260px;
-  height: 260px;
-  margin: 16px 0;
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  margin: 8px 0 4px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
 `;
 
 const GhostChar = styled.div`
@@ -240,20 +262,30 @@ const GhostChar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 180px;
+  font-size: ${p => p.$fontSize || 140}px;
   color: var(--text-muted);
-  opacity: 0.15;
+  opacity: 0.14;
   pointer-events: none;
   user-select: none;
+  white-space: nowrap;
+  line-height: 1;
 `;
 
 const DrawCanvas = styled.canvas`
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
   border: 2px solid var(--border-color);
   border-radius: 16px;
   cursor: crosshair;
   touch-action: none;
+`;
+
+const HandwritingControls = styled(BtnRow)`
+  margin-top: 6px;
+  flex-wrap: wrap;
 `;
 
 const ResultsCard = styled.div`
@@ -364,7 +396,7 @@ function LaoshiMode() {
   const [roundScores, setRoundScores] = useState([]);
 
   const hasChinese = roundCards.some(c => isChinese(c.term));
-  const drawColor = (theme === 'dark' || theme === 'cosmic') ? '#f8fafc' : '#111827';
+  const drawColor = ['dark', 'cosmic', 'forest', 'neon'].includes(theme) ? '#f8fafc' : '#111827';
 
   // ===== FETCH =====
   useEffect(() => {
@@ -442,6 +474,20 @@ function LaoshiMode() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }, []);
+
+  useEffect(() => {
+    if (stage !== STAGE.HANDWRITING) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const size = 320;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    clearCanvas();
+  }, [stage, hwIndex, clearCanvas]);
 
   useEffect(() => {
     if (stage !== STAGE.HANDWRITING) return;
@@ -708,18 +754,20 @@ function LaoshiMode() {
         const chineseCards = roundCards.filter(c => isChinese(c.term));
         const card = chineseCards[hwIndex];
         if (!card) return null;
+        const ghostFontSize = card.term.length <= 1 ? 168 : card.term.length === 2 ? 138 : 108;
         return (
           <Card>
             <HandwritingArea>
-              <SubText>Напишите иероглиф:</SubText>
-              <BigText>{card.definition}</BigText>
-              {card.pinyin && <PinyinText>{card.pinyin}</PinyinText>}
+              <HandwritingPrompt>
+                <SubText>Напишите иероглифы:</SubText>
+                <HandwritingTarget>{card.term}</HandwritingTarget>
+                {card.pinyin && <PinyinText>{card.pinyin}</PinyinText>}
+                <HandwritingMeaning>{card.translation || card.definition}</HandwritingMeaning>
+              </HandwritingPrompt>
               <CanvasWrapper>
-                <GhostChar>{card.term}</GhostChar>
+                <GhostChar $fontSize={ghostFontSize}>{card.term}</GhostChar>
                 <DrawCanvas
                   ref={canvasRef}
-                  width={520}
-                  height={520}
                   onMouseDown={startDraw}
                   onMouseMove={draw}
                   onMouseUp={endDraw}
@@ -727,9 +775,10 @@ function LaoshiMode() {
                   onTouchStart={startDraw}
                   onTouchMove={draw}
                   onTouchEnd={endDraw}
+                  onTouchCancel={endDraw}
                 />
               </CanvasWrapper>
-              <BtnRow>
+              <HandwritingControls>
                 <Btn $color="linear-gradient(135deg, #a0aec0, #718096)" onClick={clearCanvas}>↻ Очистить</Btn>
                 {hwIndex < chineseCards.length - 1 ? (
                   <Btn onClick={() => { setHwIndex(hwIndex + 1); }}>
@@ -743,7 +792,7 @@ function LaoshiMode() {
                     Завершить →
                   </Btn>
                 )}
-              </BtnRow>
+              </HandwritingControls>
               <SubText style={{ marginTop: 8 }}>{hwIndex + 1}/{chineseCards.length}</SubText>
             </HandwritingArea>
           </Card>
