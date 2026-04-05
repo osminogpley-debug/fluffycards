@@ -73,20 +73,6 @@ const TargetSection = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const TargetChar = styled.div`
-  font-size: 5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-  margin-bottom: 0.5rem;
-`;
-
-const Pinyin = styled.div`
-  font-size: 1.3rem;
-  color: #e53e3e;
-  margin-bottom: 0.25rem;
-`;
-
 const Definition = styled.div`
   font-size: 1.1rem;
   color: var(--text-secondary);
@@ -136,23 +122,6 @@ const GridOverlay = styled.div`
     top: 5%;
     bottom: 5%;
     width: 1px;
-  }
-`;
-
-const GhostChar = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: ${props => props.$size || 220}px;
-  color: rgba(200, 200, 200, ${props => props.$opacity || 0.18});
-  pointer-events: none;
-  user-select: none;
-  line-height: 1;
-  font-weight: 400;
-
-  @media (max-width: 480px) {
-    font-size: ${props => (props.$size || 220) * 0.875}px;
   }
 `;
 
@@ -332,23 +301,77 @@ function HandwritingMode() {
   const [results, setResults] = useState([]);       // [{char, score, correct}]
   const [phase, setPhase] = useState('loading');     // loading | select | practice | graded | finished
   const [lastScore, setLastScore] = useState(null);
-  const [showGhost, setShowGhost] = useState(true);
+  const [showGhost, setShowGhost] = useState(false);
   const [ghostOpacity, setGhostOpacity] = useState(0.18);
   const [isDrawing, setIsDrawing] = useState(false);
 
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
+  const revealMaskRef = useRef(null);
+  const revealGlyphRef = useRef(null);
 
   const canvasSize = 320;
   const drawColor = ['dark', 'cosmic', 'forest', 'neon'].includes(theme) ? '#f8fafc' : '#111827';
+  const current = charQueue[currentIndex] || null;
 
   const clearCanvas = useCallback(() => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d');
+    const maskCtx = revealMaskRef.current?.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, canvasSize, canvasSize);
-  }, []);
+    if (maskCtx) {
+      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      maskCtx.clearRect(0, 0, canvasSize, canvasSize);
+    }
+  }, [canvasSize]);
+
+  const initRevealLayers = useCallback((char) => {
+    if (!canvasRef.current || !char) return;
+    const dpr = window.devicePixelRatio || 1;
+    const pixelSize = canvasSize * dpr;
+
+    if (!revealMaskRef.current) revealMaskRef.current = document.createElement('canvas');
+    if (!revealGlyphRef.current) revealGlyphRef.current = document.createElement('canvas');
+
+    revealMaskRef.current.width = pixelSize;
+    revealMaskRef.current.height = pixelSize;
+    revealGlyphRef.current.width = pixelSize;
+    revealGlyphRef.current.height = pixelSize;
+
+    const glyphCtx = revealGlyphRef.current.getContext('2d');
+    if (!glyphCtx) return;
+
+    glyphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    glyphCtx.clearRect(0, 0, canvasSize, canvasSize);
+
+    if (!showGhost) return;
+
+    const fontSize = char.length <= 1 ? canvasSize * 0.66 : char.length === 2 ? canvasSize * 0.52 : canvasSize * 0.42;
+    glyphCtx.fillStyle = drawColor;
+    glyphCtx.globalAlpha = ghostOpacity;
+    glyphCtx.textAlign = 'center';
+    glyphCtx.textBaseline = 'middle';
+    glyphCtx.font = `${fontSize}px serif`;
+    glyphCtx.fillText(char, canvasSize / 2, canvasSize / 2);
+    glyphCtx.globalAlpha = 1;
+  }, [canvasSize, drawColor, ghostOpacity, showGhost]);
+
+  const renderReveal = useCallback(() => {
+    const canvas = canvasRef.current;
+    const glyphCanvas = revealGlyphRef.current;
+    const maskCanvas = revealMaskRef.current;
+    if (!canvas || !glyphCanvas || !maskCanvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, canvasSize, canvasSize);
+    ctx.drawImage(glyphCanvas, 0, 0, canvasSize, canvasSize);
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(maskCanvas, 0, 0, canvasSize, canvasSize);
+    ctx.globalCompositeOperation = 'source-over';
+  }, [canvasSize]);
 
   // Load set
   useEffect(() => {
@@ -399,7 +422,9 @@ function HandwritingMode() {
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
     clearCanvas();
-  }, [clearCanvas, currentIndex, phase]);
+    initRevealLayers(current?.char);
+    renderReveal();
+  }, [canvasSize, clearCanvas, current?.char, currentIndex, initRevealLayers, phase, renderReveal]);
 
   const getPos = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
@@ -421,8 +446,22 @@ function HandwritingMode() {
     e.preventDefault();
     setIsDrawing(true);
     const pos = getPos(e);
-    const ctx = canvasRef.current.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
+    if (showGhost) {
+      const maskCtx = revealMaskRef.current?.getContext('2d');
+      if (!maskCtx) return;
+      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      maskCtx.beginPath();
+      maskCtx.moveTo(pos.x, pos.y);
+      maskCtx.lineWidth = 20;
+      maskCtx.lineCap = 'round';
+      maskCtx.lineJoin = 'round';
+      maskCtx.strokeStyle = 'rgba(255,255,255,0.95)';
+      return;
+    }
+
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
@@ -436,8 +475,19 @@ function HandwritingMode() {
     if (!isDrawing) return;
     e.preventDefault();
     const pos = getPos(e);
-    const ctx = canvasRef.current.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
+    if (showGhost) {
+      const maskCtx = revealMaskRef.current?.getContext('2d');
+      if (!maskCtx) return;
+      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      maskCtx.lineTo(pos.x, pos.y);
+      maskCtx.stroke();
+      renderReveal();
+      return;
+    }
+
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
@@ -582,7 +632,6 @@ function HandwritingMode() {
   }
 
   // Phase: practice / graded
-  const current = charQueue[currentIndex];
   const progress = charQueue.length > 0 ? ((currentIndex + (phase === 'graded' ? 1 : 0)) / charQueue.length) * 100 : 0;
   const gradeState = phase === 'graded' ? (lastScore >= 40 ? 'correct' : 'wrong') : null;
 
@@ -612,14 +661,10 @@ function HandwritingMode() {
 
       <Card>
         <TargetSection>
-          <TargetChar>{current.char}</TargetChar>
-          {current.pinyin && <Pinyin>🔊 {current.pinyin}</Pinyin>}
           <Definition>📖 {current.definition}</Definition>
-          {current.term.length > 1 && (
-            <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              Из слова: {current.term}
-            </div>
-          )}
+          <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Ведите пальцем или мышью по предполагаемым штрихам, и символ будет проявляться по частям.
+          </div>
         </TargetSection>
 
         {phase === 'graded' && (
@@ -630,9 +675,6 @@ function HandwritingMode() {
         )}
 
         <CanvasWrapper ref={wrapperRef} $state={gradeState}>
-          {showGhost && phase === 'practice' && (
-            <GhostChar $opacity={ghostOpacity}>{current.char}</GhostChar>
-          )}
           <GridOverlay />
           <Canvas
             ref={canvasRef}
@@ -648,7 +690,7 @@ function HandwritingMode() {
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <HintToggle onClick={() => setShowGhost(g => !g)}>
-            {showGhost ? '🙈 Скрыть подсказку' : '👁️ Показать подсказку'}
+            {showGhost ? '🙈 Скрыть проявление' : '👁️ Включить проявление'}
           </HintToggle>
           {showGhost && (
             <HintToggle onClick={() => setGhostOpacity(o => o >= 0.3 ? 0.08 : o + 0.08)}>

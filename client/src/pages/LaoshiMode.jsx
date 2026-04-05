@@ -243,21 +243,6 @@ const CanvasWrapper = styled.div`
   background: rgba(255, 255, 255, 0.02);
 `;
 
-const GhostChar = styled.div`
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: ${p => p.$fontSize || 140}px;
-  color: var(--text-muted);
-  opacity: 0.14;
-  pointer-events: none;
-  user-select: none;
-  white-space: nowrap;
-  line-height: 1;
-`;
-
 const DrawCanvas = styled.canvas`
   position: absolute;
   inset: 0;
@@ -382,9 +367,12 @@ function LaoshiMode() {
   const [hwIndex, setHwIndex] = useState(0);
   const [hwCompleted, setHwCompleted] = useState(0);
   const [showGhostHint, setShowGhostHint] = useState(false);
+  const [ghostOpacity, setGhostOpacity] = useState(0.18);
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef(null);
+  const revealMaskRef = useRef(null);
+  const revealGlyphRef = useRef(null);
 
   // Results
   const [roundScores, setRoundScores] = useState([]);
@@ -459,6 +447,7 @@ function LaoshiMode() {
     setHwIndex(0);
     setHwCompleted(0);
     setShowGhostHint(false);
+    setGhostOpacity(0.18);
     setStage(STAGE.HANDWRITING);
   }, []);
 
@@ -467,7 +456,68 @@ function LaoshiMode() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const maskCtx = revealMaskRef.current?.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const size = 320;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    if (maskCtx) {
+      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      maskCtx.clearRect(0, 0, size, size);
+    }
+  }, []);
+
+  const getCurrentHandwritingCard = useCallback(() => {
+    const chineseCards = roundCards.filter(c => isChinese(c.term));
+    return chineseCards[hwIndex] || null;
+  }, [roundCards, hwIndex]);
+
+  const initRevealLayers = useCallback((term) => {
+    if (!canvasRef.current || !term) return;
+    const size = 320;
+    const dpr = window.devicePixelRatio || 1;
+    const pixelSize = size * dpr;
+
+    if (!revealMaskRef.current) revealMaskRef.current = document.createElement('canvas');
+    if (!revealGlyphRef.current) revealGlyphRef.current = document.createElement('canvas');
+
+    revealMaskRef.current.width = pixelSize;
+    revealMaskRef.current.height = pixelSize;
+    revealGlyphRef.current.width = pixelSize;
+    revealGlyphRef.current.height = pixelSize;
+
+    const glyphCtx = revealGlyphRef.current.getContext('2d');
+    if (!glyphCtx) return;
+
+    glyphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    glyphCtx.clearRect(0, 0, size, size);
+
+    if (!showGhostHint) return;
+
+    const fontSize = term.length <= 1 ? 168 : term.length === 2 ? 138 : 108;
+    glyphCtx.fillStyle = drawColor;
+    glyphCtx.globalAlpha = ghostOpacity;
+    glyphCtx.textAlign = 'center';
+    glyphCtx.textBaseline = 'middle';
+    glyphCtx.font = `${fontSize}px serif`;
+    glyphCtx.fillText(term, size / 2, size / 2);
+    glyphCtx.globalAlpha = 1;
+  }, [drawColor, ghostOpacity, showGhostHint]);
+
+  const renderReveal = useCallback(() => {
+    const canvas = canvasRef.current;
+    const glyphCanvas = revealGlyphRef.current;
+    const maskCanvas = revealMaskRef.current;
+    if (!canvas || !glyphCanvas || !maskCanvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const size = 320;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    ctx.drawImage(glyphCanvas, 0, 0, size, size);
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(maskCanvas, 0, 0, size, size);
+    ctx.globalCompositeOperation = 'source-over';
   }, []);
 
   useEffect(() => {
@@ -482,18 +532,16 @@ function LaoshiMode() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
     clearCanvas();
-  }, [stage, hwIndex, clearCanvas]);
-
-  useEffect(() => {
-    if (stage !== STAGE.HANDWRITING) return;
-    clearCanvas();
-  }, [stage, hwIndex, clearCanvas]);
+    const card = getCurrentHandwritingCard();
+    initRevealLayers(card?.term);
+    renderReveal();
+  }, [stage, hwIndex, clearCanvas, getCurrentHandwritingCard, initRevealLayers, renderReveal]);
 
   const getPos = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const ratio = canvas.width / rect.width;
+    const ratio = 320 / rect.width;
     if (e.touches) {
       return { x: (e.touches[0].clientX - rect.left) * ratio, y: (e.touches[0].clientY - rect.top) * ratio };
     }
@@ -504,19 +552,50 @@ function LaoshiMode() {
     e.preventDefault();
     drawingRef.current = true;
     lastPointRef.current = getPos(e);
+    const dpr = window.devicePixelRatio || 1;
+    if (showGhostHint) {
+      const maskCtx = revealMaskRef.current?.getContext('2d');
+      if (!maskCtx) return;
+      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      maskCtx.beginPath();
+      maskCtx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+      maskCtx.lineWidth = 20;
+      maskCtx.lineCap = 'round';
+      maskCtx.lineJoin = 'round';
+      maskCtx.strokeStyle = 'rgba(255,255,255,0.95)';
+      return;
+    }
+
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.beginPath();
+    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = drawColor;
   };
 
   const draw = (e) => {
     if (!drawingRef.current) return;
     e.preventDefault();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
     const pos = getPos(e);
-    ctx.strokeStyle = drawColor;
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    const dpr = window.devicePixelRatio || 1;
+    if (showGhostHint) {
+      const maskCtx = revealMaskRef.current?.getContext('2d');
+      if (!maskCtx) return;
+      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      maskCtx.lineTo(pos.x, pos.y);
+      maskCtx.stroke();
+      renderReveal();
+      lastPointRef.current = pos;
+      return;
+    }
+
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.beginPath();
     ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
     ctx.lineTo(pos.x, pos.y);
@@ -746,7 +825,6 @@ function LaoshiMode() {
         const chineseCards = roundCards.filter(c => isChinese(c.term));
         const card = chineseCards[hwIndex];
         if (!card) return null;
-        const ghostFontSize = card.term.length <= 1 ? 168 : card.term.length === 2 ? 138 : 108;
         return (
           <Card>
             <HandwritingArea>
@@ -755,7 +833,6 @@ function LaoshiMode() {
                 <HandwritingMeaning>{card.translation || card.definition}</HandwritingMeaning>
               </HandwritingPrompt>
               <CanvasWrapper>
-                {showGhostHint && <GhostChar $fontSize={ghostFontSize}>{card.term}</GhostChar>}
                 <DrawCanvas
                   ref={canvasRef}
                   onMouseDown={startDraw}
@@ -771,8 +848,13 @@ function LaoshiMode() {
               <HandwritingControls>
                 <Btn $color="linear-gradient(135deg, #a0aec0, #718096)" onClick={clearCanvas}>↻ Очистить</Btn>
                 <HintToggleBtn onClick={() => setShowGhostHint(prev => !prev)}>
-                  {showGhostHint ? '🙈 Скрыть подсказку' : '👁️ Показать подсказку'}
+                  {showGhostHint ? '🙈 Скрыть проявление' : '👁️ Включить проявление'}
                 </HintToggleBtn>
+                {showGhostHint && (
+                  <HintToggleBtn onClick={() => setGhostOpacity(prev => (prev >= 0.3 ? 0.08 : prev + 0.08))}>
+                    Прозрачность: {Math.round(ghostOpacity * 100)}%
+                  </HintToggleBtn>
+                )}
                 {hwIndex < chineseCards.length - 1 ? (
                   <Btn onClick={() => { setHwIndex(hwIndex + 1); }}>
                     Далее →

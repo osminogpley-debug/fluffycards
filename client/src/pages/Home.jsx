@@ -33,8 +33,10 @@ const HeroTop = styled.div`
   align-items: center;
   gap: 8px;
   border: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--bg-primary) 86%, transparent);
+  color: var(--text-primary);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(6px);
   border-radius: 999px;
   padding: 6px 12px;
   font-size: 12px;
