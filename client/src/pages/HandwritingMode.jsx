@@ -311,43 +311,42 @@ function HandwritingMode() {
   const revealGlyphRef = useRef(null);
 
   const canvasSize = 320;
+  const REVEAL_BRUSH = 44;
   const drawColor = ['dark', 'cosmic', 'forest', 'neon'].includes(theme) ? '#f8fafc' : '#111827';
   const current = charQueue[currentIndex] || null;
+
+  // Ensure off-screen canvases exist with correct size (never resets content)
+  const ensureOffscreen = useCallback(() => {
+    const dpr = window.devicePixelRatio || 1;
+    const px = canvasSize * dpr;
+    if (!revealMaskRef.current) { revealMaskRef.current = document.createElement('canvas'); revealMaskRef.current.width = px; revealMaskRef.current.height = px; }
+    if (!revealGlyphRef.current) { revealGlyphRef.current = document.createElement('canvas'); revealGlyphRef.current.width = px; revealGlyphRef.current.height = px; }
+    // Resize only if needed (avoid clearing)
+    if (revealMaskRef.current.width !== px) { revealMaskRef.current.width = px; revealMaskRef.current.height = px; }
+    if (revealGlyphRef.current.width !== px) { revealGlyphRef.current.width = px; revealGlyphRef.current.height = px; }
+  }, [canvasSize]);
 
   const clearCanvas = useCallback(() => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d');
-    const maskCtx = revealMaskRef.current?.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, canvasSize, canvasSize);
-    if (maskCtx) {
-      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      maskCtx.clearRect(0, 0, canvasSize, canvasSize);
-    }
-  }, [canvasSize]);
+    ensureOffscreen();
+    const maskCtx = revealMaskRef.current.getContext('2d');
+    maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    maskCtx.clearRect(0, 0, canvasSize, canvasSize);
+  }, [canvasSize, ensureOffscreen]);
 
-  const initRevealLayers = useCallback((char) => {
-    if (!canvasRef.current || !char) return;
-    const dpr = window.devicePixelRatio || 1;
-    const pixelSize = canvasSize * dpr;
-
-    if (!revealMaskRef.current) revealMaskRef.current = document.createElement('canvas');
-    if (!revealGlyphRef.current) revealGlyphRef.current = document.createElement('canvas');
-
-    revealMaskRef.current.width = pixelSize;
-    revealMaskRef.current.height = pixelSize;
-    revealGlyphRef.current.width = pixelSize;
-    revealGlyphRef.current.height = pixelSize;
-
+  // Rebuild only the glyph layer (keeps mask intact so user drawing persists)
+  const rebuildGlyph = useCallback((char) => {
+    ensureOffscreen();
     const glyphCtx = revealGlyphRef.current.getContext('2d');
     if (!glyphCtx) return;
-
+    const dpr = window.devicePixelRatio || 1;
     glyphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     glyphCtx.clearRect(0, 0, canvasSize, canvasSize);
-
-    if (!showGhost) return;
-
+    if (!showGhost || !char) return;
     const fontSize = char.length <= 1 ? canvasSize * 0.66 : char.length === 2 ? canvasSize * 0.52 : canvasSize * 0.42;
     glyphCtx.fillStyle = drawColor;
     glyphCtx.globalAlpha = ghostOpacity;
@@ -356,22 +355,21 @@ function HandwritingMode() {
     glyphCtx.font = `${fontSize}px serif`;
     glyphCtx.fillText(char, canvasSize / 2, canvasSize / 2);
     glyphCtx.globalAlpha = 1;
-  }, [canvasSize, drawColor, ghostOpacity, showGhost]);
+  }, [canvasSize, drawColor, ensureOffscreen, ghostOpacity, showGhost]);
 
   const renderReveal = useCallback(() => {
     const canvas = canvasRef.current;
-    const glyphCanvas = revealGlyphRef.current;
-    const maskCanvas = revealMaskRef.current;
-    if (!canvas || !glyphCanvas || !maskCanvas) return;
+    if (!canvas || !revealGlyphRef.current || !revealMaskRef.current) return;
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, canvasSize, canvasSize);
-    ctx.drawImage(glyphCanvas, 0, 0, canvasSize, canvasSize);
+    if (!showGhost) return;
+    ctx.drawImage(revealGlyphRef.current, 0, 0, canvasSize, canvasSize);
     ctx.globalCompositeOperation = 'destination-in';
-    ctx.drawImage(maskCanvas, 0, 0, canvasSize, canvasSize);
+    ctx.drawImage(revealMaskRef.current, 0, 0, canvasSize, canvasSize);
     ctx.globalCompositeOperation = 'source-over';
-  }, [canvasSize]);
+  }, [canvasSize, showGhost]);
 
   // Load set
   useEffect(() => {
@@ -410,7 +408,7 @@ function HandwritingMode() {
     })();
   }, [setId]);
 
-  // Setup canvas
+  // Setup canvas when card or phase changes → full reset
   useEffect(() => {
     if (phase !== 'practice' || !canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -422,9 +420,18 @@ function HandwritingMode() {
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
     clearCanvas();
-    initRevealLayers(current?.char);
+    rebuildGlyph(current?.char);
     renderReveal();
-  }, [canvasSize, clearCanvas, current?.char, currentIndex, initRevealLayers, phase, renderReveal]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, phase]);
+
+  // When ghost toggle or opacity changes → rebuild glyph only (preserve mask)
+  useEffect(() => {
+    if (phase !== 'practice' || !canvasRef.current) return;
+    rebuildGlyph(current?.char);
+    renderReveal();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showGhost, ghostOpacity]);
 
   const getPos = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
@@ -448,18 +455,19 @@ function HandwritingMode() {
     const pos = getPos(e);
     const dpr = window.devicePixelRatio || 1;
     if (showGhost) {
+      // Reveal mode – draw on mask; visible canvas updated in draw()
       const maskCtx = revealMaskRef.current?.getContext('2d');
       if (!maskCtx) return;
       maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       maskCtx.beginPath();
       maskCtx.moveTo(pos.x, pos.y);
-      maskCtx.lineWidth = 20;
+      maskCtx.lineWidth = REVEAL_BRUSH;
       maskCtx.lineCap = 'round';
       maskCtx.lineJoin = 'round';
-      maskCtx.strokeStyle = 'rgba(255,255,255,0.95)';
+      maskCtx.strokeStyle = '#fff';
       return;
     }
-
+    // Normal free-draw mode
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -482,10 +490,12 @@ function HandwritingMode() {
       maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       maskCtx.lineTo(pos.x, pos.y);
       maskCtx.stroke();
+      // Also start a new sub-path so next segment connects properly
+      maskCtx.beginPath();
+      maskCtx.moveTo(pos.x, pos.y);
       renderReveal();
       return;
     }
-
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -688,14 +698,21 @@ function HandwritingMode() {
           />
         </CanvasWrapper>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <HintToggle onClick={() => setShowGhost(g => !g)}>
             {showGhost ? '🙈 Скрыть проявление' : '👁️ Включить проявление'}
           </HintToggle>
           {showGhost && (
-            <HintToggle onClick={() => setGhostOpacity(o => o >= 0.3 ? 0.08 : o + 0.08)}>
-              Прозрачность: {Math.round(ghostOpacity * 100)}%
-            </HintToggle>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Яркость:
+              <input
+                type="range" min="5" max="100" step="5"
+                value={Math.round(ghostOpacity * 100)}
+                onChange={e => setGhostOpacity(Number(e.target.value) / 100)}
+                style={{ width: 90, accentColor: '#e53e3e' }}
+              />
+              {Math.round(ghostOpacity * 100)}%
+            </label>
           )}
         </div>
 

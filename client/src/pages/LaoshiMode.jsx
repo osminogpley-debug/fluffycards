@@ -452,48 +452,47 @@ function LaoshiMode() {
   }, []);
 
   // ===== CANVAS DRAWING =====
+  const REVEAL_BRUSH = 44;
+
+  // Ensure off-screen canvases exist (never resets content on re-call)
+  const ensureOffscreen = useCallback(() => {
+    const dpr = window.devicePixelRatio || 1;
+    const px = 320 * dpr;
+    if (!revealMaskRef.current) { revealMaskRef.current = document.createElement('canvas'); revealMaskRef.current.width = px; revealMaskRef.current.height = px; }
+    if (!revealGlyphRef.current) { revealGlyphRef.current = document.createElement('canvas'); revealGlyphRef.current.width = px; revealGlyphRef.current.height = px; }
+    if (revealMaskRef.current.width !== px) { revealMaskRef.current.width = px; revealMaskRef.current.height = px; }
+    if (revealGlyphRef.current.width !== px) { revealGlyphRef.current.width = px; revealGlyphRef.current.height = px; }
+  }, []);
+
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const maskCtx = revealMaskRef.current?.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const size = 320;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size, size);
-    if (maskCtx) {
-      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      maskCtx.clearRect(0, 0, size, size);
-    }
-  }, []);
+    ensureOffscreen();
+    const maskCtx = revealMaskRef.current.getContext('2d');
+    maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    maskCtx.clearRect(0, 0, size, size);
+  }, [ensureOffscreen]);
 
   const getCurrentHandwritingCard = useCallback(() => {
     const chineseCards = roundCards.filter(c => isChinese(c.term));
     return chineseCards[hwIndex] || null;
   }, [roundCards, hwIndex]);
 
-  const initRevealLayers = useCallback((term) => {
-    if (!canvasRef.current || !term) return;
-    const size = 320;
-    const dpr = window.devicePixelRatio || 1;
-    const pixelSize = size * dpr;
-
-    if (!revealMaskRef.current) revealMaskRef.current = document.createElement('canvas');
-    if (!revealGlyphRef.current) revealGlyphRef.current = document.createElement('canvas');
-
-    revealMaskRef.current.width = pixelSize;
-    revealMaskRef.current.height = pixelSize;
-    revealGlyphRef.current.width = pixelSize;
-    revealGlyphRef.current.height = pixelSize;
-
+  // Rebuild glyph layer only (keeps mask/user strokes intact)
+  const rebuildGlyph = useCallback((term) => {
+    ensureOffscreen();
     const glyphCtx = revealGlyphRef.current.getContext('2d');
     if (!glyphCtx) return;
-
+    const dpr = window.devicePixelRatio || 1;
+    const size = 320;
     glyphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     glyphCtx.clearRect(0, 0, size, size);
-
-    if (!showGhostHint) return;
-
+    if (!showGhostHint || !term) return;
     const fontSize = term.length <= 1 ? 168 : term.length === 2 ? 138 : 108;
     glyphCtx.fillStyle = drawColor;
     glyphCtx.globalAlpha = ghostOpacity;
@@ -502,24 +501,24 @@ function LaoshiMode() {
     glyphCtx.font = `${fontSize}px serif`;
     glyphCtx.fillText(term, size / 2, size / 2);
     glyphCtx.globalAlpha = 1;
-  }, [drawColor, ghostOpacity, showGhostHint]);
+  }, [drawColor, ensureOffscreen, ghostOpacity, showGhostHint]);
 
   const renderReveal = useCallback(() => {
     const canvas = canvasRef.current;
-    const glyphCanvas = revealGlyphRef.current;
-    const maskCanvas = revealMaskRef.current;
-    if (!canvas || !glyphCanvas || !maskCanvas) return;
+    if (!canvas || !revealGlyphRef.current || !revealMaskRef.current) return;
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const size = 320;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size, size);
-    ctx.drawImage(glyphCanvas, 0, 0, size, size);
+    if (!showGhostHint) return;
+    ctx.drawImage(revealGlyphRef.current, 0, 0, size, size);
     ctx.globalCompositeOperation = 'destination-in';
-    ctx.drawImage(maskCanvas, 0, 0, size, size);
+    ctx.drawImage(revealMaskRef.current, 0, 0, size, size);
     ctx.globalCompositeOperation = 'source-over';
-  }, []);
+  }, [showGhostHint]);
 
+  // Canvas init on card/stage change → full reset
   useEffect(() => {
     if (stage !== STAGE.HANDWRITING) return;
     const canvas = canvasRef.current;
@@ -533,9 +532,19 @@ function LaoshiMode() {
     ctx.scale(dpr, dpr);
     clearCanvas();
     const card = getCurrentHandwritingCard();
-    initRevealLayers(card?.term);
+    rebuildGlyph(card?.term);
     renderReveal();
-  }, [stage, hwIndex, clearCanvas, getCurrentHandwritingCard, initRevealLayers, renderReveal]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, hwIndex]);
+
+  // When ghost toggle/opacity changes → rebuild glyph only (preserve mask)
+  useEffect(() => {
+    if (stage !== STAGE.HANDWRITING) return;
+    const card = getCurrentHandwritingCard();
+    rebuildGlyph(card?.term);
+    renderReveal();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showGhostHint, ghostOpacity]);
 
   const getPos = (e) => {
     const canvas = canvasRef.current;
@@ -559,13 +568,12 @@ function LaoshiMode() {
       maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       maskCtx.beginPath();
       maskCtx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-      maskCtx.lineWidth = 20;
+      maskCtx.lineWidth = REVEAL_BRUSH;
       maskCtx.lineCap = 'round';
       maskCtx.lineJoin = 'round';
-      maskCtx.strokeStyle = 'rgba(255,255,255,0.95)';
+      maskCtx.strokeStyle = '#fff';
       return;
     }
-
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -588,11 +596,12 @@ function LaoshiMode() {
       maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       maskCtx.lineTo(pos.x, pos.y);
       maskCtx.stroke();
+      maskCtx.beginPath();
+      maskCtx.moveTo(pos.x, pos.y);
       renderReveal();
       lastPointRef.current = pos;
       return;
     }
-
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -851,9 +860,16 @@ function LaoshiMode() {
                   {showGhostHint ? '🙈 Скрыть проявление' : '👁️ Включить проявление'}
                 </HintToggleBtn>
                 {showGhostHint && (
-                  <HintToggleBtn onClick={() => setGhostOpacity(prev => (prev >= 0.3 ? 0.08 : prev + 0.08))}>
-                    Прозрачность: {Math.round(ghostOpacity * 100)}%
-                  </HintToggleBtn>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Яркость:
+                    <input
+                      type="range" min="5" max="100" step="5"
+                      value={Math.round(ghostOpacity * 100)}
+                      onChange={e => setGhostOpacity(Number(e.target.value) / 100)}
+                      style={{ width: 80, accentColor: '#4299e1' }}
+                    />
+                    {Math.round(ghostOpacity * 100)}%
+                  </label>
                 )}
                 {hwIndex < chineseCards.length - 1 ? (
                   <Btn onClick={() => { setHwIndex(hwIndex + 1); }}>
