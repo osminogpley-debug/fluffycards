@@ -55,6 +55,27 @@ const detectSourceLang = (text) => {
   return null;
 };
 
+const countChineseChars = (text = '') => (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+
+const isPoorZhToRuTranslation = (source, translated) => {
+  if (!translated) return true;
+  const src = source.trim().toLowerCase();
+  const out = translated.trim().toLowerCase();
+  if (!out) return true;
+
+  // Unchanged output means translation likely failed
+  if (src === out) return true;
+
+  // Chinese characters in ru output usually means provider returned source text
+  const chineseInOut = countChineseChars(translated);
+  if (chineseInOut > 0) return true;
+
+  // Garbage guard: extremely short result for longer source
+  if (source.length >= 3 && translated.length <= 1) return true;
+
+  return false;
+};
+
 const translateWithMyMemory = async (text, source, target) => {
   // MyMemory requires explicit language codes, 'auto' is not supported
   const srcLang = (source === 'auto' || !source) ? (detectSourceLang(text) || 'en') : source;
@@ -138,7 +159,13 @@ router.post('/', authMiddleware, async (req, res) => {
 
     for (const p of providers) {
       try {
-        translated = await p.fn();
+        const candidate = await p.fn();
+
+        if (detectedSource === 'zh' && target === 'ru' && isPoorZhToRuTranslation(trimmed, candidate)) {
+          throw new Error('Low-quality zh->ru translation');
+        }
+
+        translated = candidate;
         provider = p.name;
         break;
       } catch (e) {

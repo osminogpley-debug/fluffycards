@@ -1765,22 +1765,13 @@ function SetBuilder() {
     
     try {
       const data = await getChineseData(chineseText.trim());
-      
-      // Формируем строку для определения: "[pinyin] - [translation]"
-      const definitionValue = `${data.pinyin} - ${data.translation}`;
-      
+
       setCards(prevCards => prevCards.map(card => {
         if (card.id === cardId) {
-          // Формируем определение: если поле пустое - просто вставляем, иначе добавляем через пробел
-          const newDefinition = card.definition.trim() 
-            ? `${card.definition.trim()} ${definitionValue}`
-            : definitionValue;
-          
           return { 
             ...card, 
             pinyin: data.pinyin, 
-            translation: data.translation,
-            definition: newDefinition
+            translation: data.translation
           };
         }
         return card;
@@ -1789,7 +1780,7 @@ function SetBuilder() {
       // Обновляем оригинальный термин после успешного получения данных
       setOriginalTerms(prev => ({ ...prev, [cardId]: chineseText.trim() }));
       
-      setSuccess('Пиньинь, перевод и определение добавлены! ✨');
+      setSuccess('Пиньинь и перевод добавлены! ✨');
       setTimeout(() => setSuccess(null), 2000);
     } catch (err) {
       setError('Ошибка получения данных: ' + err.message);
@@ -1803,13 +1794,7 @@ function SetBuilder() {
   const handleDeletePinyin = (cardId) => {
     setCards(prevCards => prevCards.map(card => {
       if (card.id !== cardId) return card;
-      // Также убираем из definition автодобавленную часть "pinyin - translation"
-      let cleanedDef = card.definition || '';
-      if (card.pinyin && card.translation) {
-        const autoText = `${card.pinyin} - ${card.translation}`;
-        cleanedDef = cleanedDef.replace(autoText, '').trim();
-      }
-      return { ...card, pinyin: '', translation: '', definition: cleanedDef };
+      return { ...card, pinyin: '', translation: '' };
     }));
     
     setSuccess('Пиньинь и перевод удалены 🗑️');

@@ -105,12 +105,6 @@ const SubText = styled.div`
   margin-top: 4px;
 `;
 
-const PinyinText = styled.div`
-  font-size: 1.1rem;
-  color: #4299e1;
-  margin-top: 4px;
-`;
-
 const HintText = styled.div`
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -233,13 +227,6 @@ const HandwritingPrompt = styled.div`
   max-width: 420px;
 `;
 
-const HandwritingTarget = styled.div`
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-top: 4px;
-`;
-
 const HandwritingMeaning = styled.div`
   font-size: 0.98rem;
   color: var(--text-secondary);
@@ -286,6 +273,12 @@ const DrawCanvas = styled.canvas`
 const HandwritingControls = styled(BtnRow)`
   margin-top: 6px;
   flex-wrap: wrap;
+`;
+
+const HintToggleBtn = styled(Btn)`
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
 `;
 
 const ResultsCard = styled.div`
@@ -388,6 +381,7 @@ function LaoshiMode() {
   // Handwriting stage
   const [hwIndex, setHwIndex] = useState(0);
   const [hwCompleted, setHwCompleted] = useState(0);
+  const [showGhostHint, setShowGhostHint] = useState(false);
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef(null);
@@ -464,6 +458,7 @@ function LaoshiMode() {
   const initHandwriting = useCallback(() => {
     setHwIndex(0);
     setHwCompleted(0);
+    setShowGhostHint(false);
     setStage(STAGE.HANDWRITING);
   }, []);
 
@@ -649,7 +644,6 @@ function LaoshiMode() {
             {!flipped ? (
               <>
                 <BigText $big={isChinese(roundCards[fcIndex].term)}>{roundCards[fcIndex].term}</BigText>
-                {roundCards[fcIndex].pinyin && <PinyinText>{roundCards[fcIndex].pinyin}</PinyinText>}
                 <HintText>Нажмите, чтобы перевернуть</HintText>
               </>
             ) : (
@@ -694,7 +688,6 @@ function LaoshiMode() {
                     onClick={() => !matchedPairs[cid] && setSelectedTerm(card)}
                   >
                     {card.term}
-                    {card.pinyin && <div style={{ fontSize: '0.75rem', color: '#4299e1', marginTop: 2 }}>{card.pinyin}</div>}
                   </MatchItem>
                 );
               })}
@@ -727,7 +720,6 @@ function LaoshiMode() {
             <BigText $big={isChinese(roundCards[quizIndex].term)}>
               {roundCards[quizIndex].term}
             </BigText>
-            {roundCards[quizIndex].pinyin && <PinyinText>{roundCards[quizIndex].pinyin}</PinyinText>}
             <QuizOptions>
               {quizOptions.map((opt, i) => {
                 const isCorrect = opt === roundCards[quizIndex].definition;
@@ -760,12 +752,10 @@ function LaoshiMode() {
             <HandwritingArea>
               <HandwritingPrompt>
                 <SubText>Напишите иероглифы:</SubText>
-                <HandwritingTarget>{card.term}</HandwritingTarget>
-                {card.pinyin && <PinyinText>{card.pinyin}</PinyinText>}
                 <HandwritingMeaning>{card.translation || card.definition}</HandwritingMeaning>
               </HandwritingPrompt>
               <CanvasWrapper>
-                <GhostChar $fontSize={ghostFontSize}>{card.term}</GhostChar>
+                {showGhostHint && <GhostChar $fontSize={ghostFontSize}>{card.term}</GhostChar>}
                 <DrawCanvas
                   ref={canvasRef}
                   onMouseDown={startDraw}
@@ -780,6 +770,9 @@ function LaoshiMode() {
               </CanvasWrapper>
               <HandwritingControls>
                 <Btn $color="linear-gradient(135deg, #a0aec0, #718096)" onClick={clearCanvas}>↻ Очистить</Btn>
+                <HintToggleBtn onClick={() => setShowGhostHint(prev => !prev)}>
+                  {showGhostHint ? '🙈 Скрыть подсказку' : '👁️ Показать подсказку'}
+                </HintToggleBtn>
                 {hwIndex < chineseCards.length - 1 ? (
                   <Btn onClick={() => { setHwIndex(hwIndex + 1); }}>
                     Далее →

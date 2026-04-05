@@ -561,15 +561,6 @@ function StudyMode() {
       // Accept just the translation without pinyin
       answers.push(normalizeAnswer(card.translation));
     }
-    if (showTermSide && card.pinyin) {
-      // Accept just pinyin
-      answers.push(normalizeAnswer(card.pinyin));
-      // Accept "pinyin - translation" in various formats
-      if (card.translation) {
-        answers.push(normalizeAnswer(`${card.pinyin} - ${card.translation}`));
-        answers.push(normalizeAnswer(`${card.pinyin} ${card.translation}`));
-      }
-    }
     
     return [...new Set(answers)];
   };
@@ -581,8 +572,7 @@ function StudyMode() {
     setAttempts(prev => prev + 1);
     
     const card = getCard(currentCardId);
-    const { answer } = getPromptAndAnswer(card);
-    
+
     // Check if selected option matches the correct answer
     let correct = false;
     if (showTermSide) {
@@ -732,7 +722,12 @@ function StudyMode() {
 
   // Stats
   const totalCards = flashcards.length;
-  const progress = totalCards > 0 ? Math.round((masteredIds.length / totalCards) * 100) : 0;
+  const round1Done = Math.max(0, totalCards - round1Queue.length);
+  const round2Total = round2Queue.length + masteredIds.length;
+  const round2Done = masteredIds.length;
+  const progress = totalCards > 0
+    ? Math.round(((round1Done + round2Done) / (totalCards * 2)) * 100)
+    : 0;
   const accuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
 
   const recordStatsSession = async () => {
@@ -872,7 +867,8 @@ function StudyMode() {
   const { prompt, answer, promptLabel, answerLabel } = getPromptAndAnswer(card);
   const cardIsChinese = isChinese(card.term);
   const currentQueue = round === 1 ? round1Queue : round2Queue;
-  const queuePosition = currentQueue.indexOf(currentCardId) + 1;
+  const roundDone = round === 1 ? round1Done : round2Done;
+  const roundTotal = round === 1 ? totalCards : round2Total;
 
   return (
     <Container>
@@ -895,17 +891,17 @@ function StudyMode() {
       </ProgressBar>
       <ProgressText>
         Прогресс: {progress}% | Точность: {accuracy}% | 
-        Карточка {queuePosition} из {currentQueue.length}
+        Раунд {round}: {roundDone}/{roundTotal} | Осталось: {currentQueue.length}
       </ProgressText>
 
       <RoundInfo>
         <RoundStat>
           <div className="label">🎯 Раунд 1</div>
-          <div className="value">{round1Queue.length}</div>
+          <div className="value">{round1Done}/{totalCards}</div>
         </RoundStat>
         <RoundStat>
           <div className="label">⌨️ Раунд 2</div>
-          <div className="value">{round2Queue.length}</div>
+          <div className="value">{round2Done}/{round2Total}</div>
         </RoundStat>
         <RoundStat>
           <div className="label">🏆 Усвоено</div>
