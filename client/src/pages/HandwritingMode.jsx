@@ -1,26 +1,27 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { API_ROUTES, authFetch } from '../constants/api';
 import SetSelector from '../components/SetSelector';
 import { useTheme } from '../contexts/ThemeContext';
+import { loadHanziWriter } from '../utils/hanziWriterLoader';
 
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 820px;
   margin: 2rem auto;
   padding: 0 1rem;
 `;
 
 const Header = styled.div`
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.2rem;
 `;
 
 const Title = styled.h1`
   color: #e53e3e;
-  font-size: 2.2rem;
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
 `;
 
 const Subtitle = styled.p`
@@ -33,7 +34,7 @@ const ProgressBar = styled.div`
   height: 8px;
   background: var(--bg-tertiary, #e2e8f0);
   border-radius: 4px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.1rem;
   overflow: hidden;
 `;
 
@@ -41,103 +42,147 @@ const ProgressFill = styled.div`
   height: 100%;
   background: linear-gradient(90deg, #e53e3e, #fc8181);
   border-radius: 4px;
-  transition: width 0.4s ease;
+  transition: width 0.35s ease;
   width: ${props => props.$pct}%;
 `;
 
 const Stats = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 1rem;
 `;
 
 const Stat = styled.div`
   text-align: center;
-  span { display: block; font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-  small { color: var(--text-secondary); font-size: 0.85rem; }
+  padding: 0.8rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+
+  span { display: block; font-size: 1.4rem; font-weight: 800; color: var(--text-primary); }
+  small { color: var(--text-secondary); font-size: 0.82rem; }
 `;
 
 const Card = styled.div`
   background: var(--bg-secondary, white);
   border-radius: 20px;
-  padding: 2rem;
+  padding: 1.2rem;
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
   border: 2px solid var(--border-color, #e2e8f0);
-  margin-bottom: 1.5rem;
 `;
 
 const TargetSection = styled.div`
   text-align: center;
-  margin-bottom: 1.5rem;
+`;
+
+const Eyebrow = styled.div`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(66, 153, 225, 0.12);
+  color: #2b6cb0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+`;
+
+const Pinyin = styled.div`
+  font-size: 1rem;
+  color: #2b6cb0;
+  margin-top: 8px;
+  font-weight: 700;
 `;
 
 const Definition = styled.div`
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--text-secondary);
+  margin-top: 6px;
 `;
 
-const CanvasWrapper = styled.div`
-  position: relative;
-  width: 320px;
-  height: 320px;
-  margin: 0 auto 1.5rem;
-  border-radius: 16px;
-  border: 3px solid ${props => props.$state === 'correct' ? '#48bb78' : props.$state === 'wrong' ? '#fc8181' : 'var(--border-color, #cbd5e0)'};
-  background: ${props => props.$state === 'correct' ? 'rgba(72,187,120,0.06)' : props.$state === 'wrong' ? 'rgba(252,129,129,0.06)' : 'var(--bg-secondary, white)'};
-  transition: border-color 0.3s, background 0.3s;
-  overflow: hidden;
-  touch-action: none;
-
-  @media (max-width: 480px) {
-    width: 280px;
-    height: 280px;
-  }
-`;
-
-const Canvas = styled.canvas`
-  display: block;
-  cursor: crosshair;
-`;
-
-const GridOverlay = styled.div`
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;
-  
-  &::before, &::after {
-    content: '';
-    position: absolute;
-    background: rgba(200, 200, 200, 0.3);
-  }
-  &::before {
-    top: 50%;
-    left: 5%;
-    right: 5%;
-    height: 1px;
-  }
-  &::after {
-    left: 50%;
-    top: 5%;
-    bottom: 5%;
-    width: 1px;
-  }
-`;
-
-const Actions = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+const Helper = styled.div`
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 `;
 
 const ScoreLabel = styled.div`
   text-align: center;
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin: 1rem 0 0.8rem;
   color: ${props => props.$color || 'var(--text-primary)'};
+`;
+
+const CanvasWrapper = styled.div`
+  position: relative;
+  width: min(86vw, 320px);
+  height: min(86vw, 320px);
+  margin: 12px auto 0.8rem;
+  border-radius: 16px;
+  border: 3px solid ${props => props.$state === 'correct' ? '#48bb78' : props.$state === 'wrong' ? '#fc8181' : 'var(--border-color, #cbd5e0)'};
+  background: var(--bg-secondary, white);
+  overflow: hidden;
+`;
+
+const GridOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    background: rgba(148, 163, 184, 0.26);
+  }
+  &::before {
+    top: 50%;
+    left: 7%;
+    right: 7%;
+    height: 1px;
+  }
+  &::after {
+    left: 50%;
+    top: 7%;
+    bottom: 7%;
+    width: 1px;
+  }
+`;
+
+const GhostChar = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: min(48vw, 220px);
+  line-height: 1;
+  color: var(--text-muted);
+  user-select: none;
+  pointer-events: none;
+`;
+
+const WriterMount = styled.div`
+  position: absolute;
+  inset: 0;
+`;
+
+const StatusLine = styled.div`
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  margin-top: 4px;
+`;
+
+const Controls = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
 `;
 
 const HintToggle = styled.button`
@@ -147,35 +192,29 @@ const HintToggle = styled.button`
   padding: 0.5rem 1rem;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-
-  &:hover { border-color: #e53e3e; color: #e53e3e; }
+  font-size: 0.88rem;
 `;
 
 const ResultsCard = styled.div`
   background: var(--bg-secondary, white);
   border-radius: 20px;
-  padding: 2.5rem 2rem;
+  padding: 2rem 1.4rem;
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
   text-align: center;
-
-  h2 { color: var(--text-primary); margin-bottom: 0.5rem; }
-  p { color: var(--text-secondary); margin-bottom: 1.5rem; }
 `;
 
 const ResultsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.4rem;
 `;
 
 const ResultItem = styled.div`
   background: var(--bg-tertiary, #f7fafc);
   border-radius: 14px;
   padding: 1rem;
-  span { display: block; font-size: 1.6rem; font-weight: 700; color: ${props => props.$color || 'var(--text-primary)'}; }
+  span { display: block; font-size: 1.5rem; font-weight: 800; color: ${props => props.$color || 'var(--text-primary)'}; }
   small { color: var(--text-secondary); font-size: 0.8rem; }
 `;
 
@@ -184,7 +223,7 @@ const CharReview = styled.div`
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
 `;
 
 const ReviewChip = styled.span`
@@ -199,95 +238,35 @@ const ReviewChip = styled.span`
   border: 2px solid ${props => props.$correct ? '#48bb78' : '#e53e3e'};
 `;
 
-/* ========= helpers ========= */
+const Actions = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+`;
 
-const isChinese = (text) => {
-  if (!text) return false;
-  return /[\u4e00-\u9fff]/.test(text);
-};
+const isChinese = (text) => /[\u3400-\u9fff]/.test(text || '');
+const extractChars = (term) => [...String(term || '')].filter(ch => /[\u3400-\u9fff]/.test(ch));
 
-// Extract individual characters from a term (e.g. "你好" → ["你","好"])
-const extractChars = (term) => {
-  if (!term) return [];
-  return [...term].filter(ch => /[\u4e00-\u9fff]/.test(ch));
-};
-
-// Compute a simple structural similarity score (0–100) between user drawing and reference
-function computeSimilarity(userCanvas, refChar, canvasSize) {
-  // Create an off-screen canvas for reference
-  const offscreen = document.createElement('canvas');
-  offscreen.width = canvasSize;
-  offscreen.height = canvasSize;
-  const offCtx = offscreen.getContext('2d');
-
-  // Draw reference character
-  offCtx.fillStyle = 'white';
-  offCtx.fillRect(0, 0, canvasSize, canvasSize);
-  offCtx.fillStyle = 'black';
-  offCtx.font = `${canvasSize * 0.7}px serif`;
-  offCtx.textAlign = 'center';
-  offCtx.textBaseline = 'middle';
-  offCtx.fillText(refChar, canvasSize / 2, canvasSize / 2);
-
-  const refData = offCtx.getImageData(0, 0, canvasSize, canvasSize).data;
-  const userCtx = userCanvas.getContext('2d');
-  const userData = userCtx.getImageData(0, 0, canvasSize, canvasSize).data;
-
-  // Downsample to grid cells for comparison
-  const gridSize = 16;
-  const cellW = canvasSize / gridSize;
-  const cellH = canvasSize / gridSize;
-
-  const refGrid = [];
-  const userGrid = [];
-
-  for (let gy = 0; gy < gridSize; gy++) {
-    for (let gx = 0; gx < gridSize; gx++) {
-      let refInk = 0, userInk = 0, count = 0;
-      const startX = Math.floor(gx * cellW);
-      const startY = Math.floor(gy * cellH);
-      const endX = Math.floor((gx + 1) * cellW);
-      const endY = Math.floor((gy + 1) * cellH);
-
-      for (let y = startY; y < endY; y++) {
-        for (let x = startX; x < endX; x++) {
-          const idx = (y * canvasSize + x) * 4;
-          // Reference: black text on white → ink if dark
-          if (refData[idx] < 128) refInk++;
-          // User strokes can be dark or light depending on theme, so rely on alpha.
-          if (userData[idx + 3] > 30) userInk++;
-          count++;
-        }
-      }
-      refGrid.push(refInk / count);
-      userGrid.push(userInk / count);
-    }
-  }
-
-  // Compute correlation-like score
-  let totalCells = refGrid.length;
-  let matchScore = 0;
-  let refTotal = 0;
-  let userTotal = 0;
-
-  for (let i = 0; i < totalCells; i++) {
-    const r = refGrid[i] > 0.05 ? 1 : 0;
-    const u = userGrid[i] > 0.05 ? 1 : 0;
-    if (r === 1 && u === 1) matchScore += 2;    // hit
-    else if (r === 0 && u === 0) matchScore += 0.5; // both empty
-    else matchScore -= 0.5;                       // miss
-    refTotal += r;
-    userTotal += u;
-  }
-
-  // Penalize if the user drew too little or too much
-  const coverage = refTotal > 0 ? Math.min(userTotal / refTotal, refTotal / Math.max(userTotal, 1)) : 0;
-  const raw = Math.max(0, matchScore) / (totalCells * 0.8);
-  const score = Math.round(Math.min(100, raw * coverage * 100));
-  return score;
+function buildQueue(flashcards = []) {
+  const queue = [];
+  flashcards.forEach((card) => {
+    if (!isChinese(card?.term) && !card?.pinyin && !card?.isChinese) return;
+    extractChars(card?.term).forEach((char) => {
+      queue.push({
+        char,
+        pinyin: card?.pinyin || '',
+        definition: card?.definition || card?.translation || '',
+        term: card?.term || '',
+      });
+    });
+  });
+  return queue;
 }
 
-/* ========= component ========= */
+function scoreFromMistakes(mistakes) {
+  return Math.max(40, Math.min(100, 100 - mistakes * 12));
+}
 
 function HandwritingMode() {
   const [searchParams] = useSearchParams();
@@ -296,265 +275,169 @@ function HandwritingMode() {
   const setId = searchParams.get('setId');
 
   const [set, setSet] = useState(null);
-  const [charQueue, setCharQueue] = useState([]);  // [{char, pinyin, definition, term}]
+  const [queue, setQueue] = useState([]);
+  const [phase, setPhase] = useState('loading');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [results, setResults] = useState([]);       // [{char, score, correct}]
-  const [phase, setPhase] = useState('loading');     // loading | select | practice | graded | finished
+  const [results, setResults] = useState([]);
   const [lastScore, setLastScore] = useState(null);
-  const [showGhost, setShowGhost] = useState(false);
-  const [ghostOpacity, setGhostOpacity] = useState(0.18);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [lastMistakes, setLastMistakes] = useState(0);
+  const [lastStroke, setLastStroke] = useState(0);
+  const [statusLine, setStatusLine] = useState('Ведите пальцем по штрихам');
+  const [showGhost, setShowGhost] = useState(true);
+  const [ghostOpacity, setGhostOpacity] = useState(0.16);
 
-  const canvasRef = useRef(null);
-  const wrapperRef = useRef(null);
-  const revealMaskRef = useRef(null);
-  const revealGlyphRef = useRef(null);
+  const writerHostRef = useRef(null);
+  const writerRef = useRef(null);
 
-  const canvasSize = 320;
-  const REVEAL_BRUSH = 44;
+  const current = queue[currentIndex] || null;
   const drawColor = ['dark', 'cosmic', 'forest', 'neon'].includes(theme) ? '#f8fafc' : '#111827';
-  const current = charQueue[currentIndex] || null;
 
-  // Ensure off-screen canvases exist with correct size (never resets content)
-  const ensureOffscreen = useCallback(() => {
-    const dpr = window.devicePixelRatio || 1;
-    const px = canvasSize * dpr;
-    if (!revealMaskRef.current) { revealMaskRef.current = document.createElement('canvas'); revealMaskRef.current.width = px; revealMaskRef.current.height = px; }
-    if (!revealGlyphRef.current) { revealGlyphRef.current = document.createElement('canvas'); revealGlyphRef.current.width = px; revealGlyphRef.current.height = px; }
-    // Resize only if needed (avoid clearing)
-    if (revealMaskRef.current.width !== px) { revealMaskRef.current.width = px; revealMaskRef.current.height = px; }
-    if (revealGlyphRef.current.width !== px) { revealGlyphRef.current.width = px; revealGlyphRef.current.height = px; }
-  }, [canvasSize]);
+  const teardownWriter = useCallback(() => {
+    if (writerRef.current?.cancelQuiz) {
+      try { writerRef.current.cancelQuiz(); } catch {}
+    }
+    writerRef.current = null;
+    if (writerHostRef.current) writerHostRef.current.innerHTML = '';
+  }, []);
+
+  const startQuiz = useCallback((writer, item) => {
+    if (!writer || !item) return;
+    setLastMistakes(0);
+    setLastStroke(0);
+    setStatusLine('Ведите пальцем по штрихам');
+
+    writer.quiz({
+      leniency: 1.45,
+      onMistake: (strokeData) => {
+        const mistakes = Number(strokeData?.totalMistakes || 0);
+        setLastMistakes(mistakes);
+        setStatusLine('Есть неточность, попробуйте штрих снова');
+      },
+      onCorrectStroke: (strokeData) => {
+        const stroke = Number(strokeData?.strokeNum || 0) + 1;
+        setLastStroke(stroke);
+        setStatusLine(`Штрих ${stroke} принят`);
+      },
+      onComplete: (summaryData) => {
+        const mistakes = Number(summaryData?.totalMistakes || 0);
+        const score = scoreFromMistakes(mistakes);
+        setLastMistakes(mistakes);
+        setLastScore(score);
+        setResults(prev => [...prev, { char: item.char, score, mistakes, correct: score >= 40 }]);
+        setPhase('graded');
+      },
+    });
+  }, []);
+
+  const initWriter = useCallback(async (item) => {
+    if (!writerHostRef.current || !item) return;
+    teardownWriter();
+
+    const HanziWriter = await loadHanziWriter();
+    if (!writerHostRef.current || !HanziWriter) return;
+
+    const writer = HanziWriter.create(writerHostRef.current, item.char, {
+      width: 320,
+      height: 320,
+      padding: 10,
+      showOutline: true,
+      showCharacter: false,
+      strokeColor: drawColor,
+      drawingColor: drawColor,
+      radicalColor: '#4299e1',
+      outlineColor: 'rgba(148,163,184,0.3)',
+    });
+
+    writerRef.current = writer;
+    startQuiz(writer, item);
+  }, [drawColor, startQuiz, teardownWriter]);
 
   const clearCanvas = useCallback(() => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, canvasSize, canvasSize);
-    ensureOffscreen();
-    const maskCtx = revealMaskRef.current.getContext('2d');
-    maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    maskCtx.clearRect(0, 0, canvasSize, canvasSize);
-  }, [canvasSize, ensureOffscreen]);
+    const writer = writerRef.current;
+    if (!writer || !current) return;
+    writer.cancelQuiz();
+    writer.hideCharacter();
+    setStatusLine('Поле очищено. Пишите снова по штрихам.');
+    startQuiz(writer, current);
+  }, [current, startQuiz]);
 
-  // Rebuild only the glyph layer (keeps mask intact so user drawing persists)
-  const rebuildGlyph = useCallback((char) => {
-    ensureOffscreen();
-    const glyphCtx = revealGlyphRef.current.getContext('2d');
-    if (!glyphCtx) return;
-    const dpr = window.devicePixelRatio || 1;
-    glyphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    glyphCtx.clearRect(0, 0, canvasSize, canvasSize);
-    if (!showGhost || !char) return;
-    const fontSize = char.length <= 1 ? canvasSize * 0.66 : char.length === 2 ? canvasSize * 0.52 : canvasSize * 0.42;
-    glyphCtx.fillStyle = drawColor;
-    glyphCtx.globalAlpha = ghostOpacity;
-    glyphCtx.textAlign = 'center';
-    glyphCtx.textBaseline = 'middle';
-    glyphCtx.font = `${fontSize}px serif`;
-    glyphCtx.fillText(char, canvasSize / 2, canvasSize / 2);
-    glyphCtx.globalAlpha = 1;
-  }, [canvasSize, drawColor, ensureOffscreen, ghostOpacity, showGhost]);
-
-  const renderReveal = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !revealGlyphRef.current || !revealMaskRef.current) return;
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, canvasSize, canvasSize);
-    if (!showGhost) return;
-    ctx.drawImage(revealGlyphRef.current, 0, 0, canvasSize, canvasSize);
-    ctx.globalCompositeOperation = 'destination-in';
-    ctx.drawImage(revealMaskRef.current, 0, 0, canvasSize, canvasSize);
-    ctx.globalCompositeOperation = 'source-over';
-  }, [canvasSize, showGhost]);
-
-  // Load set
   useEffect(() => {
     if (!setId) { setPhase('select'); return; }
     (async () => {
       try {
         const res = await authFetch(`${API_ROUTES.DATA.SETS}/${setId}`);
-        if (res.ok) {
-          const data = await res.json();
-          const s = data.data || data;
-          setSet(s);
-          const allCards = s.flashcards || s.cards || [];
-          const chineseCards = allCards.filter(c => isChinese(c.term) || c.pinyin || c.isChinese);
-          if (chineseCards.length === 0) {
-            setCharQueue([]);
-            setPhase('practice');
-            return;
-          }
-          // Build char queue
-          const queue = [];
-          chineseCards.forEach(card => {
-            const chars = extractChars(card.term);
-            chars.forEach(ch => {
-              queue.push({
-                char: ch,
-                pinyin: card.pinyin || '',
-                definition: card.definition || card.translation || '',
-                term: card.term
-              });
-            });
-          });
-          setCharQueue(queue);
-          setPhase('practice');
-        }
-      } catch (err) { console.error(err); }
+        if (!res.ok) throw new Error('Набор не найден');
+        const data = await res.json();
+        const s = data.data || data;
+        setSet(s);
+        const allCards = s.flashcards || s.cards || [];
+        setQueue(buildQueue(allCards));
+        setPhase('practice');
+      } catch {
+        setPhase('select');
+      }
     })();
   }, [setId]);
 
-  // Setup canvas when card or phase changes → full reset
   useEffect(() => {
-    if (phase !== 'practice' || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = canvasSize * dpr;
-    canvas.height = canvasSize * dpr;
-    canvas.style.width = canvasSize + 'px';
-    canvas.style.height = canvasSize + 'px';
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    clearCanvas();
-    rebuildGlyph(current?.char);
-    renderReveal();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, phase]);
-
-  // When ghost toggle or opacity changes → rebuild glyph only (preserve mask)
-  useEffect(() => {
-    if (phase !== 'practice' || !canvasRef.current) return;
-    rebuildGlyph(current?.char);
-    renderReveal();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showGhost, ghostOpacity]);
-
-  const getPos = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const scaleX = canvasSize / rect.width;
-    const scaleY = canvasSize / rect.height;
-    if (e.touches) {
-      return {
-        x: (e.touches[0].clientX - rect.left) * scaleX,
-        y: (e.touches[0].clientY - rect.top) * scaleY
-      };
-    }
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
+    if (phase !== 'practice' || !current) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await initWriter(current);
+      } catch {
+        if (!cancelled) setStatusLine('Не удалось загрузить тренажер иероглифов');
+      }
+    })();
+    return () => {
+      cancelled = true;
+      teardownWriter();
     };
-  };
+  }, [current, currentIndex, initWriter, phase, teardownWriter]);
 
-  const startDraw = (e) => {
-    e.preventDefault();
-    setIsDrawing(true);
-    const pos = getPos(e);
-    const dpr = window.devicePixelRatio || 1;
-    if (showGhost) {
-      // Reveal mode – draw on mask; visible canvas updated in draw()
-      const maskCtx = revealMaskRef.current?.getContext('2d');
-      if (!maskCtx) return;
-      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      maskCtx.beginPath();
-      maskCtx.moveTo(pos.x, pos.y);
-      maskCtx.lineWidth = REVEAL_BRUSH;
-      maskCtx.lineCap = 'round';
-      maskCtx.lineJoin = 'round';
-      maskCtx.strokeStyle = '#fff';
-      return;
-    }
-    // Normal free-draw mode
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = drawColor;
-  };
+  useEffect(() => () => teardownWriter(), [teardownWriter]);
 
-  const draw = (e) => {
-    if (!isDrawing) return;
-    e.preventDefault();
-    const pos = getPos(e);
-    const dpr = window.devicePixelRatio || 1;
-    if (showGhost) {
-      const maskCtx = revealMaskRef.current?.getContext('2d');
-      if (!maskCtx) return;
-      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      maskCtx.lineTo(pos.x, pos.y);
-      maskCtx.stroke();
-      // Also start a new sub-path so next segment connects properly
-      maskCtx.beginPath();
-      maskCtx.moveTo(pos.x, pos.y);
-      renderReveal();
-      return;
-    }
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-  };
+  const progress = useMemo(() => {
+    if (!queue.length) return 0;
+    return ((currentIndex + (phase === 'graded' ? 1 : 0)) / queue.length) * 100;
+  }, [currentIndex, phase, queue.length]);
 
-  const endDraw = (e) => {
-    if (e) e.preventDefault();
-    setIsDrawing(false);
-  };
-
-  const handleGrade = () => {
-    if (!canvasRef.current || charQueue.length === 0) return;
-    const current = charQueue[currentIndex];
-    const score = computeSimilarity(canvasRef.current, current.char, canvasSize);
-    const correct = score >= 40;
-    setLastScore(score);
-    setResults(prev => [...prev, { char: current.char, score, correct }]);
-    setPhase('graded');
+  const handleRetry = () => {
+    setResults(prev => prev.slice(0, -1));
+    setLastScore(null);
+    setLastMistakes(0);
+    setLastStroke(0);
+    setPhase('practice');
   };
 
   const handleNext = () => {
     setLastScore(null);
-    if (currentIndex + 1 >= charQueue.length) {
-      setPhase('finished');
-    } else {
+    setLastMistakes(0);
+    setLastStroke(0);
+    if (currentIndex + 1 >= queue.length) setPhase('finished');
+    else {
       setCurrentIndex(prev => prev + 1);
       setPhase('practice');
     }
-  };
-
-  const handleRetry = () => {
-    setLastScore(null);
-    setResults(prev => prev.slice(0, -1));
-    clearCanvas();
-    setPhase('practice');
   };
 
   const handleRestart = () => {
     setCurrentIndex(0);
     setResults([]);
     setLastScore(null);
+    setLastMistakes(0);
+    setLastStroke(0);
     setPhase('practice');
   };
 
-  const handleSetSelect = (selectedSetId) => {
-    navigate(`/learn/handwriting?setId=${selectedSetId}`);
-  };
-
-  // Phase: select set
   if (phase === 'select') {
     return (
       <Container>
         <Header>
-          <Title>汉字 Тренажёр иероглифов</Title>
+          <Title>汉字 Тренажер иероглифов</Title>
           <Subtitle>Выберите набор с китайскими карточками</Subtitle>
         </Header>
-        <SetSelector onSelect={handleSetSelect} />
+        <SetSelector onSelect={(selectedSetId) => navigate(`/learn/handwriting?setId=${selectedSetId}`)} />
       </Container>
     );
   }
@@ -563,37 +446,24 @@ function HandwritingMode() {
     return (
       <Container>
         <Header>
-          <Title>汉字 Тренажёр иероглифов</Title>
+          <Title>汉字 Тренажер иероглифов</Title>
           <Subtitle>Загрузка...</Subtitle>
         </Header>
       </Container>
     );
   }
 
-  // Phase: no Chinese cards
-  if (phase === 'practice' && charQueue.length === 0) {
+  if (phase === 'practice' && queue.length === 0) {
     return (
       <Container>
         <Header>
-          <Title>汉字 Тренажёр иероглифов</Title>
-          <Subtitle>В этом наборе нет китайских иероглифов.</Subtitle>
+          <Title>汉字 Тренажер иероглифов</Title>
+          <Subtitle>В этом наборе нет китайских иероглифов</Subtitle>
         </Header>
-        <Card style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>汉</p>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-            Этот режим работает только с карточками, содержащими китайские иероглифы.
-            Создайте набор с иероглифами или выберите другой набор.
-          </p>
-          <Actions>
-            <SecondaryButton onClick={() => navigate(-1)}>← Назад</SecondaryButton>
-            <PrimaryButton onClick={() => { setPhase('select'); }}>Выбрать другой набор</PrimaryButton>
-          </Actions>
-        </Card>
       </Container>
     );
   }
 
-  // Phase: finished
   if (phase === 'finished') {
     const totalChars = results.length;
     const correctCount = results.filter(r => r.correct).length;
@@ -602,136 +472,99 @@ function HandwritingMode() {
 
     return (
       <Container>
-        <Header>
-          <Title>汉字 Результаты</Title>
-        </Header>
+        <Header><Title>汉字 Результаты</Title></Header>
         <ResultsCard>
           <h2>{pct >= 80 ? '🎉 Отлично!' : pct >= 50 ? '👍 Хорошо!' : '💪 Нужно практиковаться'}</h2>
           <p>Вы написали {totalChars} иероглиф{totalChars === 1 ? '' : totalChars < 5 ? 'а' : 'ов'}</p>
-
           <ResultsGrid>
-            <ResultItem $color="#48bb78">
-              <span>{correctCount}</span>
-              <small>Правильно</small>
-            </ResultItem>
-            <ResultItem $color="#e53e3e">
-              <span>{totalChars - correctCount}</span>
-              <small>Ошибки</small>
-            </ResultItem>
-            <ResultItem $color="#63b3ed">
-              <span>{avgScore}%</span>
-              <small>Средняя точность</small>
-            </ResultItem>
+            <ResultItem $color="#48bb78"><span>{correctCount}</span><small>Правильно</small></ResultItem>
+            <ResultItem $color="#e53e3e"><span>{totalChars - correctCount}</span><small>Ошибки</small></ResultItem>
+            <ResultItem $color="#4299e1"><span>{avgScore}%</span><small>Средняя точность</small></ResultItem>
           </ResultsGrid>
-
           <CharReview>
             {results.map((r, i) => (
-              <ReviewChip key={i} $correct={r.correct} title={`${r.char}: ${r.score}%`}>
-                {r.char}
-              </ReviewChip>
+              <ReviewChip key={i} $correct={r.correct} title={`${r.char}: ${r.score}%`}>{r.char}</ReviewChip>
             ))}
           </CharReview>
-
           <Actions>
             <SecondaryButton onClick={() => navigate(-1)}>← Назад</SecondaryButton>
-            <PrimaryButton onClick={handleRestart}>🔄 Ещё раз</PrimaryButton>
+            <PrimaryButton onClick={handleRestart}>🔄 Еще раз</PrimaryButton>
           </Actions>
         </ResultsCard>
       </Container>
     );
   }
 
-  // Phase: practice / graded
-  const progress = charQueue.length > 0 ? ((currentIndex + (phase === 'graded' ? 1 : 0)) / charQueue.length) * 100 : 0;
   const gradeState = phase === 'graded' ? (lastScore >= 40 ? 'correct' : 'wrong') : null;
 
   return (
     <Container>
       <Header>
-        <Title>汉字 Тренажёр иероглифов</Title>
+        <Title>汉字 Тренажер иероглифов</Title>
         <Subtitle>{set?.title || 'Практика написания'}</Subtitle>
       </Header>
 
       <ProgressBar><ProgressFill $pct={progress} /></ProgressBar>
 
       <Stats>
-        <Stat>
-          <span>{currentIndex + 1}/{charQueue.length}</span>
-          <small>Иероглиф</small>
-        </Stat>
-        <Stat>
-          <span>{results.filter(r => r.correct).length}</span>
-          <small>Правильно</small>
-        </Stat>
-        <Stat>
-          <span>{results.filter(r => !r.correct).length}</span>
-          <small>Ошибки</small>
-        </Stat>
+        <Stat><span>{currentIndex + 1}/{queue.length}</span><small>Символ</small></Stat>
+        <Stat><span>{results.filter(r => r.correct).length}</span><small>Верно</small></Stat>
+        <Stat><span>{results.filter(r => !r.correct).length}</span><small>Ошибки</small></Stat>
       </Stats>
 
       <Card>
         <TargetSection>
-          <Definition>📖 {current.definition}</Definition>
-          <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Ведите пальцем или мышью по предполагаемым штрихам, и символ будет проявляться по частям.
-          </div>
+          <Eyebrow>Режим письма</Eyebrow>
+          {current?.pinyin && <Pinyin>🔊 {current.pinyin}</Pinyin>}
+          <Definition>📖 {current?.definition || 'Без перевода'}</Definition>
+          <Helper>Пишите строго по порядку штрихов</Helper>
         </TargetSection>
 
         {phase === 'graded' && (
           <ScoreLabel $color={lastScore >= 40 ? '#48bb78' : '#e53e3e'}>
-            {lastScore >= 80 ? '🎉 Отлично!' : lastScore >= 40 ? '✅ Принято' : '❌ Попробуйте ещё'}
-            {' '}— Точность: {lastScore}%
+            {lastScore >= 80 ? '🎯 Отлично' : lastScore >= 40 ? '✅ Принято' : '❌ Попробуйте еще'} · {lastScore}% · ошибок: {lastMistakes}
           </ScoreLabel>
         )}
 
-        <CanvasWrapper ref={wrapperRef} $state={gradeState}>
+        <CanvasWrapper $state={gradeState}>
+          {showGhost && current?.char && (
+            <GhostChar style={{ opacity: ghostOpacity }}>{current.char}</GhostChar>
+          )}
           <GridOverlay />
-          <Canvas
-            ref={canvasRef}
-            onMouseDown={phase === 'practice' ? startDraw : undefined}
-            onMouseMove={phase === 'practice' ? draw : undefined}
-            onMouseUp={phase === 'practice' ? endDraw : undefined}
-            onMouseLeave={phase === 'practice' ? endDraw : undefined}
-            onTouchStart={phase === 'practice' ? startDraw : undefined}
-            onTouchMove={phase === 'practice' ? draw : undefined}
-            onTouchEnd={phase === 'practice' ? endDraw : undefined}
-          />
+          <WriterMount ref={writerHostRef} />
         </CanvasWrapper>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <HintToggle onClick={() => setShowGhost(g => !g)}>
-            {showGhost ? '🙈 Скрыть проявление' : '👁️ Включить проявление'}
-          </HintToggle>
-          {showGhost && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Яркость:
+        <StatusLine>{phase === 'practice' ? `Штрихов: ${lastStroke} · ${statusLine}` : statusLine}</StatusLine>
+
+        {phase === 'practice' && (
+          <Controls>
+            <SecondaryButton onClick={clearCanvas}>🗑️ Очистить</SecondaryButton>
+            <HintToggle onClick={() => setShowGhost(v => !v)}>
+              {showGhost ? '🙈 Скрыть подсказку' : '👁️ Показать подсказку'}
+            </HintToggle>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 13, opacity: showGhost ? 1 : 0.55 }}>
+              ◐
               <input
-                type="range" min="5" max="100" step="5"
+                type="range"
+                min="5"
+                max="100"
+                step="5"
+                disabled={!showGhost}
                 value={Math.round(ghostOpacity * 100)}
                 onChange={e => setGhostOpacity(Number(e.target.value) / 100)}
-                style={{ width: 90, accentColor: '#e53e3e' }}
+                style={{ accentColor: '#4299e1' }}
               />
               {Math.round(ghostOpacity * 100)}%
             </label>
-          )}
-        </div>
+          </Controls>
+        )}
 
-        <Actions>
-          {phase === 'practice' && (
-            <>
-              <SecondaryButton onClick={clearCanvas}>🗑️ Очистить</SecondaryButton>
-              <PrimaryButton onClick={handleGrade}>✅ Проверить</PrimaryButton>
-            </>
-          )}
-          {phase === 'graded' && (
-            <>
-              <SecondaryButton onClick={handleRetry}>🔄 Повторить</SecondaryButton>
-              <PrimaryButton onClick={handleNext}>
-                {currentIndex + 1 >= charQueue.length ? '🏁 Завершить' : '➡️ Далее'}
-              </PrimaryButton>
-            </>
-          )}
-        </Actions>
+        {phase === 'graded' && (
+          <Actions style={{ marginTop: 12 }}>
+            <SecondaryButton onClick={handleRetry}>🔄 Повторить</SecondaryButton>
+            <PrimaryButton onClick={handleNext}>{currentIndex + 1 >= queue.length ? '🏁 Завершить' : '➡️ Далее'}</PrimaryButton>
+          </Actions>
+        )}
       </Card>
     </Container>
   );

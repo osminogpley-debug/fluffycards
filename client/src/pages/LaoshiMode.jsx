@@ -3,6 +3,7 @@ import styled, { keyframes } from 'styled-components';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { API_ROUTES, authFetch } from '../constants/api';
 import { useTheme } from '../contexts/ThemeContext';
+import { loadHanziWriter } from '../utils/hanziWriterLoader';
 
 // ===== CONSTANTS =====
 const ROUND_SIZE = 10;
@@ -243,7 +244,20 @@ const CanvasWrapper = styled.div`
   background: rgba(255, 255, 255, 0.02);
 `;
 
-const DrawCanvas = styled.canvas`
+const GhostChar = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: min(48vw, 220px);
+  line-height: 1;
+  color: var(--text-muted);
+  user-select: none;
+  pointer-events: none;
+`;
+
+const WriterMount = styled.div`
   position: absolute;
   inset: 0;
   width: 100%;
@@ -251,8 +265,11 @@ const DrawCanvas = styled.canvas`
   display: block;
   border: 2px solid var(--border-color);
   border-radius: 16px;
-  cursor: crosshair;
-  touch-action: none;
+`;
+
+const HwStatusLine = styled(SubText)`
+  margin-top: 2px;
+  text-align: center;
 `;
 
 const HandwritingControls = styled(BtnRow)`
@@ -366,13 +383,14 @@ function LaoshiMode() {
   // Handwriting stage
   const [hwIndex, setHwIndex] = useState(0);
   const [hwCompleted, setHwCompleted] = useState(0);
-  const [showGhostHint, setShowGhostHint] = useState(false);
-  const [ghostOpacity, setGhostOpacity] = useState(0.18);
-  const canvasRef = useRef(null);
-  const drawingRef = useRef(false);
-  const lastPointRef = useRef(null);
-  const revealMaskRef = useRef(null);
-  const revealGlyphRef = useRef(null);
+  const [hwReadyForNext, setHwReadyForNext] = useState(false);
+  const [showGhostHint, setShowGhostHint] = useState(true);
+  const [ghostOpacity, setGhostOpacity] = useState(0.16);
+  const [hwLastMistakes, setHwLastMistakes] = useState(0);
+  const [hwLastStroke, setHwLastStroke] = useState(0);
+  const [hwStatusLine, setHwStatusLine] = useState('Ведите пальцем по штрихам');
+  const writerHostRef = useRef(null);
+  const writerRef = useRef(null);
 
   // Results
   const [roundScores, setRoundScores] = useState([]);
@@ -446,173 +464,111 @@ function LaoshiMode() {
   const initHandwriting = useCallback(() => {
     setHwIndex(0);
     setHwCompleted(0);
-    setShowGhostHint(false);
-    setGhostOpacity(0.18);
+    setHwReadyForNext(false);
+    setShowGhostHint(true);
+    setGhostOpacity(0.16);
+    setHwLastMistakes(0);
+    setHwLastStroke(0);
+    setHwStatusLine('Ведите пальцем по штрихам');
     setStage(STAGE.HANDWRITING);
   }, []);
-
-  // ===== CANVAS DRAWING =====
-  const REVEAL_BRUSH = 44;
-
-  // Ensure off-screen canvases exist (never resets content on re-call)
-  const ensureOffscreen = useCallback(() => {
-    const dpr = window.devicePixelRatio || 1;
-    const px = 320 * dpr;
-    if (!revealMaskRef.current) { revealMaskRef.current = document.createElement('canvas'); revealMaskRef.current.width = px; revealMaskRef.current.height = px; }
-    if (!revealGlyphRef.current) { revealGlyphRef.current = document.createElement('canvas'); revealGlyphRef.current.width = px; revealGlyphRef.current.height = px; }
-    if (revealMaskRef.current.width !== px) { revealMaskRef.current.width = px; revealMaskRef.current.height = px; }
-    if (revealGlyphRef.current.width !== px) { revealGlyphRef.current.width = px; revealGlyphRef.current.height = px; }
-  }, []);
-
-  const clearCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const size = 320;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, size, size);
-    ensureOffscreen();
-    const maskCtx = revealMaskRef.current.getContext('2d');
-    maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    maskCtx.clearRect(0, 0, size, size);
-  }, [ensureOffscreen]);
 
   const getCurrentHandwritingCard = useCallback(() => {
     const chineseCards = roundCards.filter(c => isChinese(c.term));
     return chineseCards[hwIndex] || null;
   }, [roundCards, hwIndex]);
 
-  // Rebuild glyph layer only (keeps mask/user strokes intact)
-  const rebuildGlyph = useCallback((term) => {
-    ensureOffscreen();
-    const glyphCtx = revealGlyphRef.current.getContext('2d');
-    if (!glyphCtx) return;
-    const dpr = window.devicePixelRatio || 1;
-    const size = 320;
-    glyphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    glyphCtx.clearRect(0, 0, size, size);
-    if (!showGhostHint || !term) return;
-    const fontSize = term.length <= 1 ? 168 : term.length === 2 ? 138 : 108;
-    glyphCtx.fillStyle = drawColor;
-    glyphCtx.globalAlpha = ghostOpacity;
-    glyphCtx.textAlign = 'center';
-    glyphCtx.textBaseline = 'middle';
-    glyphCtx.font = `${fontSize}px serif`;
-    glyphCtx.fillText(term, size / 2, size / 2);
-    glyphCtx.globalAlpha = 1;
-  }, [drawColor, ensureOffscreen, ghostOpacity, showGhostHint]);
+  const teardownWriter = useCallback(() => {
+    if (writerRef.current?.cancelQuiz) {
+      try { writerRef.current.cancelQuiz(); } catch {}
+    }
+    writerRef.current = null;
+    if (writerHostRef.current) writerHostRef.current.innerHTML = '';
+  }, []);
 
-  const renderReveal = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !revealGlyphRef.current || !revealMaskRef.current) return;
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const size = 320;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, size, size);
-    if (!showGhostHint) return;
-    ctx.drawImage(revealGlyphRef.current, 0, 0, size, size);
-    ctx.globalCompositeOperation = 'destination-in';
-    ctx.drawImage(revealMaskRef.current, 0, 0, size, size);
-    ctx.globalCompositeOperation = 'source-over';
-  }, [showGhostHint]);
+  const startHwQuiz = useCallback((writer) => {
+    if (!writer) return;
+    setHwLastMistakes(0);
+    setHwLastStroke(0);
+    setHwStatusLine('Ведите пальцем по штрихам');
+    setHwReadyForNext(false);
 
-  // Canvas init on card/stage change → full reset
+    writer.quiz({
+      leniency: 1.45,
+      onMistake: (strokeData) => {
+        const mistakes = Number(strokeData?.totalMistakes || 0);
+        setHwLastMistakes(mistakes);
+        setHwStatusLine('Есть неточность, попробуйте штрих снова');
+      },
+      onCorrectStroke: (strokeData) => {
+        const stroke = Number(strokeData?.strokeNum || 0) + 1;
+        setHwLastStroke(stroke);
+        setHwStatusLine(`Штрих ${stroke} принят`);
+      },
+      onComplete: (summaryData) => {
+        const mistakes = Number(summaryData?.totalMistakes || 0);
+        setHwLastMistakes(mistakes);
+        setHwReadyForNext(true);
+        setHwCompleted(prev => Math.max(prev, hwIndex + 1));
+        setHwStatusLine('Готово! Все штрихи заполнены');
+      },
+    });
+  }, [hwIndex]);
+
+  const initHwWriter = useCallback(async (card) => {
+    if (!writerHostRef.current || !card) return;
+    teardownWriter();
+
+    const HanziWriter = await loadHanziWriter();
+    if (!writerHostRef.current || !HanziWriter) return;
+
+    const targetChar = String(card.term || '').trim().charAt(0);
+    if (!targetChar) return;
+
+    const writer = HanziWriter.create(writerHostRef.current, targetChar, {
+      width: 320,
+      height: 320,
+      padding: 10,
+      showOutline: true,
+      showCharacter: false,
+      strokeColor: drawColor,
+      drawingColor: drawColor,
+      radicalColor: '#4299e1',
+      outlineColor: 'rgba(148,163,184,0.3)',
+    });
+
+    writerRef.current = writer;
+    startHwQuiz(writer);
+  }, [drawColor, startHwQuiz, teardownWriter]);
+
+  const clearCanvas = useCallback(() => {
+    const writer = writerRef.current;
+    if (!writer) return;
+    writer.cancelQuiz();
+    writer.hideCharacter();
+    setHwStatusLine('Поле очищено. Пишите снова по штрихам.');
+    startHwQuiz(writer);
+  }, [startHwQuiz]);
+
   useEffect(() => {
     if (stage !== STAGE.HANDWRITING) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const size = 320;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
-    clearCanvas();
     const card = getCurrentHandwritingCard();
-    rebuildGlyph(card?.term);
-    renderReveal();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, hwIndex]);
+    if (!card) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await initHwWriter(card);
+      } catch {
+        if (!cancelled) setHwStatusLine('Не удалось загрузить тренажер иероглифов');
+      }
+    })();
+    return () => {
+      cancelled = true;
+      teardownWriter();
+    };
+  }, [stage, hwIndex, getCurrentHandwritingCard, initHwWriter, teardownWriter]);
 
-  // When ghost toggle/opacity changes → rebuild glyph only (preserve mask)
-  useEffect(() => {
-    if (stage !== STAGE.HANDWRITING) return;
-    const card = getCurrentHandwritingCard();
-    rebuildGlyph(card?.term);
-    renderReveal();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showGhostHint, ghostOpacity]);
-
-  const getPos = (e) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    const rect = canvas.getBoundingClientRect();
-    const ratio = 320 / rect.width;
-    if (e.touches) {
-      return { x: (e.touches[0].clientX - rect.left) * ratio, y: (e.touches[0].clientY - rect.top) * ratio };
-    }
-    return { x: (e.clientX - rect.left) * ratio, y: (e.clientY - rect.top) * ratio };
-  };
-
-  const startDraw = (e) => {
-    e.preventDefault();
-    drawingRef.current = true;
-    lastPointRef.current = getPos(e);
-    const dpr = window.devicePixelRatio || 1;
-    if (showGhostHint) {
-      const maskCtx = revealMaskRef.current?.getContext('2d');
-      if (!maskCtx) return;
-      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      maskCtx.beginPath();
-      maskCtx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-      maskCtx.lineWidth = REVEAL_BRUSH;
-      maskCtx.lineCap = 'round';
-      maskCtx.lineJoin = 'round';
-      maskCtx.strokeStyle = '#fff';
-      return;
-    }
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.beginPath();
-    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = drawColor;
-  };
-
-  const draw = (e) => {
-    if (!drawingRef.current) return;
-    e.preventDefault();
-    const pos = getPos(e);
-    const dpr = window.devicePixelRatio || 1;
-    if (showGhostHint) {
-      const maskCtx = revealMaskRef.current?.getContext('2d');
-      if (!maskCtx) return;
-      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      maskCtx.lineTo(pos.x, pos.y);
-      maskCtx.stroke();
-      maskCtx.beginPath();
-      maskCtx.moveTo(pos.x, pos.y);
-      renderReveal();
-      lastPointRef.current = pos;
-      return;
-    }
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.beginPath();
-    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    lastPointRef.current = pos;
-  };
-
-  const endDraw = () => { drawingRef.current = false; lastPointRef.current = null; };
+  useEffect(() => () => teardownWriter(), [teardownWriter]);
 
   // ===== STAGE PROGRESSION =====
   const nextStage = useCallback(() => {
@@ -834,49 +790,48 @@ function LaoshiMode() {
         const chineseCards = roundCards.filter(c => isChinese(c.term));
         const card = chineseCards[hwIndex];
         if (!card) return null;
+        const targetChar = String(card.term || '').trim().charAt(0);
         return (
           <Card>
             <HandwritingArea>
               <HandwritingPrompt>
                 <SubText>Напишите иероглифы:</SubText>
+                {card.pinyin && <SubText style={{ color: '#4299e1' }}>{card.pinyin}</SubText>}
                 <HandwritingMeaning>{card.translation || card.definition}</HandwritingMeaning>
               </HandwritingPrompt>
               <CanvasWrapper>
-                <DrawCanvas
-                  ref={canvasRef}
-                  onMouseDown={startDraw}
-                  onMouseMove={draw}
-                  onMouseUp={endDraw}
-                  onMouseLeave={endDraw}
-                  onTouchStart={startDraw}
-                  onTouchMove={draw}
-                  onTouchEnd={endDraw}
-                  onTouchCancel={endDraw}
-                />
+                {showGhostHint && <GhostChar style={{ opacity: ghostOpacity }}>{targetChar}</GhostChar>}
+                <WriterMount ref={writerHostRef} />
               </CanvasWrapper>
+              <HwStatusLine>
+                {`Штрихов: ${hwLastStroke} · ошибок: ${hwLastMistakes} · ${hwStatusLine}`}
+              </HwStatusLine>
               <HandwritingControls>
                 <Btn $color="linear-gradient(135deg, #a0aec0, #718096)" onClick={clearCanvas}>↻ Очистить</Btn>
                 <HintToggleBtn onClick={() => setShowGhostHint(prev => !prev)}>
-                  {showGhostHint ? '🙈 Скрыть проявление' : '👁️ Включить проявление'}
+                  {showGhostHint ? '🙈 Скрыть подсказку' : '👁️ Показать подсказку'}
                 </HintToggleBtn>
-                {showGhostHint && (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    Яркость:
-                    <input
-                      type="range" min="5" max="100" step="5"
-                      value={Math.round(ghostOpacity * 100)}
-                      onChange={e => setGhostOpacity(Number(e.target.value) / 100)}
-                      style={{ width: 80, accentColor: '#4299e1' }}
-                    />
-                    {Math.round(ghostOpacity * 100)}%
-                  </label>
-                )}
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: showGhostHint ? 1 : 0.55 }}>
+                  ◐
+                  <input
+                    type="range" min="5" max="100" step="5"
+                    disabled={!showGhostHint}
+                    value={Math.round(ghostOpacity * 100)}
+                    onChange={e => setGhostOpacity(Number(e.target.value) / 100)}
+                    style={{ width: 80, accentColor: '#4299e1' }}
+                  />
+                  {Math.round(ghostOpacity * 100)}%
+                </label>
                 {hwIndex < chineseCards.length - 1 ? (
-                  <Btn onClick={() => { setHwIndex(hwIndex + 1); }}>
+                  <Btn disabled={!hwReadyForNext} onClick={() => {
+                    setHwReadyForNext(false);
+                    setHwStatusLine('Ведите пальцем по штрихам');
+                    setHwIndex(hwIndex + 1);
+                  }}>
                     Далее →
                   </Btn>
                 ) : (
-                  <Btn $color="linear-gradient(135deg, #48bb78, #38a169)" onClick={() => {
+                  <Btn $color="linear-gradient(135deg, #48bb78, #38a169)" disabled={!hwReadyForNext} onClick={() => {
                     setHwCompleted(chineseCards.length);
                     nextStage();
                   }}>
@@ -884,6 +839,9 @@ function LaoshiMode() {
                   </Btn>
                 )}
               </HandwritingControls>
+              {!hwReadyForNext && (
+                <SubText style={{ marginTop: 6 }}>Сначала доведите символ до конца по штрихам</SubText>
+              )}
               <SubText style={{ marginTop: 8 }}>{hwIndex + 1}/{chineseCards.length}</SubText>
             </HandwritingArea>
           </Card>
