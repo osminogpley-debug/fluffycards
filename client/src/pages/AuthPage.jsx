@@ -1,8 +1,8 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Helmet } from 'react-helmet-async';
-import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
+import { PrimaryButton } from '../components/UI/Buttons';
 import { AuthContext } from '../App';
 
 const AuthContainer = styled.div`
@@ -127,10 +127,10 @@ const RoleFeatures = styled.div`
 const OAuthDivider = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin: 1.5rem 0;
+  gap: 12px;
+  margin: 1.25rem 0;
   color: #718096;
-  font-size: 0.85rem;
+  font-size: 14px;
 
   &::before,
   &::after {
@@ -141,16 +141,20 @@ const OAuthDivider = styled.div`
   }
 `;
 
-const GoogleButtonWrap = styled.div`
-  display: flex;
-  justify-content: center;
-`;
+const YandexButton = styled.button`
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #fc3f1d;
+  border-radius: 12px;
+  background: #fff5f2;
+  color: #b8321b;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
 
-const OAuthHint = styled.p`
-  margin-top: 0.75rem;
-  font-size: 0.8rem;
-  color: #718096;
-  text-align: center;
+  &:hover {
+    background: #ffe8e1;
+  }
 `;
 
 function AuthPage(props) {
@@ -163,9 +167,6 @@ function AuthPage(props) {
   });
   
   const { setAuthState } = useContext(AuthContext);
-  const googleButtonRef = useRef(null);
-  const isLoginRef = useRef(isLogin);
-  const roleRef = useRef(formData.role);
 
   const handleChange = (e) => {
     setFormData({
@@ -178,93 +179,57 @@ function AuthPage(props) {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '808573686338-9fhmvg0c8p4acoul8m9pkjlckiohnmhr.apps.googleusercontent.com';
 
   useEffect(() => {
-    isLoginRef.current = isLogin;
-    roleRef.current = formData.role;
-  }, [isLogin, formData.role]);
+    const params = new URLSearchParams(window.location.search);
+    const oauth = params.get('oauth');
+    const token = params.get('token');
+    const oauthError = params.get('error');
 
-  useEffect(() => {
-    if (!googleClientId) return;
-    let cancelled = false;
+    if (oauth !== 'yandex') {
+      return;
+    }
 
-    const handleGoogleResponse = async (response) => {
+    if (oauthError) {
+      setError(oauthError);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (!token) {
+      return;
+    }
+
+    const finalizeYandexAuth = async () => {
       try {
-        setError('');
-        if (!response?.credential) {
-          setError('Не удалось получить токен Google');
-          return;
-        }
-
-        if (!isLoginRef.current && !roleRef.current) {
-          setError('Пожалуйста, выберите роль перед регистрацией через Google');
-          return;
-        }
-
-        const apiUrl = `/api/auth/google`;
-        const payload = {
-          idToken: response.credential,
-          role: isLoginRef.current ? undefined : roleRef.current
-        };
-
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        localStorage.setItem('token', token);
+        const response = await fetch('/api/auth/me', {
           credentials: 'include',
-          body: JSON.stringify(payload)
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
 
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.message || 'Ошибка входа через Google');
-          return;
+        if (!response.ok) {
+          throw new Error('Не удалось завершить вход через Яндекс');
         }
 
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-
+        const data = await response.json();
         setAuthState({
           isAuthenticated: true,
           user: data.user,
           role: data.user?.role || 'student',
           loading: false
         });
-
+        window.history.replaceState({}, document.title, window.location.pathname);
         navigate('/');
-      } catch (err) {
-        setError('Ошибка подключения к серверу');
+      } catch (authError) {
+        setError(authError.message || 'Не удалось завершить вход через Яндекс');
       }
     };
 
-    const initGoogle = () => {
-      if (cancelled) return;
-      if (!window.google || !googleButtonRef.current) {
-        setTimeout(initGoogle, 300);
-        return;
-      }
-
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleResponse
-      });
-
-      googleButtonRef.current.innerHTML = '';
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        text: isLogin ? 'signin_with' : 'signup_with',
-        shape: 'pill'
-      });
-    };
-
-    initGoogle();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [googleClientId, isLogin, navigate, setAuthState]);
+    finalizeYandexAuth();
+  }, [navigate, setAuthState]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -328,6 +293,27 @@ function AuthPage(props) {
       setError('Ошибка подключения к серверу');
       setLoading(false);
     }
+  };
+
+  const handleYandexAuth = () => {
+    setError('');
+    setSuccessMessage('');
+
+    if (!isLogin && !formData.role) {
+      setError('Пожалуйста, выберите роль перед входом через Яндекс');
+      return;
+    }
+
+    const params = new URLSearchParams({
+      platform: 'web',
+      return_to: `${window.location.origin}/auth`
+    });
+
+    if (!isLogin) {
+      params.set('role', formData.role);
+    }
+
+    window.location.href = `/api/auth/yandex/start?${params.toString()}`;
   };
 
   return (
@@ -438,10 +424,10 @@ function AuthPage(props) {
         >
           {loading ? 'Загрузка...' : isLogin ? 'Войти' : 'Зарегистрироваться'}
         </PrimaryButton>
-
         <OAuthDivider>или</OAuthDivider>
-        <GoogleButtonWrap ref={googleButtonRef} />
-        <OAuthHint>Быстрый вход без пароля</OAuthHint>
+        <YandexButton type="button" onClick={handleYandexAuth}>
+          {isLogin ? 'Войти через Яндекс' : 'Зарегистрироваться через Яндекс'}
+        </YandexButton>
       </form>
     </AuthContainer>
   );

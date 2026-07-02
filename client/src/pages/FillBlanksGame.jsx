@@ -1,10 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { API_ROUTES, authFetch } from '../constants/api';
 import { trackGameWin } from '../services/gamificationService';
 import SetSelector from '../components/SetSelector';
+import ChineseInputHelper from '../components/ChineseInputHelper';
+import { getPinyinAnswers, matchesPinyinAnswer } from '../utils/chineseLearning';
 
 const pulse = keyframes`
   0% { transform: scale(1); }
@@ -209,6 +211,8 @@ export default function FillBlanksGame() {
   const [placedIds, setPlacedIds] = useState([]);
   const [bank, setBank] = useState([]);
   const [results, setResults] = useState(null);
+  const [activeBlankIndex, setActiveBlankIndex] = useState(null);
+  const blankInputRefs = useRef([]);
 
   const blanks = useMemo(() => {
     const raw = setData?.clozeBlanks || [];
@@ -242,6 +246,24 @@ export default function FillBlanksGame() {
     }
     return segmentsList;
   }, [setData, blanks]);
+
+  const chineseDictionaryEntries = useMemo(
+    () => [setData?.clozeText || '', ...blanks.map((blank) => blank.answer)],
+    [setData, blanks]
+  );
+
+  const activeBlank = activeBlankIndex !== null ? blanks[activeBlankIndex] : null;
+  const activeBlankPinyinAnswers = getPinyinAnswers(activeBlank?.answer);
+  const activeBlankRequiresPinyin = activeBlankPinyinAnswers.length > 0;
+
+  const isBlankCorrect = (userValue, blank) => {
+    const pinyinAnswers = getPinyinAnswers(blank?.answer);
+    if (pinyinAnswers.length > 0) {
+      return matchesPinyinAnswer(userValue, pinyinAnswers);
+    }
+
+    return normalize(userValue || '') === normalize(blank?.answer || '');
+  };
 
   useEffect(() => {
     if (!setId) return;
@@ -381,7 +403,7 @@ export default function FillBlanksGame() {
 
   const handleCheck = () => {
     const nextResults = blanks.map((blank, index) => {
-      return normalize(placed[index] || '') === normalize(blank.answer || '');
+      return isBlankCorrect(placed[index] || '', blank);
     });
     setResults(nextResults);
 
@@ -466,9 +488,13 @@ export default function FillBlanksGame() {
                 onDragOver={handleDragOver}
               >
                 <BlankInput
+                  ref={(element) => {
+                    blankInputRefs.current[blankIndex] = element;
+                  }}
                   value={placed[blankIndex] || ''}
-                  placeholder="..."
+                  placeholder={getPinyinAnswers(blanks[blankIndex]?.answer).length > 0 ? 'пиньинь...' : '...'}
                   onChange={(e) => handleType(blankIndex, e.target.value)}
+                  onFocus={() => setActiveBlankIndex(blankIndex)}
                   onDragStart={(event) => {
                     if (!placedIds[blankIndex]) return;
                     event.dataTransfer.setData('text/plain', JSON.stringify({
@@ -516,6 +542,17 @@ export default function FillBlanksGame() {
             ))}
           </BankGrid>
         </WordBank>
+
+        {activeBlankRequiresPinyin && (
+          <div style={{ marginTop: '16px' }}>
+            <ChineseInputHelper
+              value={placed[activeBlankIndex] || ''}
+              onChange={(nextValue) => handleType(activeBlankIndex, nextValue)}
+              inputRef={{ current: blankInputRefs.current[activeBlankIndex] }}
+              dictionaryCharacters={chineseDictionaryEntries}
+            />
+          </div>
+        )}
 
         <Actions>
           <PrimaryButton onClick={handleCheck}>Проверить</PrimaryButton>

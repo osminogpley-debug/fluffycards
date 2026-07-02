@@ -396,6 +396,7 @@ function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: formData.username,
+          email: formData.email,
           isProfilePublic: formData.isProfilePublic,
           profileImage: user?.profileImage
         })
@@ -595,7 +596,6 @@ function ProfilePage() {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            disabled
           />
         </FormGroup>
 

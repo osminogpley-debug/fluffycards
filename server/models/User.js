@@ -18,16 +18,15 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     match: [/\S+@\S+\.\S+/, 'is invalid']
   },
-  googleId: {
+  yandexId: {
     type: String,
     unique: true,
-    sparse: true
+    sparse: true,
+    trim: true
   },
   password: {
     type: String,
-    required: function requiredPassword() {
-      return !this.googleId;
-    },
+    required: true,
     minlength: 6
   },
   role: {

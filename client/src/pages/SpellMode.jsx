@@ -1,10 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { API_ROUTES, authFetch } from '../constants/api';
 import TextToSpeech from '../components/TextToSpeech';
 import SetSelector from '../components/SetSelector';
+import ChineseInputHelper from '../components/ChineseInputHelper';
+import {
+  formatExpectedAnswer,
+  getPinyinAnswers,
+  matchesPinyinAnswer
+} from '../utils/chineseLearning';
 
 
 
@@ -335,6 +341,7 @@ function SpellMode() {
   const [currentSet, setCurrentSet] = useState(null);
   const sessionStartRef = useRef(Date.now());
   const statsRecordedRef = useRef(false);
+  const inputRef = useRef(null);
 
   // Загрузка набора
   useEffect(() => {
@@ -391,6 +398,12 @@ function SpellMode() {
   };
 
   const currentTerm = terms[currentIndex];
+  const pinyinAnswers = getPinyinAnswers(currentTerm?.term, currentTerm?.pinyin);
+  const requiresPinyin = pinyinAnswers.length > 0;
+  const chineseDictionaryEntries = useMemo(
+    () => terms.flatMap((card) => [card.term, card.definition]),
+    [terms]
+  );
 
   const speak = useCallback(() => {
     if (!currentTerm?.term) return;
@@ -417,7 +430,9 @@ function SpellMode() {
     const userAnswer = inputValue.trim().toLowerCase();
     const correct = currentTerm.term.toLowerCase();
 
-    const isMatch = userAnswer === correct;
+    const isMatch = requiresPinyin
+      ? matchesPinyinAnswer(inputValue, pinyinAnswers)
+      : userAnswer === correct;
 
     setIsCorrect(isMatch);
     setInputStatus(isMatch ? 'correct' : 'incorrect');
@@ -627,13 +642,14 @@ function SpellMode() {
       </CardContainer>
 
       <InputContainer>
-        <InputLabel>Введите услышанное слово:</InputLabel>
+        <InputLabel>{requiresPinyin ? 'Введите пиньинь услышанного слова:' : 'Введите услышанное слово:'}</InputLabel>
         <InputField
+          ref={inputRef}
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Напишите здесь..."
+          placeholder={requiresPinyin ? 'Напишите пиньинь здесь...' : 'Напишите здесь...'}
           status={inputStatus}
           disabled={showFeedback && isCorrect}
           autoFocus
@@ -641,6 +657,16 @@ function SpellMode() {
           autoCorrect="off"
           spellCheck="false"
         />
+
+        {requiresPinyin && (
+          <ChineseInputHelper
+            value={inputValue}
+            onChange={setInputValue}
+            disabled={showFeedback && isCorrect}
+            inputRef={inputRef}
+            dictionaryCharacters={chineseDictionaryEntries}
+          />
+        )}
 
         {showFeedback && (
           <FeedbackContainer correct={isCorrect}>
@@ -654,7 +680,7 @@ function SpellMode() {
             </FeedbackText>
             {!isCorrect && (
               <CorrectAnswer>
-                Правильно: <strong>{currentTerm.term}</strong>
+                Правильно: <strong>{formatExpectedAnswer(currentTerm.term, pinyinAnswers) || currentTerm.term}</strong>
               </CorrectAnswer>
             )}
           </FeedbackContainer>
@@ -668,7 +694,7 @@ function SpellMode() {
               🔊 Повторить
             </SecondaryButton>
             <SecondaryButton onClick={() => {
-              setInputValue(currentTerm.term);
+              setInputValue(requiresPinyin ? (pinyinAnswers[0] || currentTerm.term) : currentTerm.term);
               setInputStatus('neutral');
             }}>
               👁️ Подсказка

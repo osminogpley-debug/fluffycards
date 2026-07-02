@@ -1,8 +1,14 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { API_ROUTES, authFetch } from '../constants/api';
+import ChineseInputHelper from '../components/ChineseInputHelper';
+import {
+  formatExpectedAnswer,
+  getPinyinAnswers,
+  matchesPinyinAnswer
+} from '../utils/chineseLearning';
 
 
 
@@ -442,6 +448,8 @@ const generateQuestionsFromFlashcards = (flashcards, settings) => {
     } else if (type === 'writing') {
       // Writing: term -> write definition (or vice versa)
       const isTermToDef = Math.random() > 0.5;
+      const correctAnswer = isTermToDef ? card.definition : card.term;
+      const pinyinAnswers = getPinyinAnswers(correctAnswer, isTermToDef ? '' : card.pinyin);
       
       questions.push({
         id: card._id || index,
@@ -449,7 +457,9 @@ const generateQuestionsFromFlashcards = (flashcards, settings) => {
         question: isTermToDef 
           ? `Напишите определение для: "${card.term}"`
           : `Какой термин соответствует определению: "${card.definition}"?`,
-        correctAnswer: isTermToDef ? card.definition : card.term,
+        correctAnswer,
+        pinyinAnswers,
+        requiresPinyin: pinyinAnswers.length > 0,
         card: card
       });
     }
@@ -485,6 +495,7 @@ function TestMode() {
   const [shakeOption, setShakeOption] = useState(false);
   const sessionStartRef = useRef(Date.now());
   const statsRecordedRef = useRef(false);
+  const inputRef = useRef(null);
 
   // Fetch set data
   useEffect(() => {
@@ -540,6 +551,10 @@ function TestMode() {
   const question = questions[currentQuestion];
   const totalQuestions = questions.length;
   const answeredCount = Object.keys(answers).length;
+  const chineseDictionaryEntries = useMemo(
+    () => flashcards.flatMap((flashcard) => [flashcard.term, flashcard.definition]),
+    [flashcards]
+  );
   const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
 
   // ⏰ Timer effect
@@ -615,7 +630,9 @@ function TestMode() {
       question: q,
       userAnswer: answers[q.id],
       isCorrect: q.type === 'writing' 
-        ? answers[q.id]?.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()
+        ? (q.requiresPinyin
+            ? matchesPinyinAnswer(answers[q.id] || '', q.pinyinAnswers)
+            : answers[q.id]?.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim())
         : answers[q.id] === q.correctAnswer
     }));
     const correctCount = results.filter(r => r.isCorrect).length;
@@ -627,7 +644,9 @@ function TestMode() {
   const isAnswered = question && answers[question.id] !== undefined;
   const isCorrect = question && isAnswered && (
     question.type === 'writing' 
-      ? answers[question.id]?.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim()
+      ? (question.requiresPinyin
+          ? matchesPinyinAnswer(answers[question.id] || '', question.pinyinAnswers)
+          : answers[question.id]?.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim())
       : answers[question.id] === question.correctAnswer
   );
 
@@ -641,7 +660,7 @@ function TestMode() {
     if (!q) return '';
     if (q.type === 'multiple_choice') return q.options[q.correctAnswer];
     if (q.type === 'true_false') return q.correctAnswer ? 'Верно' : 'Неверно';
-    return q.correctAnswer;
+    return formatExpectedAnswer(q.correctAnswer, q.pinyinAnswers);
   };
 
   if (loading) {
@@ -784,13 +803,23 @@ function TestMode() {
         {question.type === 'writing' && (
           <InputContainer>
             <AnswerInput
+              ref={inputRef}
               type="text"
-              placeholder="Введите ваш ответ... ✍️"
+              placeholder={question.requiresPinyin ? 'Введите пиньинь... ✍️' : 'Введите ваш ответ... ✍️'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleWritingSubmit()}
               disabled={showResult}
             />
+            {question.requiresPinyin && (
+              <ChineseInputHelper
+                value={inputValue}
+                onChange={setInputValue}
+                disabled={showResult}
+                inputRef={inputRef}
+                dictionaryCharacters={chineseDictionaryEntries}
+              />
+            )}
             {!showResult && (
               <SubmitButton onClick={handleWritingSubmit}>
                 Ответить 🚀

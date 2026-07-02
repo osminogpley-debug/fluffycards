@@ -5,6 +5,12 @@ import confetti from 'canvas-confetti';
 import { API_ROUTES, authFetch } from '../constants/api';
 import { trackGameWin } from '../services/gamificationService';
 import SetSelector from '../components/SetSelector';
+import ChineseInputHelper from '../components/ChineseInputHelper';
+import {
+  formatExpectedAnswer,
+  getPinyinAnswers,
+  matchesPinyinAnswer
+} from '../utils/chineseLearning';
 
 /* ─── keyframes ─── */
 const pop = keyframes`
@@ -379,8 +385,12 @@ export default function TreasureIsland() {
   const handleTypeSubmit = (e) => {
     e?.preventDefault();
     if (result || !typeAnswer.trim()) return;
-    const sim = similarity(typeAnswer, questionCard.definition);
-    if (sim >= 0.75) handleCorrect();
+    const pinyinAnswers = getPinyinAnswers(questionCard?.definition);
+    const isCorrect = pinyinAnswers.length > 0
+      ? matchesPinyinAnswer(typeAnswer, pinyinAnswers)
+      : similarity(typeAnswer, questionCard.definition) >= 0.75;
+
+    if (isCorrect) handleCorrect();
     else handleWrong();
   };
 
@@ -398,6 +408,13 @@ export default function TreasureIsland() {
   }, [islands]);
 
   useEffect(() => { if (finished) recordStats(); }, [finished, recordStats]);
+
+  const pinyinAnswers = getPinyinAnswers(questionCard?.definition);
+  const requiresPinyin = pinyinAnswers.length > 0;
+  const chineseDictionaryEntries = flashcards.flatMap((card) => [card.term, card.definition]);
+  const typeHintValue = requiresPinyin
+    ? (pinyinAnswers[0] || '')
+    : (questionCard?.definition || '');
 
   if (!setId) return <SetSelector title="🏝️ Остров сокровищ" subtitle="Доберитесь до сокровища!" onSelectSet={s => navigate(`/games/treasure-island?setId=${s._id || s.id}`)} gameMode />;
   if (loading) return <Container><LoadW>⏳ Загрузка...</LoadW></Container>;
@@ -521,16 +538,27 @@ export default function TreasureIsland() {
             </OptionsGrid>
           ) : (
             <form onSubmit={handleTypeSubmit}>
-              <TypeHint>💡 <span>{questionCard.definition.charAt(0)}{'·'.repeat(questionCard.definition.length - 1)} ({questionCard.definition.length})</span></TypeHint>
+              <TypeHint>
+                💡 <span>{typeHintValue.charAt(0)}{'·'.repeat(Math.max(typeHintValue.length - 1, 0))} ({typeHintValue.length})</span>
+              </TypeHint>
               <TypeInput
                 ref={inputRef}
                 value={typeAnswer}
                 onChange={e => setTypeAnswer(e.target.value)}
-                placeholder="Введите определение..."
+                placeholder={requiresPinyin ? 'Введите пиньинь...' : 'Введите определение...'}
                 $s={result}
                 disabled={!!result}
                 autoComplete="off"
               />
+              {requiresPinyin && (
+                <ChineseInputHelper
+                  value={typeAnswer}
+                  onChange={setTypeAnswer}
+                  disabled={!!result}
+                  inputRef={inputRef}
+                  dictionaryCharacters={chineseDictionaryEntries}
+                />
+              )}
               <TypeSubmit type="submit" disabled={!!result || !typeAnswer.trim()}>
                 Ответить
               </TypeSubmit>
@@ -540,7 +568,7 @@ export default function TreasureIsland() {
           {result === 'correct' && <Feedback $ok>✅ Верно! +{10 + currentIsland * 5} монет!</Feedback>}
           {result === 'wrong' && (
             <Feedback>
-              ❌ Неверно! Правильно: <strong>{questionCard.definition}</strong>
+              ❌ Неверно! Правильно: <strong>{formatExpectedAnswer(questionCard.definition, pinyinAnswers) || questionCard.definition}</strong>
             </Feedback>
           )}
         </QCard>

@@ -4,6 +4,11 @@ import styled, { keyframes } from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { API_ROUTES, authFetch } from '../constants/api';
 import SetSelector from '../components/SetSelector';
+import {
+  formatExpectedAnswer,
+  getPinyinAnswers,
+  stripPinyinToneMarks
+} from '../utils/chineseLearning';
 
 const pop = keyframes`
   0% { transform: scale(0.8); opacity: 0; }
@@ -38,6 +43,20 @@ const isScrambleEligible = (term = '') => {
     return hanCount >= 2;
   }
   return countSyllables(term) >= 2;
+};
+
+const buildScrambleData = (card) => {
+  const pinyinAnswers = getPinyinAnswers(card?.term, card?.pinyin);
+  const requiresPinyin = pinyinAnswers.length > 0;
+  const rawTarget = requiresPinyin ? stripPinyinToneMarks(pinyinAnswers[0] || '') : String(card?.term || '');
+  const targetTerm = rawTarget.replace(/\s+/g, '').toLowerCase();
+
+  return {
+    ...card,
+    targetTerm,
+    requiresPinyin,
+    revealAnswer: requiresPinyin ? formatExpectedAnswer(card?.term, pinyinAnswers) : card?.term
+  };
 };
 
 const Container = styled.div`
@@ -406,10 +425,10 @@ function ScrambleGame() {
       statsRecordedRef.current = false;
       
       if (setData.flashcards && setData.flashcards.length > 0) {
-        const cards = setData.flashcards.map((card, idx) => ({
+        const cards = setData.flashcards.map((card, idx) => buildScrambleData({
           ...card,
           id: card._id || idx + 1
-        })).filter(card => isScrambleEligible(card.term));
+        })).filter(card => isScrambleEligible(card.targetTerm));
 
         if (cards.length === 0) {
           setFlashcards([]);
@@ -435,11 +454,11 @@ function ScrambleGame() {
     const card = cards.find(c => c.id === cardId);
     if (!card) return;
     setCurrentCardId(cardId);
-    const letters = card.term.split('').map((char, i) => ({ char, originalIndex: i }));
+    const letters = card.targetTerm.split('').map((char, i) => ({ char, originalIndex: i }));
     // Scramble (make sure it's actually scrambled)
     let scrambled = shuffleArray(letters);
     let tries = 0;
-    while (scrambled.map(l => l.char).join('') === card.term && tries < 10) {
+    while (scrambled.map(l => l.char).join('') === card.targetTerm && tries < 10) {
       scrambled = shuffleArray(letters);
       tries++;
     }
@@ -460,7 +479,7 @@ function ScrambleGame() {
 
     // Auto-check when all letters are placed
     const card = flashcards.find(c => c.id === currentCardId);
-    if (newAnswer.length === card.term.length) {
+    if (newAnswer.length === card.targetTerm.length) {
       const userAnswer = newAnswer.map(l => l.char).join('');
       checkAnswer(userAnswer, card);
     }
@@ -473,7 +492,7 @@ function ScrambleGame() {
   };
 
   const checkAnswer = (userAnswer, card) => {
-    const correct = userAnswer.toLowerCase() === card.term.toLowerCase();
+    const correct = userAnswer.toLowerCase() === card.targetTerm.toLowerCase();
     setShowFeedback(true);
     setAnswerStatus(correct ? 'correct' : 'wrong');
     
@@ -489,7 +508,7 @@ function ScrambleGame() {
         : '✨ Правильно!');
     } else {
       setStreak(0);
-      setFeedbackMsg(`Неправильно! Это: ${card.term}`);
+      setFeedbackMsg(`Неправильно! Это: ${card.revealAnswer}`);
     }
   };
 
@@ -649,6 +668,7 @@ function ScrambleGame() {
       <GameCard key={currentCardId}>
         <HintText>📖 Определение:</HintText>
         <DefinitionText>{card.definition}</DefinitionText>
+        {card.requiresPinyin && <HintText>Соберите pinyin для китайского слова</HintText>}
 
         <HintText>Твой ответ:</HintText>
         <AnswerArea status={answerStatus}>
@@ -680,7 +700,7 @@ function ScrambleGame() {
 
         {showFeedback && !isCorrectAnswer() && (
           <CorrectAnswer>
-            Правильный ответ: <strong>{card.term}</strong>
+            Правильный ответ: <strong>{card.revealAnswer}</strong>
           </CorrectAnswer>
         )}
 

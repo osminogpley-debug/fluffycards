@@ -1,9 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import SetSelector from '../components/SetSelector';
+import ChineseInputHelper from '../components/ChineseInputHelper';
+import {
+  formatExpectedAnswer,
+  getPinyinAnswers,
+  isChineseText,
+  matchesPinyinAnswer
+} from '../utils/chineseLearning';
 
 const resolveImageUrl = (url) => {
   if (!url) return url;
@@ -422,8 +429,6 @@ const shuffleArray = (arr) => {
   return a;
 };
 
-const isChinese = (text) => /[\u4e00-\u9fff]/.test(text);
-
 const normalizeAnswer = (str) => str.trim().toLowerCase().replace(/\s+/g, ' ');
 
 function StudyMode() {
@@ -550,10 +555,30 @@ function StudyMode() {
     }
   };
 
-  // Get acceptable answers for Chinese cards (without pinyin)
+  const getAnswerMeta = (card) => {
+    if (!card) {
+      return { requiresPinyin: false, pinyinAnswers: [], revealAnswer: '' };
+    }
+
+    const { answer } = getPromptAndAnswer(card);
+    const pinyinAnswers = getPinyinAnswers(answer, showTermSide ? '' : card.pinyin);
+
+    return {
+      requiresPinyin: pinyinAnswers.length > 0,
+      pinyinAnswers,
+      revealAnswer: formatExpectedAnswer(answer, pinyinAnswers)
+    };
+  };
+
   const getAcceptableAnswers = (card) => {
     if (!card) return [];
     const { answer } = getPromptAndAnswer(card);
+    const { requiresPinyin, pinyinAnswers } = getAnswerMeta(card);
+
+    if (requiresPinyin) {
+      return pinyinAnswers;
+    }
+
     const answers = [normalizeAnswer(answer)];
     
     // For Chinese cards answering with definition
@@ -600,14 +625,16 @@ function StudyMode() {
     const card = getCard(currentCardId);
     const userAnswer = normalizeAnswer(inputValue);
     const acceptableAnswers = getAcceptableAnswers(card);
+    const { requiresPinyin } = getAnswerMeta(card);
     
-    // Also check with fuzzy matching
-    const isMatch = acceptableAnswers.some(ans => 
-      ans === userAnswer || 
-      ans.includes(userAnswer) || 
-      userAnswer.includes(ans) ||
-      calculateSimilarity(userAnswer, ans) > 0.8
-    );
+    const isMatch = requiresPinyin
+      ? matchesPinyinAnswer(inputValue, acceptableAnswers)
+      : acceptableAnswers.some(ans => 
+          ans === userAnswer || 
+          ans.includes(userAnswer) || 
+          userAnswer.includes(ans) ||
+          calculateSimilarity(userAnswer, ans) > 0.8
+        );
 
     setIsCorrect(isMatch);
     setInputStatus(isMatch ? 'correct' : 'wrong');
@@ -725,6 +752,10 @@ function StudyMode() {
   const round1Done = Math.max(0, totalCards - round1Queue.length);
   const round2Total = round2Queue.length + masteredIds.length;
   const round2Done = masteredIds.length;
+  const chineseDictionaryEntries = useMemo(
+    () => flashcards.flatMap((flashcard) => [flashcard.term, flashcard.definition]),
+    [flashcards]
+  );
   const progress = totalCards > 0
     ? Math.round(((round1Done + round2Done) / (totalCards * 2)) * 100)
     : 0;
@@ -865,7 +896,8 @@ function StudyMode() {
   if (!card) return null;
 
   const { prompt, answer, promptLabel, answerLabel } = getPromptAndAnswer(card);
-  const cardIsChinese = isChinese(card.term);
+  const cardIsChinese = isChineseText(card.term) || isChineseText(card.definition);
+  const answerMeta = getAnswerMeta(card);
   const currentQueue = round === 1 ? round1Queue : round2Queue;
   const roundDone = round === 1 ? round1Done : round2Done;
   const roundTotal = round === 1 ? totalCards : round2Total;
@@ -945,7 +977,11 @@ function StudyMode() {
         ) : (
           /* ROUND 2: Typing */
           <>
-            {cardIsChinese && showTermSide && card.translation && (
+            {answerMeta.requiresPinyin ? (
+              <ChineseHint>
+                Введите ответ пиньинем. Подойдут варианты с тонами, без тонов и в формате ni3 hao3.
+              </ChineseHint>
+            ) : cardIsChinese && showTermSide && card.translation && (
               <ChineseHint>
                 💡 Можно ввести только перевод без пиньиня
               </ChineseHint>
@@ -956,7 +992,7 @@ function StudyMode() {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={`Введите ${answerLabel}...`}
+                placeholder={answerMeta.requiresPinyin ? 'Введите пиньинь...' : `Введите ${answerLabel}...`}
                 onKeyDown={(e) => e.key === 'Enter' && handleInputSubmit()}
                 disabled={showFeedback}
                 status={inputStatus}
@@ -968,6 +1004,15 @@ function StudyMode() {
                 Проверить
               </PrimaryButton>
             </InputContainer>
+            {answerMeta.requiresPinyin && (
+              <ChineseInputHelper
+                value={inputValue}
+                onChange={setInputValue}
+                disabled={showFeedback}
+                inputRef={inputRef}
+                dictionaryCharacters={chineseDictionaryEntries}
+              />
+            )}
           </>
         )}
 
@@ -979,7 +1024,7 @@ function StudyMode() {
 
         {showFeedback && !isCorrect && (
           <CorrectAnswerReveal>
-            Правильный ответ: <strong>{answer}</strong>
+            Правильный ответ: <strong>{answerMeta.revealAnswer || answer}</strong>
           </CorrectAnswerReveal>
         )}
 

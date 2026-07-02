@@ -5,6 +5,11 @@ import confetti from 'canvas-confetti';
 import { API_ROUTES, authFetch } from '../constants/api';
 import { trackGameWin } from '../services/gamificationService';
 import SetSelector from '../components/SetSelector';
+import {
+  formatExpectedAnswer,
+  getPinyinAnswers,
+  stripPinyinToneMarks
+} from '../utils/chineseLearning';
 
 /* ─── keyframes ─── */
 const pop = keyframes`
@@ -206,6 +211,20 @@ const WAGON_COLORS = [
   '#6366f1,#4f46e5', '#84cc16,#65a30d'
 ];
 
+const buildRoundCard = (card) => {
+  const pinyinAnswers = getPinyinAnswers(card?.term, card?.pinyin);
+  const requiresPinyin = pinyinAnswers.length > 0;
+  const rawTarget = requiresPinyin ? stripPinyinToneMarks(pinyinAnswers[0] || '') : String(card?.term || '');
+  const targetTerm = rawTarget.replace(/\s+/g, '').toLowerCase();
+
+  return {
+    ...card,
+    targetTerm,
+    requiresPinyin,
+    revealAnswer: requiresPinyin ? formatExpectedAnswer(card?.term, pinyinAnswers) : card?.term
+  };
+};
+
 export default function WordTrain() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -240,7 +259,10 @@ export default function WordTrain() {
         const r = await authFetch(`${API_ROUTES.DATA.SETS}/${setId}`);
         if (!r.ok) throw new Error('Набор не найден');
         const d = await r.json();
-        const cards = (d.cards || d.flashcards || []).filter(c => c.term && c.definition);
+        const cards = (d.cards || d.flashcards || [])
+          .filter(c => c.term && c.definition)
+          .map(buildRoundCard)
+          .filter(c => isScrambleEligible(c.targetTerm));
         if (cards.length < 4) throw new Error('Нужно минимум 4 карточки');
         setFlashcards(cards);
         setCurrentSet(d);
@@ -251,7 +273,7 @@ export default function WordTrain() {
   }, [setId]);
 
   const setupRound = useCallback((card) => {
-    const letters = card.term.split('');
+    const letters = card.targetTerm.split('');
     const shuffled = [...letters].sort(() => Math.random() - 0.5);
     // Ensure shuffled is not identical to original
     if (shuffled.join('') === letters.join('') && letters.length > 1) {
@@ -285,13 +307,13 @@ export default function WordTrain() {
 
     // Check if word is complete
     const card = queue[round];
-    if (newBuilt.length === card.term.length) {
+    if (newBuilt.length === card.targetTerm.length) {
       const builtWord = newBuilt.map(l => l.letter).join('');
-      if (builtWord === card.term) {
+      if (builtWord === card.targetTerm) {
         setResult('correct');
         setScore(s => s + 20);
         setCorrect(c => c + 1);
-        setWagons(w => [...w, { label: card.term, color: WAGON_COLORS[round % WAGON_COLORS.length] }]);
+        setWagons(w => [...w, { label: card.revealAnswer, color: WAGON_COLORS[round % WAGON_COLORS.length] }]);
         if ((correct + 1) % 3 === 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
         setTimeout(() => nextRound(), 1200);
       } else {
@@ -435,8 +457,13 @@ export default function WordTrain() {
       <QuestionCard $shake={shaking}>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Раунд {round + 1} из {TOTAL}</div>
         <DefText>📖 {card?.definition}</DefText>
+        {card?.requiresPinyin && (
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+            Соберите pinyin для китайского слова
+          </div>
+        )}
         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-          Соберите слово из букв ({card?.term.length} букв)
+          Соберите слово из букв ({card?.targetTerm.length} букв)
         </div>
 
         <BuiltWord $wrong={result === 'wrong'} $correct={result === 'correct'}>
@@ -445,7 +472,7 @@ export default function WordTrain() {
               {l.letter}
             </BuiltLetter>
           ))}
-          {Array.from({ length: Math.max(0, (card?.term.length || 0) - built.length) }).map((_, i) => (
+          {Array.from({ length: Math.max(0, (card?.targetTerm.length || 0) - built.length) }).map((_, i) => (
             <Placeholder key={`ph-${i}`} />
           ))}
         </BuiltWord>
@@ -469,7 +496,7 @@ export default function WordTrain() {
         </ActionRow>
 
         {result === 'correct' && <Feedback $ok>✅ Верно! Вагон прицеплен!</Feedback>}
-        {result === 'wrong' && <Feedback>❌ Неверно! Правильно: <strong>{card?.term}</strong></Feedback>}
+        {result === 'wrong' && <Feedback>❌ Неверно! Правильно: <strong>{card?.revealAnswer}</strong></Feedback>}
       </QuestionCard>
     </Container>
   );

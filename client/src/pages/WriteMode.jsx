@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PrimaryButton, SecondaryButton } from '../components/UI/Buttons';
 import { API_ROUTES, authFetch, FILE_BASE_URL } from '../constants/api';
 import SetSelector from '../components/SetSelector';
+import ChineseInputHelper from '../components/ChineseInputHelper';
+import {
+  formatExpectedAnswer,
+  getPinyinAnswers,
+  matchesPinyinAnswer
+} from '../utils/chineseLearning';
 
 const resolveImageUrl = (url) => {
   if (!url) return url;
@@ -151,6 +157,13 @@ const DirectionButton = styled.button`
 
 const InputContainer = styled.div`
   margin-bottom: 1.5rem;
+`;
+
+const ChineseHint = styled.div`
+  margin: -0.5rem 0 1rem;
+  color: var(--text-secondary, #4a5568);
+  font-size: 0.9rem;
+  text-align: center;
 `;
 
 const InputField = styled.input`
@@ -346,6 +359,7 @@ function WriteMode() {
   const [currentSet, setCurrentSet] = useState(null);
   const sessionStartRef = useRef(Date.now());
   const statsRecordedRef = useRef(false);
+  const inputRef = useRef(null);
 
   // Загрузка набора
   useEffect(() => {
@@ -389,6 +403,12 @@ function WriteMode() {
 
   const prompt = isTermToDef ? currentCard?.term : currentCard?.definition;
   const correctAnswer = isTermToDef ? currentCard?.definition : currentCard?.term;
+  const pinyinAnswers = getPinyinAnswers(correctAnswer, isTermToDef ? '' : currentCard?.pinyin);
+  const requiresPinyin = pinyinAnswers.length > 0;
+  const chineseDictionaryEntries = useMemo(
+    () => flashcards.flatMap((flashcard) => [flashcard.term, flashcard.definition]),
+    [flashcards]
+  );
 
   const progress = flashcards.length > 0 ? Math.round((answeredCards.length / flashcards.length) * 100) : 0;
   const accuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
@@ -431,10 +451,12 @@ function WriteMode() {
     const userAnswer = inputValue.trim().toLowerCase();
     const correct = correctAnswer.toLowerCase();
     
-    const isMatch = userAnswer === correct || 
-                    correct.includes(userAnswer) || 
-                    userAnswer.includes(correct) ||
-                    calculateSimilarity(userAnswer, correct) > 0.8;
+    const isMatch = requiresPinyin
+      ? matchesPinyinAnswer(inputValue, pinyinAnswers)
+      : userAnswer === correct || 
+        correct.includes(userAnswer) || 
+        userAnswer.includes(correct) ||
+        calculateSimilarity(userAnswer, correct) > 0.8;
     
     setIsCorrect(isMatch);
     setInputStatus(isMatch ? 'correct' : 'incorrect');
@@ -666,16 +688,31 @@ function WriteMode() {
 
         <InputContainer>
           <InputField
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={isTermToDef ? 'Введите определение...' : 'Введите термин...'}
+            placeholder={requiresPinyin ? 'Введите пиньинь...' : isTermToDef ? 'Введите определение...' : 'Введите термин...'}
             status={inputStatus}
             disabled={showFeedback && isCorrect}
             autoFocus
           />
         </InputContainer>
+        {requiresPinyin && (
+          <ChineseHint>
+            Используйте пиньинь. Подойдут nǐ hǎo, ni hao и ni3 hao3.
+          </ChineseHint>
+        )}
+        {requiresPinyin && (
+          <ChineseInputHelper
+            value={inputValue}
+            onChange={setInputValue}
+            disabled={showFeedback && isCorrect}
+            inputRef={inputRef}
+            dictionaryCharacters={chineseDictionaryEntries}
+          />
+        )}
 
         {showFeedback && (
           <FeedbackContainer correct={isCorrect}>
@@ -684,7 +721,7 @@ function WriteMode() {
             </FeedbackText>
             {!isCorrect && (
               <CorrectAnswer>
-                Правильный ответ: <strong>{correctAnswer}</strong>
+                Правильный ответ: <strong>{formatExpectedAnswer(correctAnswer, pinyinAnswers) || correctAnswer}</strong>
               </CorrectAnswer>
             )}
           </FeedbackContainer>
@@ -707,7 +744,7 @@ function WriteMode() {
             <>
               {!isCorrect && (
                 <SecondaryButton onClick={() => {
-                  setInputValue(correctAnswer);
+                  setInputValue(pinyinAnswers[0] || correctAnswer);
                   setInputStatus('correct');
                   setIsCorrect(true);
                 }}>
